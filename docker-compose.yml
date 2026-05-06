@@ -1,0 +1,47 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:80"
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      - db
+    networks:
+      - srms-network
+
+  db:
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: srms
+      MYSQL_USER: srms_user
+      MYSQL_PASSWORD: srms_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./srms.sql:/docker-entrypoint-initdb.d/srms.sql
+    networks:
+      - srms-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      PMA_USER: srms_user
+      PMA_PASSWORD: srms_password
+    depends_on:
+      - db
+    networks:
+      - srms-network
+
+volumes:
+  mysql-data:
+
+networks:
+  srms-network:
