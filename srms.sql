@@ -144,6 +144,7 @@ CREATE TABLE `tblstudents` (
   `StudentName` varchar(100) DEFAULT NULL,
   `RollId` varchar(100) DEFAULT NULL,
   `StudentEmail` varchar(100) DEFAULT NULL,
+  `ParentPhone` varchar(30) DEFAULT NULL,
   `Gender` varchar(10) DEFAULT NULL,
   `DOB` varchar(100) DEFAULT NULL,
   `ClassId` int(11) DEFAULT NULL,
@@ -156,13 +157,13 @@ CREATE TABLE `tblstudents` (
 -- Dumping data for table `tblstudents`
 --
 
-INSERT INTO `tblstudents` (`StudentId`, `StudentName`, `RollId`, `StudentEmail`, `Gender`, `DOB`, `ClassId`, `RegDate`, `UpdationDate`, `Status`) VALUES
-(1, 'Sarita', '46456', 'info@phpgurukul.com', 'Female', '1995-03-03', 1, '2024-04-20 10:30:57', NULL, 1),
-(2, 'Anuj kumar', '10861', 'anuj@gmail.co', 'Male', '1995-02-02', 4, '2024-04-24 10:30:57', NULL, 0),
-(3, 'amit kumar', '2626', 'amit@gmail.com', 'Male', '2014-08-06', 6, '2024-04-22 10:30:57', NULL, 1),
-(4, 'rahul kumar', '990', 'rahul01@gmail.com', 'Male', '2001-02-03', 7, '2024-04-24 10:30:57', NULL, 1),
-(5, 'sanjeev singh', '122', 'sanjeev01@gmail.com', 'Male', '2002-02-03', 8, '2024-04-25 10:30:57', NULL, 1),
-(6, 'Shiv Gupta', '12345', 'shiv34534@gmail.com', 'Male', '2007-01-12', 9, '2024-05-01 15:19:40', NULL, 1);
+INSERT INTO `tblstudents` (`StudentId`, `StudentName`, `RollId`, `StudentEmail`, `ParentPhone`, `Gender`, `DOB`, `ClassId`, `RegDate`, `UpdationDate`, `Status`) VALUES
+(1, 'Sarita', '46456', 'info@phpgurukul.com', NULL, 'Female', '1995-03-03', 1, '2024-04-20 10:30:57', NULL, 1),
+(2, 'Anuj kumar', '10861', 'anuj@gmail.co', NULL, 'Male', '1995-02-02', 4, '2024-04-24 10:30:57', NULL, 0),
+(3, 'amit kumar', '2626', 'amit@gmail.com', NULL, 'Male', '2014-08-06', 6, '2024-04-22 10:30:57', NULL, 1),
+(4, 'rahul kumar', '990', 'rahul01@gmail.com', NULL, 'Male', '2001-02-03', 7, '2024-04-24 10:30:57', NULL, 1),
+(5, 'sanjeev singh', '122', 'sanjeev01@gmail.com', NULL, 'Male', '2002-02-03', 8, '2024-04-25 10:30:57', NULL, 1),
+(6, 'Shiv Gupta', '12345', 'shiv34534@gmail.com', NULL, 'Male', '2007-01-12', 9, '2024-05-01 15:19:40', NULL, 1);
 
 -- --------------------------------------------------------
 

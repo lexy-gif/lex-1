@@ -3,6 +3,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    environment:
+      AFRICASTALKING_SMS_ENABLED: "${AFRICASTALKING_SMS_ENABLED:-false}"
+      AFRICASTALKING_ENV: "${AFRICASTALKING_ENV:-sandbox}"
+      AFRICASTALKING_USERNAME: "${AFRICASTALKING_USERNAME:-sandbox}"
+      AFRICASTALKING_API_KEY: "${AFRICASTALKING_API_KEY:-replace-with-your-api-key}"
+      AFRICASTALKING_SENDER_ID: "${AFRICASTALKING_SENDER_ID:-}"
     ports:
       - "5000:80"
     volumes:
