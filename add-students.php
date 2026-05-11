@@ -17,17 +17,19 @@ if(isset($_POST['submit']))
     } else {
         $roolid = $_POST['rollid']; 
         $studentemail = $_POST['emailid']; 
+        $parentphone = $_POST['parentphone'];
         $gender = $_POST['gender']; 
         $classid = $_POST['class']; 
         $dob = $_POST['dob']; 
         $status = 1;
 
-        $sql = "INSERT INTO tblstudents(StudentName, RollId, StudentEmail, Gender, ClassId, DOB, Status)
-                VALUES(:studentname, :roolid, :studentemail, :gender, :classid, :dob, :status)";
+        $sql = "INSERT INTO tblstudents(StudentName, RollId, StudentEmail, ParentPhone, Gender, ClassId, DOB, Status)
+                VALUES(:studentname, :roolid, :studentemail, :parentphone, :gender, :classid, :dob, :status)";
         $query = $dbh->prepare($sql);
         $query->bindParam(':studentname',$studentname,PDO::PARAM_STR);
         $query->bindParam(':roolid',$roolid,PDO::PARAM_STR);
         $query->bindParam(':studentemail',$studentemail,PDO::PARAM_STR);
+        $query->bindParam(':parentphone',$parentphone,PDO::PARAM_STR);
         $query->bindParam(':gender',$gender,PDO::PARAM_STR);
         $query->bindParam(':classid',$classid,PDO::PARAM_STR);
         $query->bindParam(':dob',$dob,PDO::PARAM_STR);
@@ -134,6 +136,15 @@ if(isset($_POST['submit']))
                                                 <label for="default" class="col-sm-2 control-label">Email ID</label>
                                                 <div class="col-sm-10">
                                                     <input type="email" name="emailid" class="form-control" id="email"
+                                                        required="required" autocomplete="off">
+                                                </div>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label for="parentphone" class="col-sm-2 control-label">Parent Phone</label>
+                                                <div class="col-sm-10">
+                                                    <input type="tel" name="parentphone" class="form-control"
+                                                        id="parentphone" placeholder="0712345678 or +254712345678"
                                                         required="required" autocomplete="off">
                                                 </div>
                                             </div>

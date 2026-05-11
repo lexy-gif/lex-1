@@ -15,15 +15,17 @@ if(isset($_POST['submit']))
 $studentname=$_POST['fullanme'];
 $roolid=$_POST['rollid']; 
 $studentemail=$_POST['emailid']; 
+$parentphone=$_POST['parentphone'];
 $gender=$_POST['gender']; 
 $classid=$_POST['class']; 
 $dob=$_POST['dob']; 
 $status=$_POST['status'];
-$sql="update tblstudents set StudentName=:studentname,RollId=:roolid,StudentEmail=:studentemail,Gender=:gender,DOB=:dob,Status=:status where StudentId=:stid ";
+$sql="update tblstudents set StudentName=:studentname,RollId=:roolid,StudentEmail=:studentemail,ParentPhone=:parentphone,Gender=:gender,DOB=:dob,Status=:status where StudentId=:stid ";
 $query = $dbh->prepare($sql);
 $query->bindParam(':studentname',$studentname,PDO::PARAM_STR);
 $query->bindParam(':roolid',$roolid,PDO::PARAM_STR);
 $query->bindParam(':studentemail',$studentemail,PDO::PARAM_STR);
+$query->bindParam(':parentphone',$parentphone,PDO::PARAM_STR);
 $query->bindParam(':gender',$gender,PDO::PARAM_STR);
 $query->bindParam(':dob',$dob,PDO::PARAM_STR);
 $query->bindParam(':status',$status,PDO::PARAM_STR);
@@ -111,7 +113,7 @@ else if($error){?>
                                                 <form class="form-horizontal" method="post">
 <?php 
 
-$sql = "SELECT tblstudents.StudentName,tblstudents.RollId,tblstudents.RegDate,tblstudents.StudentId,tblstudents.Status,tblstudents.StudentEmail,tblstudents.Gender,tblstudents.DOB,tblclasses.ClassName,tblclasses.Section from tblstudents join tblclasses on tblclasses.id=tblstudents.ClassId where tblstudents.StudentId=:stid";
+$sql = "SELECT tblstudents.StudentName,tblstudents.RollId,tblstudents.RegDate,tblstudents.StudentId,tblstudents.Status,tblstudents.StudentEmail,tblstudents.ParentPhone,tblstudents.Gender,tblstudents.DOB,tblclasses.ClassName,tblclasses.Section from tblstudents join tblclasses on tblclasses.id=tblstudents.ClassId where tblstudents.StudentId=:stid";
 $query = $dbh->prepare($sql);
 $query->bindParam(':stid',$stid,PDO::PARAM_STR);
 $query->execute();
@@ -141,6 +143,13 @@ foreach($results as $result)
 <label for="default" class="col-sm-2 control-label">Email id)</label>
 <div class="col-sm-10">
 <input type="email" name="emailid" class="form-control" id="email" value="<?php echo htmlentities($result->StudentEmail)?>" required="required" autocomplete="off">
+</div>
+</div>
+
+<div class="form-group">
+<label for="parentphone" class="col-sm-2 control-label">Parent Phone</label>
+<div class="col-sm-10">
+<input type="tel" name="parentphone" class="form-control" id="parentphone" value="<?php echo htmlentities($result->ParentPhone)?>" placeholder="0712345678 or +254712345678" required="required" autocomplete="off">
 </div>
 </div>
 
