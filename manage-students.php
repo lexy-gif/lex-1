@@ -114,6 +114,7 @@ else if($error){?>
                                                         <th>Student Name</th>
                                                         <th>Registration ID</th>
                                                         <th>multi-subject learners</th>
+                                                        <th>Parent Phone</th>
                                                         <th>Reg Date</th>
                                                         <th>Status</th>
                                                         <th>Action</th>
@@ -125,13 +126,14 @@ else if($error){?>
                                                         <th>Student Name</th>
                                                         <th>Registration ID</th>
                                                         <th>multi-subject learners</th>
+                                                        <th>Parent Phone</th>
                                                         <th>Reg Date</th>
                                                         <th>Status</th>
                                                         <th>Action</th>
                                                     </tr>
                                                 </tfoot>
                                                 <tbody>
-                                                    <?php $sql = "SELECT tblstudents.StudentName,tblstudents.RollId,tblstudents.RegDate,tblstudents.StudentId,tblstudents.Status,tblclasses.ClassName,tblclasses.Section from tblstudents join tblclasses on tblclasses.id=tblstudents.ClassId";
+                                                    <?php $sql = "SELECT tblstudents.StudentName,tblstudents.RollId,tblstudents.ParentPhone,tblstudents.RegDate,tblstudents.StudentId,tblstudents.Status,tblclasses.ClassName,tblclasses.Section from tblstudents join tblclasses on tblclasses.id=tblstudents.ClassId";
 $query = $dbh->prepare($sql);
 $query->execute();
 $results=$query->fetchAll(PDO::FETCH_OBJ);
@@ -146,6 +148,7 @@ foreach($results as $result)
                                                         <td><?php echo htmlentities($result->RollId);?></td>
                                                         <td><?php echo htmlentities($result->ClassName);?>(<?php echo htmlentities($result->Section);?>)
                                                         </td>
+                                                        <td><?php echo htmlentities($result->ParentPhone);?></td>
                                                         <td><?php echo htmlentities($result->RegDate);?></td>
                                                         <td><?php if($result->Status==1){
 echo htmlentities('Active');
