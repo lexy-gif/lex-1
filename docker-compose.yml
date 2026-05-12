@@ -3,27 +3,44 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      AFRICASTALKING_SMS_ENABLED: ${AFRICASTALKING_SMS_ENABLED}
+      AFRICASTALKING_ENV: ${AFRICASTALKING_ENV}
+      AFRICASTALKING_USERNAME: ${AFRICASTALKING_USERNAME}
+      AFRICASTALKING_API_KEY: ${AFRICASTALKING_API_KEY}
+      AFRICASTALKING_SENDER_ID: ${AFRICASTALKING_SENDER_ID}
     ports:
       - "5000:80"
     volumes:
       - .:/var/www/html
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - srms-network
 
   db:
-    image: mysql:latest
+    image: mysql:8.0
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: srms
-      MYSQL_USER: srms_user
-      MYSQL_PASSWORD: srms_password
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASS}
     ports:
       - "3306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
       - ./srms.sql:/docker-entrypoint-initdb.d/srms.sql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u$${MYSQL_USER} -p$${MYSQL_PASSWORD} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - srms-network
 
@@ -33,10 +50,11 @@ services:
       - "8081:80"
     environment:
       PMA_HOST: db
-      PMA_USER: srms_user
-      PMA_PASSWORD: srms_password
+      PMA_USER: ${DB_USER}
+      PMA_PASSWORD: ${DB_PASS}
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - srms-network
 
