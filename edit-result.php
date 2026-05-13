@@ -18,7 +18,6 @@ $marks=$_POST['marks'];
 foreach($_POST['id'] as $count => $id){
 $mrks=$marks[$count];
 $iid=$rowid[$count];
-for($i=0;$i<=$count;$i++) {
 
 $sql="update tblresult  set marks=:mrks where id=:iid ";
 $query = $dbh->prepare($sql);
@@ -27,7 +26,6 @@ $query->bindParam(':iid',$iid,PDO::PARAM_STR);
 $query->execute();
 
 $msg="Result info updated successfully";
-}
 }
 }
 
@@ -111,7 +109,7 @@ else if($error){?>
 
                                             <?php 
 
-$ret = "SELECT tblstudents.StudentName,tblclasses.ClassName,tblclasses.Section from tblresult join tblstudents on tblresult.StudentId=tblresult.StudentId join tblsubjects on tblsubjects.id=tblresult.SubjectId join tblclasses on tblclasses.id=tblstudents.ClassId where tblstudents.StudentId=:stid limit 1";
+$ret = "SELECT tblstudents.StudentName,tblclasses.ClassName,tblclasses.Section from tblresult join tblstudents on tblstudents.StudentId=tblresult.StudentId join tblsubjects on tblsubjects.id=tblresult.SubjectId join tblclasses on tblclasses.id=tblstudents.ClassId where tblstudents.StudentId=:stid limit 1";
 $stmt = $dbh->prepare($ret);
 $stmt->bindParam(':stid',$stid,PDO::PARAM_STR);
 $stmt->execute();

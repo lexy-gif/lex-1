@@ -44,7 +44,7 @@ include('includes/config.php');
         <div class="container text-center position-relative">
             <h1 class="display-5 fw-bold">Welcome to the Student Result Management System</h1>
             <p class="lead mb-4">Effortlessly manage, view, and access student academic results online.</p>
-            <a href="find-result.php" class="btn btn-primary btn-lg me-2">Studet Login</a>
+            <a href="find-result.php" class="btn btn-primary btn-lg me-2">Student Login</a>
             <a href="admin-login.php" class="btn btn-outline-light btn-lg">Class Teacher Login</a>
         </div>
     </header>

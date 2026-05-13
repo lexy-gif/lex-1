@@ -8,16 +8,32 @@ $_SESSION['alogin']='';
 if(isset($_POST['login']))
 {
 $uname=$_POST['username'];
-$password=md5($_POST['password']);
-$sql ="SELECT UserName,Password FROM admin WHERE UserName=:uname and Password=:password";
+$password=$_POST['password'];
+$sql ="SELECT UserName,Password FROM admin WHERE UserName=:uname LIMIT 1";
 $query= $dbh -> prepare($sql);
 $query-> bindParam(':uname', $uname, PDO::PARAM_STR);
-$query-> bindParam(':password', $password, PDO::PARAM_STR);
 $query-> execute();
-$results=$query->fetchAll(PDO::FETCH_OBJ);
-if($query->rowCount() > 0)
+$result=$query->fetch(PDO::FETCH_OBJ);
+$passwordMatches = false;
+
+if($result) {
+    $passwordMatches = password_verify($password, $result->Password);
+
+    // Upgrade legacy MD5 hashes after a successful login.
+    if(!$passwordMatches && hash_equals($result->Password, md5($password))) {
+        $passwordMatches = true;
+        $newHash = password_hash($password, PASSWORD_DEFAULT);
+        $update = $dbh->prepare("UPDATE admin SET Password=:password WHERE UserName=:uname");
+        $update->bindParam(':password', $newHash, PDO::PARAM_STR);
+        $update->bindParam(':uname', $uname, PDO::PARAM_STR);
+        $update->execute();
+    }
+}
+
+if($passwordMatches)
 {
-$_SESSION['alogin']=$_POST['username'];
+session_regenerate_id(true);
+$_SESSION['alogin']=$result->UserName;
 echo "<script type='text/javascript'> document.location = 'dashboard.php'; </script>";
 } else{
     echo "<script>alert('Invalid Details');</script>";
