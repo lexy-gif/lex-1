@@ -2,6 +2,7 @@
 session_start();
 error_reporting(0);
 include('includes/config.php');
+include('includes/sms.php');
 if(strlen($_SESSION['alogin'])=="") {   
     header("Location: index.php"); 
 } else {
@@ -67,6 +68,27 @@ if(strlen($_SESSION['alogin'])=="") {
             }
 
             $msg = "Result info added successfully. Student scored <strong>$studentTotal</strong> marks and is ranked <strong>$studentRank</strong> out of <strong>$totalStudents</strong> students in the class.";
+
+            $studentSql = "SELECT StudentName, ParentPhone FROM tblstudents WHERE StudentId = :studentid LIMIT 1";
+            $studentQuery = $dbh->prepare($studentSql);
+            $studentQuery->bindParam(':studentid', $studentid, PDO::PARAM_STR);
+            $studentQuery->execute();
+            $student = $studentQuery->fetch(PDO::FETCH_ASSOC);
+
+            if($student && !empty($student['ParentPhone'])) {
+                $smsText = "Hello Parent, " . $student['StudentName'] . "'s results are ready. Total: " . $studentTotal . " marks. Rank: " . $studentRank . " out of " . $totalStudents . ". Please login to SRMS for full details.";
+                $smsResult = send_africastalking_sms($student['ParentPhone'], $smsText);
+
+                if(!empty($smsResult['success'])) {
+                    $msg .= " SMS sent to parent.";
+                } elseif(!empty($smsResult['skipped'])) {
+                    $msg .= " SMS not sent: " . htmlentities($smsResult['message']);
+                } else {
+                    $msg .= " Result saved, but SMS failed: " . htmlentities($smsResult['message']);
+                }
+            } else {
+                $msg .= " SMS not sent because this student has no parent phone number.";
+            }
         } else {
             $error = "Something went wrong. Please try again";
         }
