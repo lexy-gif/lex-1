@@ -9,23 +9,23 @@ if(strlen($_SESSION['alogin'])=="")
     else{
 if(isset($_POST['submit']))
     {
-$password=md5($_POST['password']);
-$newpassword=md5($_POST['newpassword']);
+$password=$_POST['password'];
+$newpassword=password_hash($_POST['newpassword'], PASSWORD_DEFAULT);
 $username=$_SESSION['alogin'];
-    $sql ="SELECT Password FROM admin WHERE UserName=:username and Password=:password";
+    $sql ="SELECT Password FROM admin WHERE UserName=:username LIMIT 1";
 $query= $dbh -> prepare($sql);
 $query-> bindParam(':username', $username, PDO::PARAM_STR);
-$query-> bindParam(':password', $password, PDO::PARAM_STR);
 $query-> execute();
-$results = $query -> fetchAll(PDO::FETCH_OBJ);
-if($query -> rowCount() > 0)
+$result = $query -> fetch(PDO::FETCH_OBJ);
+$passwordMatches = $result && (password_verify($password, $result->Password) || hash_equals($result->Password, md5($password)));
+if($passwordMatches)
 {
 $con="update admin set Password=:newpassword where UserName=:username";
 $chngpwd1 = $dbh->prepare($con);
 $chngpwd1-> bindParam(':username', $username, PDO::PARAM_STR);
 $chngpwd1-> bindParam(':newpassword', $newpassword, PDO::PARAM_STR);
 $chngpwd1->execute();
-$msg="Your Password succesfully changed";
+$msg="Your password was successfully changed";
 }
 else {
 $error="Your current password is wrong";    

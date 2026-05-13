@@ -7,16 +7,15 @@ if(strlen($_SESSION['alogin'])=="") {
     header("Location: index.php"); 
 } else {
     if(isset($_POST['submit'])) {
-        $marks = array();
         $class = $_POST['class'];
         $studentid = $_POST['studentid']; 
         $mark = $_POST['marks'];
 
-        // Get subject IDs for the class
+        // Get active subject IDs for the class in the same order used by the form.
         $stmt = $dbh->prepare("SELECT tblsubjects.SubjectName, tblsubjects.id 
                                FROM tblsubjectcombination 
                                JOIN tblsubjects ON tblsubjects.id = tblsubjectcombination.SubjectId 
-                               WHERE tblsubjectcombination.ClassId = :cid 
+                               WHERE tblsubjectcombination.ClassId = :cid AND tblsubjectcombination.status = 1
                                ORDER BY tblsubjects.SubjectName");
         $stmt->execute(array(':cid' => $class));
         $sid1 = array();
@@ -24,7 +23,10 @@ if(strlen($_SESSION['alogin'])=="") {
             array_push($sid1, $row['id']);
         } 
 
-        // Insert marks for each subject
+        if(count($mark) !== count($sid1)) {
+            $error = "Subject and marks count did not match. Please try again.";
+        } else {
+        $lastInsertId = 0;
         for($i = 0; $i < count($mark); $i++) {
             $mar = $mark[$i];
             $sid = $sid1[$i];
@@ -90,7 +92,7 @@ if(strlen($_SESSION['alogin'])=="") {
         } else {
             $error = "Something went wrong. Please try again";
         }
-        // ✅ END RANK SECTION
+        }
     }
 ?>
 <!DOCTYPE html>

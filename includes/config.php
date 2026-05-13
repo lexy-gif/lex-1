@@ -7,13 +7,14 @@ define('DB_NAME', getenv('DB_NAME') ?: 'srms');
 // Establish database connection.
 try
 {
-$dbh = new PDO("mysql:host=".DB_HOST.";dbname=".DB_NAME, DB_USER, DB_PASS, array(
-    PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'utf8'",
+$dbh = new PDO("mysql:host=".DB_HOST.";dbname=".DB_NAME.";charset=utf8mb4", DB_USER, DB_PASS, array(
+    PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'utf8mb4'",
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
 ));
 }
 catch (PDOException $e)
 {
-exit("Error: " . $e->getMessage());
+error_log("Database connection failed: " . $e->getMessage());
+exit("Database connection failed. Please try again later.");
 }
 ?>
