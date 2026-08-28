@@ -2,6 +2,8 @@
 session_start();
 error_reporting(0);
 include('includes/config.php');
+include('includes/csrf.php');
+include('includes/audit.php');
 if(strlen($_SESSION['alogin'])=="")
     {   
     header("Location: index.php"); 
@@ -9,6 +11,7 @@ if(strlen($_SESSION['alogin'])=="")
     else{
 if(isset($_POST['submit']))
     {
+csrf_require_valid($_POST['csrf_token'] ?? '');
 $password=$_POST['password'];
 $newpassword=password_hash($_POST['newpassword'], PASSWORD_DEFAULT);
 $username=$_SESSION['alogin'];
@@ -25,6 +28,7 @@ $chngpwd1 = $dbh->prepare($con);
 $chngpwd1-> bindParam(':username', $username, PDO::PARAM_STR);
 $chngpwd1-> bindParam(':newpassword', $newpassword, PDO::PARAM_STR);
 $chngpwd1->execute();
+audit_log($dbh, 'dean_password_changed', 'admin', $username, 'Dean changed password');
 $msg="Your password was successfully changed";
 }
 else {
@@ -135,7 +139,8 @@ else if($error){?>
   
                                             <div class="panel-body">
 
-                                                <form  name="chngpwd" method="post" \ onSubmit="return valid();">
+                                                <form  name="chngpwd" method="post" onSubmit="return valid();">
+                                                    <?php csrf_field(); ?>
                                                     <div class="form-group has-success">
                                                         <label for="success" class="control-label">Current Password</label>
                                                 		<div class="">

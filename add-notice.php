@@ -2,11 +2,13 @@
 session_start();
 error_reporting(0);
 include('includes/config.php');
+include('includes/csrf.php');
 if(strlen($_SESSION['alogin'])==""){  
     header("Location: index.php");
      }else{
 if(isset($_POST['submit']))
 {
+csrf_require_valid($_POST['csrf_token'] ?? '');
 $ntitle=$_POST['noticetitle'];
 $ndetails=$_POST['noticedetails']; 
 $sql="INSERT INTO  tblnotice(noticeTitle,noticeDetails) VALUES(:ntitle,:ndetails)";
@@ -113,6 +115,7 @@ echo '<script>alert("Something went wrong. Please try again.")</script>';
                                             <div class="panel-body">
 
                                                 <form method="post">
+                                                    <?php csrf_field(); ?>
                                                     <div class="form-group has-success">
                                                         <label for="success" class="control-label">Notice Title</label>
                                                 		<div class="">

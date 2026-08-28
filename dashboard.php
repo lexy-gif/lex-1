@@ -5,6 +5,25 @@ include('includes/config.php');
 if(strlen($_SESSION['alogin'])=="") {   
     header("Location: index.php"); 
 } else {
+$totalStudents = $dbh->query("SELECT COUNT(*) FROM tblstudents")->fetchColumn();
+$totalSubjects = $dbh->query("SELECT COUNT(*) FROM tblsubjects")->fetchColumn();
+$totalClasses = $dbh->query("SELECT COUNT(*) FROM tblclasses")->fetchColumn();
+$teacherRoleSql = "'class_teacher','subject_teacher','head_of_department','exams_officer','deputy_dean'";
+$totalTeachers = $dbh->query("SELECT COUNT(*) FROM tblusers WHERE Role IN ($teacherRoleSql)")->fetchColumn();
+$activeTeachers = $dbh->query("SELECT COUNT(*) FROM tblusers WHERE Role IN ($teacherRoleSql) AND Status = 1")->fetchColumn();
+$inactiveTeachers = $dbh->query("SELECT COUNT(*) FROM tblusers WHERE Role IN ($teacherRoleSql) AND Status = 0")->fetchColumn();
+$activeExamCount = $dbh->query("SELECT COUNT(*) FROM tblexams WHERE Status IN ('marks_entry','submitted','under_review','approved')")->fetchColumn();
+$resultsSubmitted = $dbh->query("SELECT COUNT(DISTINCT CONCAT(StudentId, '-', COALESCE(ExamId, 0))) FROM tblresult")->fetchColumn();
+$classesAwaitingApproval = $dbh->query("SELECT COUNT(*) FROM tblresultreviews WHERE Status = 'approved'")->fetchColumn();
+$schoolMean = $dbh->query("SELECT ROUND(AVG(marks), 2) FROM tblresult")->fetchColumn();
+$classesScheduled = $dbh->query("SELECT COUNT(DISTINCT ClassId) FROM tblclasstimetableentries WHERE Status = 'published'")->fetchColumn();
+$timetableConflicts = 0;
+$examTimetableStatusQuery = $dbh->query("SELECT Status FROM tblexamtimetableentries ORDER BY id DESC LIMIT 1");
+$examTimetableStatus = $examTimetableStatusQuery ? $examTimetableStatusQuery->fetchColumn() : null;
+$activePeriodQuery = $dbh->prepare("SELECT ay.AcademicYear, t.TermName FROM tblterms t JOIN tblacademicyears ay ON ay.id = t.AcademicYearId WHERE t.IsActive = 1 LIMIT 1");
+$activePeriodQuery->execute();
+$activePeriod = $activePeriodQuery->fetch(PDO::FETCH_OBJ);
+$pendingResults = max(0, ((int)$totalStudents) - ((int)$resultsSubmitted));
 ?>
 
 <!DOCTYPE html>
@@ -14,7 +33,7 @@ if(strlen($_SESSION['alogin'])=="") {
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Student Result Management System | Dashboard</title>
+    <title>Dean of Studies Dashboard | SRMS</title>
 
     <!-- CSS FILES -->
     <link rel="stylesheet" href="css/bootstrap.min.css" media="screen">
@@ -117,7 +136,13 @@ if(strlen($_SESSION['alogin'])=="") {
                     <div class="container-fluid">
                         <div class="row page-title-div">
                             <div class="col-sm-6">
-                                <h2 class="title text-white">Dashboard</h2>
+                                <h2 class="title text-white">Dean of Studies Dashboard</h2>
+                                <p class="text-white">Academic Year: <?php echo $activePeriod ? htmlentities($activePeriod->AcademicYear) : 'Not set'; ?> | Term: <?php echo $activePeriod ? htmlentities($activePeriod->TermName) : 'Not set'; ?></p>
+                            </div>
+                            <div class="col-sm-6 text-right">
+                                <a href="manage-teachers.php" class="btn btn-primary" style="margin-top:20px;">
+                                    <i class="fa fa-user-circle"></i> Manage Teachers
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -129,43 +154,25 @@ if(strlen($_SESSION['alogin'])=="") {
                                 <!-- Registered Users -->
                                 <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
                                     <a class="dashboard-stat bg-primary" href="manage-students.php">
-                                        <?php 
-                                        $sql1 ="SELECT StudentId from tblstudents";
-                                        $query1 = $dbh -> prepare($sql1);
-                                        $query1->execute();
-                                        $totalstudents=$query1->rowCount();
-                                        ?>
-                                        <span class="number counter"><?php echo htmlentities($totalstudents);?></span>
-                                        <span class="name">Registered Users</span>
+                                        <span class="number counter"><?php echo htmlentities($totalStudents);?></span>
+                                        <span class="name">Total Students</span>
                                         <span class="bg-icon"><i class="fa fa-users"></i></span>
                                     </a>
                                 </div>
 
                                 <!-- Subjects -->
                                 <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
-                                    <a class="dashboard-stat bg-danger" href="manage-subjects.php">
-                                        <?php 
-                                        $sql ="SELECT id from tblsubjects";
-                                        $query = $dbh -> prepare($sql);
-                                        $query->execute();
-                                        $totalsubjects=$query->rowCount();
-                                        ?>
-                                        <span class="number counter"><?php echo htmlentities($totalsubjects);?></span>
-                                        <span class="name">Subjects Listed</span>
-                                        <span class="bg-icon"><i class="fa fa-ticket"></i></span>
+                                    <a class="dashboard-stat bg-danger" href="manage-teachers.php">
+                                        <span class="number counter"><?php echo htmlentities($totalTeachers);?></span>
+                                        <span class="name">Manage Teachers</span>
+                                        <span class="bg-icon"><i class="fa fa-user-circle"></i></span>
                                     </a>
                                 </div>
 
                                 <!-- Classes -->
                                 <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12" style="margin-top:1%;">
                                     <a class="dashboard-stat bg-warning" href="manage-classes.php">
-                                        <?php 
-                                        $sql2 ="SELECT id from tblclasses";
-                                        $query2 = $dbh -> prepare($sql2);
-                                        $query2->execute();
-                                        $totalclasses=$query2->rowCount();
-                                        ?>
-                                        <span class="number counter"><?php echo htmlentities($totalclasses);?></span>
+                                        <span class="number counter"><?php echo htmlentities($totalClasses);?></span>
                                         <span class="name">Total Classes</span>
                                         <span class="bg-icon"><i class="fa fa-bank"></i></span>
                                     </a>
@@ -174,15 +181,73 @@ if(strlen($_SESSION['alogin'])=="") {
                                 <!-- Results -->
                                 <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12" style="margin-top:1%;">
                                     <a class="dashboard-stat bg-success" href="manage-results.php">
-                                        <?php 
-                                        $sql3="SELECT distinct StudentId from tblresult";
-                                        $query3 = $dbh -> prepare($sql3);
-                                        $query3->execute();
-                                        $totalresults=$query3->rowCount();
-                                        ?>
-                                        <span class="number counter"><?php echo htmlentities($totalresults);?></span>
-                                        <span class="name">Results Declared</span>
+                                        <span class="number counter"><?php echo htmlentities($totalSubjects);?></span>
+                                        <span class="name">Total Subjects</span>
                                         <span class="bg-icon"><i class="fa fa-file-text"></i></span>
+                                    </a>
+                                </div>
+
+                                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12" style="margin-top:1%;">
+                                    <a class="dashboard-stat bg-primary" href="manage-exams.php">
+                                        <span class="number counter"><?php echo htmlentities($activeExamCount);?></span>
+                                        <span class="name">Active Examinations</span>
+                                        <span class="bg-icon"><i class="fa fa-calendar"></i></span>
+                                    </a>
+                                </div>
+
+                                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12" style="margin-top:1%;">
+                                    <a class="dashboard-stat bg-success" href="manage-results.php">
+                                        <span class="number counter"><?php echo htmlentities($resultsSubmitted);?></span>
+                                        <span class="name">Results Submitted</span>
+                                        <span class="bg-icon"><i class="fa fa-check"></i></span>
+                                    </a>
+                                </div>
+
+                                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12" style="margin-top:1%;">
+                                    <a class="dashboard-stat bg-warning" href="dean-result-approvals.php">
+                                        <span class="number counter"><?php echo htmlentities($classesAwaitingApproval);?></span>
+                                        <span class="name">Classes Awaiting Approval</span>
+                                        <span class="bg-icon"><i class="fa fa-check-square-o"></i></span>
+                                    </a>
+                                </div>
+
+                                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12" style="margin-top:1%;">
+                                    <a class="dashboard-stat bg-danger" href="dean-result-approvals.php">
+                                        <span class="number counter"><?php echo htmlentities($schoolMean ?: 0);?></span>
+                                        <span class="name">School Mean Performance</span>
+                                        <span class="bg-icon"><i class="fa fa-line-chart"></i></span>
+                                    </a>
+                                </div>
+
+                                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12" style="margin-top:1%;">
+                                    <a class="dashboard-stat bg-primary" href="dean-class-timetable.php">
+                                        <span class="number counter"><?php echo htmlentities($classesScheduled);?> / <?php echo htmlentities($totalClasses);?></span>
+                                        <span class="name">Classes Scheduled</span>
+                                        <span class="bg-icon"><i class="fa fa-table"></i></span>
+                                    </a>
+                                </div>
+
+                                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12" style="margin-top:1%;">
+                                    <a class="dashboard-stat bg-warning" href="dean-exam-timetable.php">
+                                        <span class="number"><?php echo htmlentities($examTimetableStatus ? ucfirst(str_replace('_', ' ', $examTimetableStatus)) : 'Draft');?></span>
+                                        <span class="name">Exam Timetable</span>
+                                        <span class="bg-icon"><i class="fa fa-calendar-check-o"></i></span>
+                                    </a>
+                                </div>
+
+                                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12" style="margin-top:1%;">
+                                    <a class="dashboard-stat bg-success" href="manage-teachers.php">
+                                        <span class="number counter"><?php echo htmlentities($activeTeachers);?></span>
+                                        <span class="name">Active Teachers</span>
+                                        <span class="bg-icon"><i class="fa fa-user-circle"></i></span>
+                                    </a>
+                                </div>
+
+                                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12" style="margin-top:1%;">
+                                    <a class="dashboard-stat bg-danger" href="manage-teachers.php">
+                                        <span class="number counter"><?php echo htmlentities($inactiveTeachers);?></span>
+                                        <span class="name">Inactive Teachers</span>
+                                        <span class="bg-icon"><i class="fa fa-user-times"></i></span>
                                     </a>
                                 </div>
 
@@ -198,8 +263,7 @@ if(strlen($_SESSION['alogin'])=="") {
                                 <div class="info-card">
                                     <i class="fa fa-bullhorn"></i>
                                     <h5>Recent Announcements</h5>
-                                    <p>Stay updated with the latest exam notifications and system announcements directly
-                                        from the admin portal.</p>
+                                    <p>Stay updated with exam notifications, academic deadlines, and school-wide result workflow activity.</p>
                                 </div>
                             </div>
 
@@ -207,17 +271,15 @@ if(strlen($_SESSION['alogin'])=="") {
                                 <div class="info-card">
                                     <i class="fa fa-line-chart"></i>
                                     <h5>Performance Insights</h5>
-                                    <p>Track student progress, subject averages, and overall performance trends for each
-                                        academic term.</p>
+                                    <p>Track school mean, class averages, subject performance, and term-based academic progress.</p>
                                 </div>
                             </div>
 
                             <div class="col-md-4">
                                 <div class="info-card">
                                     <i class="fa fa-cogs"></i>
-                                    <h5>System Management</h5>
-                                    <p>Manage classes, results, and user data efficiently through the SRMS dashboard
-                                        with ease and control.</p>
+                                    <h5>Academic Administration</h5>
+                                    <p>Manage academic years, grades, teachers, examinations, approvals, publication, and audit activity.</p>
                                 </div>
                             </div>
 
@@ -231,7 +293,7 @@ if(strlen($_SESSION['alogin'])=="") {
 
     <!-- Footer -->
     <footer>
-        <p>&copy; <span id="year"></span> Student Result Management System. All Rights Reserved.</p>
+        <p>&copy; <span id="year"></span> Student Result Management System | Dean of Studies. All Rights Reserved.</p>
     </footer>
 
     <script>
@@ -253,7 +315,7 @@ if(strlen($_SESSION['alogin'])=="") {
             delay: 10,
             time: 1000
         });
-        toastr["success"]("Welcome to Student Result Management System Dashboard!");
+        toastr["success"]("Welcome to the Dean of Studies Dashboard!");
     });
     </script>
 </body>

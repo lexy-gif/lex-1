@@ -2,6 +2,7 @@
 session_start();
 error_reporting(0);
 include('includes/config.php');
+include('includes/csrf.php');
 if(strlen($_SESSION['alogin'])=="")
     {   
     header("Location: index.php"); 
@@ -9,6 +10,7 @@ if(strlen($_SESSION['alogin'])=="")
     else{
 if(isset($_POST['Update']))
 {
+csrf_require_valid($_POST['csrf_token'] ?? '');
 $sid=intval($_GET['subjectid']);
 $subjectname=$_POST['subjectname'];
 $subjectcode=$_POST['subjectcode']; 
@@ -95,6 +97,7 @@ else if($error){?>
                                         </div>
                                         <?php } ?>
                                                 <form class="form-horizontal" method="post">
+                                                    <?php csrf_field(); ?>
 
  <?php
 $sid=intval($_GET['subjectid']);

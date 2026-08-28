@@ -111,6 +111,7 @@ else if($error){?>
                                                             <th>Student Name</th>
                                                             <th>Roll Id</th>
                                                             <th>Class</th>
+                                                            <th>Exam</th>
                                                             <th>Reg Date</th>
                                                             <th>Status</th>
                                                             <th>Action</th>
@@ -122,13 +123,23 @@ else if($error){?>
                                                             <th>Student Name</th>
                                                             <th>Roll Id</th>
                                                             <th>Class</th>
+                                                            <th>Exam</th>
                                                             <th>Reg Date</th>
                                                             <th>Status</th>
                                                             <th>Action</th>
                                                         </tr>
                                                     </tfoot>
                                                     <tbody>
-<?php $sql = "SELECT  distinct tblstudents.StudentName,tblstudents.RollId,tblstudents.RegDate,tblstudents.StudentId,tblstudents.Status,tblclasses.ClassName,tblclasses.Section from tblresult join tblstudents on tblstudents.StudentId=tblresult.StudentId  join tblclasses on tblclasses.id=tblresult.ClassId";
+<?php $sql = "SELECT tblstudents.StudentName,tblstudents.RollId,tblstudents.RegDate,tblstudents.StudentId,tblstudents.Status,
+tblclasses.ClassName,tblclasses.Section,tblresult.ExamId,tblexams.ExamName,tblacademicyears.AcademicYear,tblterms.TermName
+from tblresult
+join tblstudents on tblstudents.StudentId=tblresult.StudentId
+join tblclasses on tblclasses.id=tblresult.ClassId
+left join tblexams on tblexams.id=tblresult.ExamId
+left join tblacademicyears on tblacademicyears.id=tblexams.AcademicYearId
+left join tblterms on tblterms.id=tblexams.TermId
+group by tblstudents.StudentId,tblresult.ExamId,tblstudents.StudentName,tblstudents.RollId,tblstudents.RegDate,tblstudents.Status,tblclasses.ClassName,tblclasses.Section,tblexams.ExamName,tblacademicyears.AcademicYear,tblterms.TermName
+order by tblstudents.StudentName,tblresult.ExamId desc";
 $query = $dbh->prepare($sql);
 $query->execute();
 $results=$query->fetchAll(PDO::FETCH_OBJ);
@@ -142,6 +153,7 @@ foreach($results as $result)
                                                             <td><?php echo htmlentities($result->StudentName);?></td>
                                                             <td><?php echo htmlentities($result->RollId);?></td>
                                                             <td><?php echo htmlentities($result->ClassName);?>(<?php echo htmlentities($result->Section);?>)</td>
+                                                            <td><?php echo $result->ExamName ? htmlentities($result->AcademicYear.' - '.$result->TermName.' - '.$result->ExamName) : htmlentities('Legacy Result');?></td>
                                                             <td><?php echo htmlentities($result->RegDate);?></td>
                                                              <td><?php if($result->Status==1){
 echo htmlentities('Active');
@@ -151,7 +163,7 @@ else{
 }
                                                                 ?></td>
 <td>
-<a href="edit-result.php?stid=<?php echo htmlentities($result->StudentId);?>" class="btn btn-primary btn-xs">Edit</a> 
+<a href="edit-result.php?stid=<?php echo htmlentities($result->StudentId);?>&examid=<?php echo htmlentities($result->ExamId);?>" class="btn btn-primary btn-xs">Edit</a> 
 
 </td>
 </tr>

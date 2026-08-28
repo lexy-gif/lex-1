@@ -2,6 +2,7 @@
 session_start();
 error_reporting(0);
 include('includes/config.php');
+include('includes/csrf.php');
 if(strlen($_SESSION['alogin'])=="")
     {   
     header("Location: index.php"); 
@@ -9,9 +10,13 @@ if(strlen($_SESSION['alogin'])=="")
     else{
 if(isset($_POST['submit']))
 {
+csrf_require_valid($_POST['csrf_token'] ?? '');
 $classname=$_POST['classname'];
 $classnamenumeric=$_POST['classnamenumeric']; 
 $section=$_POST['section'];
+if($classnamenumeric < 1 || $classnamenumeric > 9) {
+    $error="Grade numeric must be between 1 and 9";
+} else {
 $sql="INSERT INTO  tblclasses(ClassName,ClassNameNumeric,Section) VALUES(:classname,:classnamenumeric,:section)";
 $query = $dbh->prepare($sql);
 $query->bindParam(':classname',$classname,PDO::PARAM_STR);
@@ -28,6 +33,7 @@ else
 $error="Something went wrong. Please try again";
 }
 
+}
 }
 ?>
 <!DOCTYPE html>
@@ -81,7 +87,7 @@ $error="Something went wrong. Please try again";
                         <div class="container-fluid">
                             <div class="row page-title-div">
                                 <div class="col-md-6">
-                                    <h2 class="title">Create Student Class</h2>
+                                    <h2 class="title">Create Grade</h2>
                                 </div>
                                 
                             </div>
@@ -112,7 +118,7 @@ $error="Something went wrong. Please try again";
                                         <div class="panel">
                                             <div class="panel-heading">
                                                 <div class="panel-title">
-                                                    <h5>Create Student Class</h5>
+                                                    <h5>Create Grade</h5>
                                                 </div>
                                             </div>
            <?php if($msg){?>
@@ -128,18 +134,19 @@ else if($error){?>
                                             <div class="panel-body">
 
                                                 <form method="post">
+                                                    <?php csrf_field(); ?>
                                                     <div class="form-group has-success">
-                                                        <label for="success" class="control-label">Class Name</label>
+                                                        <label for="success" class="control-label">Grade Name</label>
                                                 		<div class="">
                                                 			<input type="text" name="classname" class="form-control" required="required" id="success">
-                                                            <span class="help-block">Eg- Third, Fouth,Sixth etc</span>
+                                                            <span class="help-block">Eg- Grade 1, Grade 2, Grade 9 etc</span>
                                                 		</div>
                                                 	</div>
                                                        <div class="form-group has-success">
-                                                        <label for="success" class="control-label">Class Name in Numeric</label>
+                                                        <label for="success" class="control-label">Grade Numeric</label>
                                                         <div class="">
-                                                            <input type="number" name="classnamenumeric" required="required" class="form-control" id="success">
-                                                            <span class="help-block">Eg- 1,2,4,5 etc</span>
+                                                            <input type="number" name="classnamenumeric" min="1" max="9" required="required" class="form-control" id="success">
+                                                            <span class="help-block">Eg- 1, 2, 3, up to 9</span>
                                                         </div>
                                                     </div>
                                                      <div class="form-group has-success">

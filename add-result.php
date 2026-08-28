@@ -2,14 +2,35 @@
 session_start();
 error_reporting(0);
 include('includes/config.php');
+include('includes/csrf.php');
 include('includes/sms.php');
 if(strlen($_SESSION['alogin'])=="") {   
     header("Location: index.php"); 
 } else {
     if(isset($_POST['submit'])) {
+        csrf_require_valid($_POST['csrf_token'] ?? '');
         $class = $_POST['class'];
+        $examid = $_POST['examid'];
         $studentid = $_POST['studentid']; 
         $mark = $_POST['marks'];
+        $examName = 'Selected Exam';
+
+        $examStmt = $dbh->prepare("SELECT e.ExamName, e.Status, e.ClassId, ay.AcademicYear, t.TermName
+                                   FROM tblexams e
+                                   JOIN tblacademicyears ay ON ay.id = e.AcademicYearId
+                                   JOIN tblterms t ON t.id = e.TermId
+                                   WHERE e.id = :examid
+                                   LIMIT 1");
+        $examStmt->bindParam(':examid', $examid, PDO::PARAM_STR);
+        $examStmt->execute();
+        $exam = $examStmt->fetch(PDO::FETCH_ASSOC);
+
+        if(!$exam) {
+            $error = "Please select a valid exam.";
+        } elseif(!empty($exam['ClassId']) && (int)$exam['ClassId'] !== (int)$class) {
+            $error = "The selected exam does not belong to this class.";
+        } else {
+            $examName = $exam['AcademicYear'] . " - " . $exam['TermName'] . " - " . $exam['ExamName'];
 
         // Get active subject IDs for the class in the same order used by the form.
         $stmt = $dbh->prepare("SELECT tblsubjects.SubjectName, tblsubjects.id 
@@ -23,18 +44,27 @@ if(strlen($_SESSION['alogin'])=="") {
             array_push($sid1, $row['id']);
         } 
 
-        if(count($mark) !== count($sid1)) {
+        $duplicateStmt = $dbh->prepare("SELECT id FROM tblresult WHERE StudentId = :studentid AND ClassId = :class AND ExamId = :examid LIMIT 1");
+        $duplicateStmt->bindParam(':studentid', $studentid, PDO::PARAM_STR);
+        $duplicateStmt->bindParam(':class', $class, PDO::PARAM_STR);
+        $duplicateStmt->bindParam(':examid', $examid, PDO::PARAM_STR);
+        $duplicateStmt->execute();
+
+        if($duplicateStmt->rowCount() > 0) {
+            $error = "Result already declared for this student and exam.";
+        } elseif(count($mark) !== count($sid1)) {
             $error = "Subject and marks count did not match. Please try again.";
         } else {
         $lastInsertId = 0;
         for($i = 0; $i < count($mark); $i++) {
             $mar = $mark[$i];
             $sid = $sid1[$i];
-            $sql = "INSERT INTO tblresult(StudentId, ClassId, SubjectId, marks) 
-                    VALUES(:studentid, :class, :sid, :marks)";
+            $sql = "INSERT INTO tblresult(StudentId, ClassId, ExamId, SubjectId, marks) 
+                    VALUES(:studentid, :class, :examid, :sid, :marks)";
             $query = $dbh->prepare($sql);
             $query->bindParam(':studentid', $studentid, PDO::PARAM_STR);
             $query->bindParam(':class', $class, PDO::PARAM_STR);
+            $query->bindParam(':examid', $examid, PDO::PARAM_STR);
             $query->bindParam(':sid', $sid, PDO::PARAM_STR);
             $query->bindParam(':marks', $mar, PDO::PARAM_STR);
             $query->execute();
@@ -46,11 +76,12 @@ if(strlen($_SESSION['alogin'])=="") {
             // Calculate total marks for each student in the same class
             $sql_rank = "SELECT StudentId, SUM(marks) AS totalMarks 
                          FROM tblresult 
-                         WHERE ClassId = :class 
+                         WHERE ClassId = :class AND ExamId = :examid
                          GROUP BY StudentId 
                          ORDER BY totalMarks DESC";
             $query_rank = $dbh->prepare($sql_rank);
             $query_rank->bindParam(':class', $class, PDO::PARAM_STR);
+            $query_rank->bindParam(':examid', $examid, PDO::PARAM_STR);
             $query_rank->execute();
             $results_rank = $query_rank->fetchAll(PDO::FETCH_ASSOC);
 
@@ -67,7 +98,7 @@ if(strlen($_SESSION['alogin'])=="") {
                 }
             }
 
-            $msg = "Result info added successfully. Student scored <strong>$studentTotal</strong> marks and is ranked <strong>$studentRank</strong> out of <strong>$totalStudents</strong> students in the class.";
+            $msg = "Result info added successfully for <strong>" . htmlentities($examName) . "</strong>. Student scored <strong>$studentTotal</strong> marks and is ranked <strong>$studentRank</strong> out of <strong>$totalStudents</strong> students in the class.";
 
             $studentSql = "SELECT StudentName, ParentPhone FROM tblstudents WHERE StudentId = :studentid LIMIT 1";
             $studentQuery = $dbh->prepare($studentSql);
@@ -76,7 +107,7 @@ if(strlen($_SESSION['alogin'])=="") {
             $student = $studentQuery->fetch(PDO::FETCH_ASSOC);
 
             if($student && !empty($student['ParentPhone'])) {
-                $smsText = "Hello Parent, " . $student['StudentName'] . "'s results are ready. Total: " . $studentTotal . " marks. Rank: " . $studentRank . " out of " . $totalStudents . ". Please login to SRMS for full details.";
+                $smsText = "Hello Parent, " . $student['StudentName'] . "'s " . $examName . " results are ready. Total: " . $studentTotal . " marks. Rank: " . $studentRank . " out of " . $totalStudents . ". Please login to SRMS for full details.";
                 $smsResult = send_africastalking_sms($student['ParentPhone'], $smsText);
 
                 if(!empty($smsResult['success'])) {
@@ -91,6 +122,7 @@ if(strlen($_SESSION['alogin'])=="") {
             }
         } else {
             $error = "Something went wrong. Please try again";
+        }
         }
         }
     }
@@ -134,7 +166,13 @@ if(strlen($_SESSION['alogin'])=="") {
     function getresult(val, clid) {
         var clid = $(".clid").val();
         var val = $(".stid").val();
-        var abh = clid + '$' + val;
+        var examid = $(".examid").val();
+        if (!clid || !val || !examid) {
+            $("#reslt").html('');
+            $('#submit').prop('disabled', false);
+            return;
+        }
+        var abh = clid + '$' + val + '$' + examid;
         $.ajax({
             type: "POST",
             url: "get_student.php",
@@ -184,6 +222,7 @@ if(strlen($_SESSION['alogin'])=="") {
                                         </div>
                                         <?php } ?>
                                         <form class="form-horizontal" method="post">
+                                            <?php csrf_field(); ?>
                                             <div class="form-group">
                                                 <label for="default" class="col-sm-2 control-label">Class</label>
                                                 <div class="col-sm-10">
@@ -203,6 +242,34 @@ if(strlen($_SESSION['alogin'])=="") {
                                                         </option>
                                                         <?php }} ?>
                                                     </select>
+                                                </div>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="examid" class="col-sm-2 control-label">Exam</label>
+                                                <div class="col-sm-10">
+                                                    <select name="examid" class="form-control examid" id="examid"
+                                                        required="required" onChange="getresult();">
+                                                        <option value="">Select Exam</option>
+                                                        <?php
+                                                            $examSql = "SELECT e.id, e.ExamName, e.Status, e.ClassId, ay.AcademicYear, t.TermName, c.ClassName, c.Section
+                                                                        FROM tblexams e
+                                                                        JOIN tblacademicyears ay ON ay.id = e.AcademicYearId
+                                                                        JOIN tblterms t ON t.id = e.TermId
+                                                                        LEFT JOIN tblclasses c ON c.id = e.ClassId
+                                                                        WHERE e.Status IN ('draft','marks_entry','submitted','under_review','approved','published')
+                                                                        ORDER BY ay.AcademicYear DESC, t.id DESC, e.ExamName ASC";
+                                                            $examQuery = $dbh->prepare($examSql);
+                                                            $examQuery->execute();
+                                                            $exams = $examQuery->fetchAll(PDO::FETCH_OBJ);
+                                                            foreach($exams as $examRow) {
+                                                                $classLabel = $examRow->ClassName ? " - " . $examRow->ClassName . " Section-" . $examRow->Section : " - All Classes";
+                                                        ?>
+                                                        <option value="<?php echo htmlentities($examRow->id); ?>">
+                                                            <?php echo htmlentities($examRow->AcademicYear . " - " . $examRow->TermName . " - " . $examRow->ExamName . $classLabel); ?>
+                                                        </option>
+                                                        <?php } ?>
+                                                    </select>
+                                                    <span class="help-block">Create exams from the Manage Exams page before declaring term results.</span>
                                                 </div>
                                             </div>
                                             <div class="form-group">

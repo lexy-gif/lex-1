@@ -31,7 +31,8 @@ include('includes/config.php');
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                     <li class="nav-item"><a class="nav-link active" href="#!">Home</a></li>
                     <li class="nav-item"><a class="nav-link" href="find-result.php">Students</a></li>
-                    <li class="nav-item"><a class="nav-link" href="admin-login.php">Class Teacher</a></li>
+                    <li class="nav-item"><a class="nav-link" href="teacher-login.php">Class Teacher</a></li>
+                    <li class="nav-item"><a class="nav-link" href="admin-login.php">Dean of Studies</a></li>
                 </ul>
             </div>
         </div>
@@ -45,7 +46,7 @@ include('includes/config.php');
             <h1 class="display-5 fw-bold">Welcome to the Student Result Management System</h1>
             <p class="lead mb-4">Effortlessly manage, view, and access student academic results online.</p>
             <a href="find-result.php" class="btn btn-primary btn-lg me-2">Student Login</a>
-            <a href="admin-login.php" class="btn btn-outline-light btn-lg">Class Teacher Login</a>
+            <a href="teacher-login.php" class="btn btn-outline-light btn-lg">Class Teacher Login</a>
         </div>
     </header>
 

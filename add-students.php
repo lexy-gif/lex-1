@@ -2,6 +2,7 @@
 session_start();
 error_reporting(0);
 include('includes/config.php');
+include('includes/csrf.php');
 
 if(strlen($_SESSION['alogin'])=="") {   
     header("Location: index.php"); 
@@ -9,6 +10,7 @@ if(strlen($_SESSION['alogin'])=="") {
 
 if(isset($_POST['submit']))
 {
+    csrf_require_valid($_POST['csrf_token'] ?? '');
     $studentname = $_POST['fullanme'];
 
     // ✅ Validate: name must contain only letters and spaces (no numbers)
@@ -113,6 +115,7 @@ if(isset($_POST['submit']))
                                         <?php } ?>
 
                                         <form class="form-horizontal" method="post">
+                                            <?php csrf_field(); ?>
 
                                             <div class="form-group">
                                                 <label for="default" class="col-sm-2 control-label">Full Name</label>

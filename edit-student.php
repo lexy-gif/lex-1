@@ -2,6 +2,7 @@
 session_start();
 error_reporting(0);
 include('includes/config.php');
+include('includes/csrf.php');
 if(strlen($_SESSION['alogin'])=="")
     {   
     header("Location: index.php"); 
@@ -12,6 +13,7 @@ $stid=intval($_GET['stid']);
 
 if(isset($_POST['submit']))
 {
+csrf_require_valid($_POST['csrf_token'] ?? '');
 $studentname=$_POST['fullanme'];
 $roolid=$_POST['rollid']; 
 $studentemail=$_POST['emailid']; 
@@ -111,6 +113,7 @@ else if($error){?>
                                         </div>
                                         <?php } ?>
                                                 <form class="form-horizontal" method="post">
+                                                    <?php csrf_field(); ?>
 <?php 
 
 $sql = "SELECT tblstudents.StudentName,tblstudents.RollId,tblstudents.RegDate,tblstudents.StudentId,tblstudents.Status,tblstudents.StudentEmail,tblstudents.ParentPhone,tblstudents.Gender,tblstudents.DOB,tblclasses.ClassName,tblclasses.Section from tblstudents join tblclasses on tblclasses.id=tblstudents.ClassId where tblstudents.StudentId=:stid";

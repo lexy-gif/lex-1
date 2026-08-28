@@ -2,11 +2,14 @@
 session_start();
 error_reporting(0);
 include('includes/config.php');
+include('includes/csrf.php');
+include('includes/audit.php');
 if($_SESSION['alogin']!=''){
 $_SESSION['alogin']='';
 }
 if(isset($_POST['login']))
 {
+csrf_require_valid($_POST['csrf_token'] ?? '');
 $uname=$_POST['username'];
 $password=$_POST['password'];
 $sql ="SELECT UserName,Password FROM admin WHERE UserName=:uname LIMIT 1";
@@ -19,7 +22,6 @@ $passwordMatches = false;
 if($result) {
     $passwordMatches = password_verify($password, $result->Password);
 
-    // Upgrade legacy MD5 hashes after a successful login.
     if(!$passwordMatches && hash_equals($result->Password, md5($password))) {
         $passwordMatches = true;
         $newHash = password_hash($password, PASSWORD_DEFAULT);
@@ -34,8 +36,10 @@ if($passwordMatches)
 {
 session_regenerate_id(true);
 $_SESSION['alogin']=$result->UserName;
+audit_log($dbh, 'dean_login', 'admin', $result->UserName, 'Dean of Studies logged in');
 echo "<script type='text/javascript'> document.location = 'dashboard.php'; </script>";
 } else{
+    audit_log($dbh, 'dean_login_failed', 'admin', null, 'Failed Dean login for username: ' . $uname);
     echo "<script>alert('Invalid Details');</script>";
 }
 }
@@ -48,7 +52,7 @@ echo "<script type='text/javascript'> document.location = 'dashboard.php'; </scr
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Class Teacher Login | SRMS</title>
+    <title>Dean of Studies Login | SRMS</title>
 
     <link rel="stylesheet" href="css/bootstrap.min.css" media="screen">
     <link rel="stylesheet" href="css/font-awesome.min.css" media="screen">
@@ -125,11 +129,12 @@ echo "<script type='text/javascript'> document.location = 'dashboard.php'; </scr
                             <div class="panel">
                                 <div class="panel-heading">
                                     <div class="panel-title text-center">
-                                        <h4><i class="fa fa-lock"></i> Class Teacher Login</h4>
+                                        <h4><i class="fa fa-lock"></i> Dean of Studies Login</h4>
                                     </div>
                                 </div>
                                 <div class="panel-body p-20">
                                     <form class="form-horizontal" method="post">
+                                        <?php csrf_field(); ?>
                                         <div class="form-group">
                                             <label for="inputEmail3" class="col-sm-2 control-label">Username</label>
                                             <div class="col-sm-10">
@@ -160,7 +165,7 @@ echo "<script type='text/javascript'> document.location = 'dashboard.php'; </scr
                                 </div>
                             </div>
                             <p class="text-muted text-center mt-3">
-                                <small>Secure Access Portal -Class Teacher Only</small>
+                                <small>Secure Access Portal - Dean of Studies Only</small>
                             </p>
                         </section>
                     </div>

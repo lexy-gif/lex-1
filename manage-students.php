@@ -133,7 +133,9 @@ else if($error){?>
                                                     </tr>
                                                 </tfoot>
                                                 <tbody>
-                                                    <?php $sql = "SELECT tblstudents.StudentName,tblstudents.RollId,tblstudents.ParentPhone,tblstudents.RegDate,tblstudents.StudentId,tblstudents.Status,tblclasses.ClassName,tblclasses.Section from tblstudents join tblclasses on tblclasses.id=tblstudents.ClassId";
+                                                    <?php $sql = "SELECT tblstudents.StudentName,tblstudents.RollId,tblstudents.ParentPhone,tblstudents.RegDate,tblstudents.StudentId,tblstudents.Status,tblclasses.ClassName,tblclasses.Section,
+(SELECT r.ExamId FROM tblresult r WHERE r.StudentId=tblstudents.StudentId ORDER BY (r.ExamId IS NULL) ASC, r.ExamId DESC LIMIT 1) as LatestExamId
+from tblstudents join tblclasses on tblclasses.id=tblstudents.ClassId";
 $query = $dbh->prepare($sql);
 $query->execute();
 $results=$query->fetchAll(PDO::FETCH_OBJ);
@@ -161,7 +163,7 @@ else{
                                                             <a href="edit-student.php?stid=<?php echo htmlentities($result->StudentId);?>"
                                                                 class="btn btn-primary btn-xs" target="_blank">Edit </a>
 
-                                                            <a href="edit-result.php?stid=<?php echo htmlentities($result->StudentId);?>"
+                                                            <a href="edit-result.php?stid=<?php echo htmlentities($result->StudentId);?>&examid=<?php echo htmlentities($result->LatestExamId);?>"
                                                                 class="btn btn-warning btn-xs" target="_blank">View
                                                                 Result </a>
 

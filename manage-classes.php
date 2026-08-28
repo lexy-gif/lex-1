@@ -1,6 +1,7 @@
 <?php session_start();
 error_reporting(0);
 include('includes/config.php');
+include('includes/csrf.php');
 if(strlen($_SESSION['alogin'])=="")
 {   header("Location: index.php"); 
 }else{
@@ -8,6 +9,7 @@ if(strlen($_SESSION['alogin'])=="")
 //Code for Deletion
 if(isset($_GET['id']))
 { 
+csrf_require_valid($_GET['csrf_token'] ?? '');
 $classid=$_GET['id'];
 $sql="delete from tblclasses where id = :classid";
 $query = $dbh->prepare($sql);
@@ -100,7 +102,7 @@ echo "<script>window.location.href ='manage-classes.php'</script>";
                                     <div class="panel">
                                         <div class="panel-heading">
                                             <div class="panel-title">
-                                                <h5>View Classes Info</h5>
+                                                <h5>View Grades Info</h5>
                                             </div>
                                         </div>
                                         <?php if($msg){?>
@@ -119,8 +121,8 @@ echo "<script>window.location.href ='manage-classes.php'</script>";
                                                 <thead>
                                                     <tr>
                                                         <th>#</th>
-                                                        <th>Class Name</th>
-                                                        <th>Class Name Numeric</th>
+                                                        <th>Grade Name</th>
+                                                        <th>Grade Numeric</th>
                                                         <th>Section</th>
                                                         <th>Creation Date</th>
                                                         <th>Action</th>
@@ -129,8 +131,8 @@ echo "<script>window.location.href ='manage-classes.php'</script>";
                                                 <tfoot>
                                                     <tr>
                                                         <th>#</th>
-                                                        <th>Class Name</th>
-                                                        <th>Class Name Numeric</th>
+                                                        <th>Grade Name</th>
+                                                        <th>Grade Numeric</th>
                                                         <th>Section</th>
                                                         <th>Creation Date</th>
                                                         <th>Action</th>
@@ -156,7 +158,7 @@ echo "<script>window.location.href ='manage-classes.php'</script>";
                                                             <a href="edit-class.php?classid=<?php echo htmlentities($result->id);?>"
                                                                 class="btn btn-info btn-xs"> Edit </a>
 
-                                                            <a href="manage-classes.php?id=<?php echo $result->id;?>&del=delete"
+                                                            <a href="manage-classes.php?id=<?php echo $result->id;?>&del=delete&<?php echo csrf_url_param();?>"
                                                                 onClick="return confirm('Are you sure you want to delete?')"
                                                                 class="btn btn-danger btn-xs">Delete</a>
 

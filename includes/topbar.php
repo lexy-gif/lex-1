@@ -1,9 +1,21 @@
+<?php
+$deanDeliveryCount = 0;
+try {
+    if(isset($dbh)) {
+        $deliveryQuery = $dbh->prepare("SELECT COUNT(*) FROM tblnotificationdeliveries WHERE Status IN ('PENDING','FAILED','RETRYING')");
+        $deliveryQuery->execute();
+        $deanDeliveryCount = (int)$deliveryQuery->fetchColumn();
+    }
+} catch(Exception $e) {
+    $deanDeliveryCount = 0;
+}
+?>
   <nav class="navbar top-navbar bg-white box-shadow">
             	<div class="container-fluid">
                     <div class="row">
                         <div class="navbar-header no-padding">
                 			<a class="navbar-brand" href="dashboard.php">
-                			    SRMS | Admin
+                			    SRMS | Dean of Studies
                 			</a>
                             <span class="small-nav-handle hidden-sm hidden-xs"><i class="fa fa-outdent"></i></span>
                 			<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse-1" aria-expanded="false">
@@ -29,6 +41,7 @@
                 			<ul class="nav navbar-nav navbar-right" data-dropdown-in="fadeIn" data-dropdown-out="fadeOut">
                              
                 				
+                				    <li><a href="dean-notification-deliveries.php"><i class="fa fa-bell"></i><?php if($deanDeliveryCount > 0) { ?> <span class="badge badge-danger"><?php echo htmlentities($deanDeliveryCount); ?></span><?php } ?></a></li>
                 				    <li><a href="logout.php" class="color-danger text-center"><i class="fa fa-sign-out"></i> Logout</a></li>
                 					
                 		

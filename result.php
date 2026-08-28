@@ -90,9 +90,35 @@ try {
 ?>
 
 <?php if ($student): ?>
+<?php
+$selectedExamId = null;
+$examInfo = null;
+try {
+    $examPickQuery = "SELECT r.ExamId, e.ExamName, ay.AcademicYear, t.TermName
+                      FROM tblresult r
+                      LEFT JOIN tblexams e ON e.id = r.ExamId
+                      LEFT JOIN tblacademicyears ay ON ay.id = e.AcademicYearId
+                      LEFT JOIN tblterms t ON t.id = e.TermId
+                      WHERE r.StudentId = :studentid
+                        AND r.ClassId = :classid
+                        AND (e.Status = 'published' OR r.ExamId IS NULL)
+                      ORDER BY (r.ExamId IS NULL) ASC, r.ExamId DESC
+                      LIMIT 1";
+    $examPickStmt = $dbh->prepare($examPickQuery);
+    $examPickStmt->bindParam(':studentid', $student->StudentId, PDO::PARAM_STR);
+    $examPickStmt->bindParam(':classid', $classid, PDO::PARAM_STR);
+    $examPickStmt->execute();
+    $examInfo = $examPickStmt->fetch(PDO::FETCH_OBJ);
+    $selectedExamId = $examInfo ? $examInfo->ExamId : null;
+} catch (Exception $e) {
+    $selectedExamId = null;
+    $examInfo = null;
+}
+?>
                                                 <p><b>Student Name:</b> <?php echo htmlentities($student->StudentName); ?></p>
                                                 <p><b>Student Registration ID:</b> <?php echo htmlentities($student->RollId); ?></p>
                                                 <p><b>Student Class:</b> <?php echo htmlentities($student->ClassName); ?> (<?php echo htmlentities($student->Section); ?>)</p>
+                                                <p><b>Exam:</b> <?php echo ($examInfo && $examInfo->ExamName) ? htmlentities($examInfo->AcademicYear . ' - ' . $examInfo->TermName . ' - ' . $examInfo->ExamName) : htmlentities('Legacy Result'); ?></p>
                                             </div>
                                             <div class="panel-body p-20">
                                                 <div class="panel panel-info">
@@ -113,21 +139,29 @@ try {
                                                             <th style="text-align: center">#</th>
                                                             <th style="text-align: center">Subject</th>
                                                             <th style="text-align: center">Marks</th>
+                                                            <th style="text-align: center">Grade</th>
+                                                            <th style="text-align: center">Remark</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
 <?php
 // Fetch subject-wise marks for this student (tblresult is used per your confirmation)
 try {
-    $query = "SELECT sub.SubjectName, r.marks
+    $examCondition = $selectedExamId ? " AND r.ExamId = :examid" : " AND r.ExamId IS NULL";
+    $query = "SELECT sub.SubjectName, r.marks, g.Grade, g.Remark
               FROM tblresult AS r
               JOIN tblsubjects AS sub ON sub.id = r.SubjectId
               JOIN tblstudents AS s ON s.StudentId = r.StudentId
+              LEFT JOIN tblgradingscales g ON r.marks BETWEEN g.MinMark AND g.MaxMark
               WHERE s.RollId = :rollid AND r.ClassId = :classid
+              $examCondition
               ORDER BY sub.SubjectName ASC";
     $stmt2 = $dbh->prepare($query);
     $stmt2->bindParam(':rollid', $rollid, PDO::PARAM_STR);
     $stmt2->bindParam(':classid', $classid, PDO::PARAM_STR);
+    if($selectedExamId) {
+        $stmt2->bindParam(':examid', $selectedExamId, PDO::PARAM_STR);
+    }
     $stmt2->execute();
     $results = $stmt2->fetchAll(PDO::FETCH_OBJ);
 } catch (Exception $e) {
@@ -147,6 +181,8 @@ if ($subjectCount > 0):
                                                             <th scope="row" style="text-align: center"><?php echo $cnt; ?></th>
                                                             <td style="text-align: center"><?php echo htmlentities($result->SubjectName); ?></td>
                                                             <td style="text-align: center"><?php echo htmlentities($marks); ?></td>
+                                                            <td style="text-align: center"><?php echo htmlentities($result->Grade ?: 'N/A'); ?></td>
+                                                            <td style="text-align: center"><?php echo htmlentities($result->Remark ?: 'N/A'); ?></td>
                                                         </tr>
 <?php
         $cnt++;
@@ -166,13 +202,18 @@ if ($subjectCount > 0):
         $studentData = $studentStmt->fetch(PDO::FETCH_OBJ);
         $studentId = $studentData ? $studentData->StudentId : null;
 
+        $rankExamCondition = $selectedExamId ? " AND r.ExamId = :examid" : " AND r.ExamId IS NULL";
         $rankQuery = "SELECT r.StudentId, SUM(r.marks) AS totalMarks
                       FROM tblresult r
                       WHERE r.ClassId = :classid
+                      $rankExamCondition
                       GROUP BY r.StudentId
                       ORDER BY totalMarks DESC";
         $rankStmt = $dbh->prepare($rankQuery);
         $rankStmt->bindParam(':classid', $classid, PDO::PARAM_STR);
+        if($selectedExamId) {
+            $rankStmt->bindParam(':examid', $selectedExamId, PDO::PARAM_STR);
+        }
         $rankStmt->execute();
         $rankResults = $rankStmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (Exception $e) {
@@ -193,17 +234,17 @@ if ($subjectCount > 0):
     }
 ?>
                                                         <tr>
-                                                            <th scope="row" colspan="2" style="text-align: center">Total Marks</th>
+                                                            <th scope="row" colspan="4" style="text-align: center">Total Marks</th>
                                                             <td style="text-align: center"><b><?php echo htmlentities($totlcount); ?></b> out of <b><?php echo htmlentities($outof); ?></b></td>
                                                         </tr>
 
                                                         <tr>
-                                                            <th scope="row" colspan="2" style="text-align: center">Percentage</th>
+                                                            <th scope="row" colspan="4" style="text-align: center">Percentage</th>
                                                             <td style="text-align: center"><b><?php echo $percentage; ?>%</b></td>
                                                         </tr>
 
                                                         <tr>
-                                                            <th scope="row" colspan="2" style="text-align: center">Class Position</th>
+                                                            <th scope="row" colspan="4" style="text-align: center">Class Position</th>
                                                             <td style="text-align: center"><b><?php echo $studentRank ?: 'N/A'; ?></b> out of <b><?php echo $totalStudents ?: 'N/A'; ?></b></td>
                                                         </tr>
                                                     </tbody>

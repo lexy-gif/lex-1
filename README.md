@@ -37,7 +37,7 @@ Access the Application
 
 Once the containers are running, open your browser and visit:
 
-http://localhost:8000
+http://localhost:5000
 Project Structure
 srms/
 │

@@ -1,6 +1,7 @@
 <?php session_start();
 error_reporting(0);
 include('includes/config.php');
+include('includes/csrf.php');
 if(strlen($_SESSION['alogin'])=="")
 {   header("Location: index.php"); 
 }else{
@@ -8,6 +9,7 @@ if(strlen($_SESSION['alogin'])=="")
 //Code for Deletion
 if(isset($_GET['id']))
 { 
+csrf_require_valid($_GET['csrf_token'] ?? '');
 $subid=$_GET['id'];
 $sql="delete from tblsubjects where id = :subid";
 $query = $dbh->prepare($sql);
@@ -151,7 +153,7 @@ foreach($results as $result)
                                                             <td><?php echo htmlentities($result->UpdationDate);?></td>
 <td>
 <a href="edit-subject.php?subjectid=<?php echo htmlentities($result->id);?>" class="btn btn-info btn-xs">Eidt  </a> 
-  <a href="manage-subjects.php?id=<?php echo $result->id;?>&del=delete" onClick="return confirm('Are you sure you want to delete?')" class="btn btn-danger btn-xs">Delete</a>
+  <a href="manage-subjects.php?id=<?php echo $result->id;?>&del=delete&<?php echo csrf_url_param();?>" onClick="return confirm('Are you sure you want to delete?')" class="btn btn-danger btn-xs">Delete</a>
 
 </td>
 </tr>

@@ -2,6 +2,7 @@
 session_start();
 error_reporting(0);
 include('includes/config.php');
+include('includes/csrf.php');
 if(strlen($_SESSION['alogin'])=="")
     {   
     header("Location: index.php"); 
@@ -9,8 +10,10 @@ if(strlen($_SESSION['alogin'])=="")
     else{
 
 $stid=intval($_GET['stid']);
+$examid=isset($_GET['examid']) ? intval($_GET['examid']) : 0;
 if(isset($_POST['submit']))
 {
+csrf_require_valid($_POST['csrf_token'] ?? '');
 
 $rowid=$_POST['id'];
 $marks=$_POST['marks']; 
@@ -106,12 +109,25 @@ else if($error){?>
                                         </div>
                                         <?php } ?>
                                         <form class="form-horizontal" method="post">
+                                            <?php csrf_field(); ?>
 
                                             <?php 
 
-$ret = "SELECT tblstudents.StudentName,tblclasses.ClassName,tblclasses.Section from tblresult join tblstudents on tblstudents.StudentId=tblresult.StudentId join tblsubjects on tblsubjects.id=tblresult.SubjectId join tblclasses on tblclasses.id=tblstudents.ClassId where tblstudents.StudentId=:stid limit 1";
+$examCondition = $examid > 0 ? " and tblresult.ExamId=:examid" : " and tblresult.ExamId is null";
+$ret = "SELECT tblstudents.StudentName,tblclasses.ClassName,tblclasses.Section,tblexams.ExamName,tblacademicyears.AcademicYear,tblterms.TermName
+from tblresult
+join tblstudents on tblstudents.StudentId=tblresult.StudentId
+join tblsubjects on tblsubjects.id=tblresult.SubjectId
+join tblclasses on tblclasses.id=tblstudents.ClassId
+left join tblexams on tblexams.id=tblresult.ExamId
+left join tblacademicyears on tblacademicyears.id=tblexams.AcademicYearId
+left join tblterms on tblterms.id=tblexams.TermId
+where tblstudents.StudentId=:stid $examCondition limit 1";
 $stmt = $dbh->prepare($ret);
 $stmt->bindParam(':stid',$stid,PDO::PARAM_STR);
+if($examid > 0) {
+    $stmt->bindParam(':examid',$examid,PDO::PARAM_STR);
+}
 $stmt->execute();
 $result=$stmt->fetchAll(PDO::FETCH_OBJ);
 $cnt=1;
@@ -132,14 +148,28 @@ foreach($result as $row)
                                                     <?php echo htmlentities($row->StudentName);?>
                                                 </div>
                                             </div>
+                                            <div class="form-group">
+                                                <label for="default" class="col-sm-2 control-label">Exam</label>
+                                                <div class="col-sm-10">
+                                                    <?php echo $row->ExamName ? htmlentities($row->AcademicYear.' - '.$row->TermName.' - '.$row->ExamName) : htmlentities('Legacy Result');?>
+                                                </div>
+                                            </div>
                                             <?php } }?>
 
 
 
                                             <?php 
-$sql = "SELECT distinct tblstudents.StudentName,tblstudents.StudentId,tblclasses.ClassName,tblclasses.Section,tblsubjects.SubjectName,tblresult.marks,tblresult.id as resultid from tblresult join tblstudents on tblstudents.StudentId=tblresult.StudentId join tblsubjects on tblsubjects.id=tblresult.SubjectId join tblclasses on tblclasses.id=tblstudents.ClassId where tblstudents.StudentId=:stid ";
+$sql = "SELECT distinct tblstudents.StudentName,tblstudents.StudentId,tblclasses.ClassName,tblclasses.Section,tblsubjects.SubjectName,tblresult.marks,tblresult.id as resultid
+from tblresult
+join tblstudents on tblstudents.StudentId=tblresult.StudentId
+join tblsubjects on tblsubjects.id=tblresult.SubjectId
+join tblclasses on tblclasses.id=tblstudents.ClassId
+where tblstudents.StudentId=:stid $examCondition";
 $query = $dbh->prepare($sql);
 $query->bindParam(':stid',$stid,PDO::PARAM_STR);
+if($examid > 0) {
+    $query->bindParam(':examid',$examid,PDO::PARAM_STR);
+}
 $query->execute();
 $results=$query->fetchAll(PDO::FETCH_OBJ);
 $cnt=1;

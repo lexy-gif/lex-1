@@ -3,6 +3,7 @@
 session_start();
 error_reporting(0);
 include('includes/config.php');
+include('includes/csrf.php');
 if(strlen($_SESSION['alogin'])=="")
     {   
     header("Location: index.php"); 
@@ -11,6 +12,7 @@ if(strlen($_SESSION['alogin'])=="")
  // for activate Subject   	
 if(isset($_GET['acid']))
 {
+csrf_require_valid($_GET['csrf_token'] ?? '');
 $acid=intval($_GET['acid']);
 $status=1;
 $sql="update tblsubjectcombination set status=:status where id=:acid ";
@@ -24,6 +26,7 @@ $msg="Subject Activate successfully";
  // for Deactivate Subject
 if(isset($_GET['did']))
 {
+csrf_require_valid($_GET['csrf_token'] ?? '');
 $did=intval($_GET['did']);
 $status=0;
 $sql="update tblsubjectcombination set status=:status where id=:did ";
@@ -175,9 +178,9 @@ else
 <td>
 <?php if($stts=='0')
 { ?>
-<a href="manage-subjectcombination.php?acid=<?php echo htmlentities($result->scid);?>" onclick="confirm('do you really want to ativate this subject');"><i class="fa fa-check" title="Acticvate Record"></i> </a><?php } else {?>
+<a href="manage-subjectcombination.php?acid=<?php echo htmlentities($result->scid);?>&<?php echo csrf_url_param();?>" onclick="return confirm('do you really want to activate this subject');"><i class="fa fa-check" title="Activate Record"></i> </a><?php } else {?>
 
-<a href="manage-subjectcombination.php?did=<?php echo htmlentities($result->scid);?>" onclick="confirm('do you really want to deativate this subject');"><i class="fa fa-times" title="Deactivate Record"></i> </a>
+<a href="manage-subjectcombination.php?did=<?php echo htmlentities($result->scid);?>&<?php echo csrf_url_param();?>" onclick="return confirm('do you really want to deactivate this subject');"><i class="fa fa-times" title="Deactivate Record"></i> </a>
 <?php }?>
 </td>
 </tr>

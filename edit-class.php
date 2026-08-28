@@ -2,6 +2,7 @@
 session_start();
 error_reporting(0);
 include('includes/config.php');
+include('includes/csrf.php');
 if(strlen($_SESSION['alogin'])=="")
     {   
     header("Location: index.php"); 
@@ -9,10 +10,14 @@ if(strlen($_SESSION['alogin'])=="")
     else{
 if(isset($_POST['update']))
 {
+csrf_require_valid($_POST['csrf_token'] ?? '');
 $classname=$_POST['classname'];
 $classnamenumeric=$_POST['classnamenumeric']; 
 $section=$_POST['section'];
 $cid=intval($_GET['classid']);
+if($classnamenumeric < 1 || $classnamenumeric > 9) {
+    $error="Grade numeric must be between 1 and 9";
+} else {
 $sql="update  tblclasses set ClassName=:classname,ClassNameNumeric=:classnamenumeric,Section=:section where id=:cid ";
 $query = $dbh->prepare($sql);
 $query->bindParam(':classname',$classname,PDO::PARAM_STR);
@@ -21,6 +26,7 @@ $query->bindParam(':section',$section,PDO::PARAM_STR);
 $query->bindParam(':cid',$cid,PDO::PARAM_STR);
 $query->execute();
 $msg="Data has been updated successfully";
+}
 }
 ?>
 <!DOCTYPE html>
@@ -56,7 +62,7 @@ $msg="Data has been updated successfully";
                         <div class="container-fluid">
                             <div class="row page-title-div">
                                 <div class="col-md-6">
-                                    <h2 class="title">Update Student Class</h2>
+                                    <h2 class="title">Update Grade</h2>
                                 </div>
                                 
                             </div>
@@ -87,7 +93,7 @@ $msg="Data has been updated successfully";
                                         <div class="panel">
                                             <div class="panel-heading">
                                                 <div class="panel-title">
-                                                    <h5>Update Student Class info</h5>
+                                                    <h5>Update Grade Info</h5>
                                                 </div>
                                             </div>
 <?php if($msg){?>
@@ -101,6 +107,7 @@ else if($error){?>
                                         <?php } ?>
 
                                                 <form method="post">
+                                                    <?php csrf_field(); ?>
 <?php 
 $cid=intval($_GET['classid']);
 $sql = "SELECT * from tblclasses where id=:cid";
@@ -115,17 +122,17 @@ foreach($results as $result)
 {   ?>
 
                                                     <div class="form-group has-success">
-                                                        <label for="success" class="control-label">Class Name</label>
+                                                        <label for="success" class="control-label">Grade Name</label>
                                                 		<div class="">
                                                 			<input type="text" name="classname" value="<?php echo htmlentities($result->ClassName);?>" required="required" class="form-control" id="success">
-                                                            <span class="help-block">Eg- Third, Fouth,Sixth etc</span>
+                                                            <span class="help-block">Eg- Grade 1, Grade 2, Grade 9 etc</span>
                                                 		</div>
                                                 	</div>
                                                        <div class="form-group has-success">
-                                                        <label for="success" class="control-label">Class Name in Numeric</label>
+                                                        <label for="success" class="control-label">Grade Numeric</label>
                                                         <div class="">
-                                                            <input type="number" name="classnamenumeric" value="<?php echo htmlentities($result->ClassNameNumeric);?>" required="required" class="form-control" id="success">
-                                                            <span class="help-block">Eg- 1,2,4,5 etc</span>
+                                                            <input type="number" name="classnamenumeric" value="<?php echo htmlentities($result->ClassNameNumeric);?>" min="1" max="9" required="required" class="form-control" id="success">
+                                                            <span class="help-block">Eg- 1, 2, 3, up to 9</span>
                                                         </div>
                                                     </div>
                                                      <div class="form-group has-success">

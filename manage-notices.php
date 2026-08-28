@@ -3,13 +3,15 @@
 session_start();
 error_reporting(0);
 include('includes/config.php');
+include('includes/csrf.php');
 if(strlen($_SESSION['alogin'])==""){   
 header("Location: index.php"); 
 }else{
 //For Deleting the notice
 
-if($_GET['id'])
+if(isset($_GET['id']))
 {
+csrf_require_valid($_GET['csrf_token'] ?? '');
 $id=$_GET['id'];
 $sql="delete from tblnotice where id=:id";
 $query = $dbh->prepare($sql);
@@ -142,7 +144,7 @@ foreach($results as $result)
                                                             <td><?php echo htmlentities($result->noticeDetails);?></td>
                                                             <td><?php echo htmlentities($result->postingDate);?></td>
 <td>
-<a href="manage-notices.php?id=<?php echo htmlentities($result->id);?>" onclick="return confirm('Do you really want to delete the notice?');" title="Delete this Record" class="btn btn-danger btn-xs" >Delete </a> 
+<a href="manage-notices.php?id=<?php echo htmlentities($result->id);?>&<?php echo csrf_url_param();?>" onclick="return confirm('Do you really want to delete the notice?');" title="Delete this Record" class="btn btn-danger btn-xs" >Delete </a> 
 
 </td>
 </tr>

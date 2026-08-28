@@ -52,10 +52,12 @@ if(!empty($_POST["studclass"]))
  $dta=explode("$",$id);
 $id=$dta[0];
 $id1=$dta[1];
- $query = $dbh->prepare("SELECT StudentId,ClassId FROM tblresult WHERE StudentId=:id1 and ClassId=:id ");
+$examid = isset($dta[2]) ? intval($dta[2]) : 0;
+ $query = $dbh->prepare("SELECT StudentId,ClassId FROM tblresult WHERE StudentId=:id1 and ClassId=:id and ExamId=:examid ");
 //$query= $dbh -> prepare($sql);
 $query-> bindParam(':id1', $id1, PDO::PARAM_STR);
 $query-> bindParam(':id', $id, PDO::PARAM_STR);
+$query-> bindParam(':examid', $examid, PDO::PARAM_STR);
 $query-> execute();
 $results = $query -> fetchAll(PDO::FETCH_OBJ);
 $cnt=1;
@@ -63,10 +65,13 @@ if($query -> rowCount() > 0)
 { ?>
 <p>
 <?php
-echo "<span style='color:red'> Result Already Declare .</span>";
+echo "<span style='color:red'> Result already declared for this student and exam.</span>";
  echo "<script>$('#submit').prop('disabled',true);</script>";
  ?></p>
 <?php }
+else {
+ echo "<script>$('#submit').prop('disabled',false);</script>";
+}
 
 
   }?>
