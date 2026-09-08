@@ -92,6 +92,7 @@ if(strlen($_SESSION['alogin'])=="") {
     <link rel="stylesheet" href="css/prism/prism.css" media="screen">
     <link rel="stylesheet" type="text/css" href="js/DataTables/datatables.min.css">
     <link rel="stylesheet" href="css/main.css" media="screen">
+    <link rel="stylesheet" href="css/custom.css" media="screen">
     <script src="js/modernizr/modernizr.min.js"></script>
 </head>
 <body class="top-navbar-fixed">

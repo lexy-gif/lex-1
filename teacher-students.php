@@ -16,6 +16,7 @@ $classId = teacher_class_id();
     <link rel="stylesheet" href="css/font-awesome.min.css" media="screen">
     <link rel="stylesheet" type="text/css" href="js/DataTables/datatables.min.css">
     <link rel="stylesheet" href="css/main.css" media="screen">
+    <link rel="stylesheet" href="css/custom.css" media="screen">
 </head>
 <body class="top-navbar-fixed">
 <div class="main-wrapper">
@@ -29,7 +30,7 @@ $classId = teacher_class_id();
             <thead><tr><th>#</th><th>Name</th><th>Admission No.</th><th>Email</th><th>Parent Phone</th><th>Status</th></tr></thead>
             <tbody>
             <?php
-            $sql = "SELECT StudentName, RollId, StudentEmail, ParentPhone, Status FROM tblstudents WHERE ClassId = :classid ORDER BY StudentName";
+            $sql = "SELECT StudentName, RollId, StudentEmail, ParentPhone, Status FROM tblstudents WHERE ClassId = :classid AND Status=1 ORDER BY StudentName";
             $query = $dbh->prepare($sql);
             $query->execute(array(':classid' => $classId));
             $cnt = 1;

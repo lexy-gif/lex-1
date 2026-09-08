@@ -39,6 +39,7 @@ if(isset($_POST['save_attendance'])) {
     <link rel="stylesheet" href="css/bootstrap.min.css" media="screen">
     <link rel="stylesheet" href="css/font-awesome.min.css" media="screen">
     <link rel="stylesheet" href="css/main.css" media="screen">
+    <link rel="stylesheet" href="css/custom.css" media="screen">
 </head>
 <body class="top-navbar-fixed">
 <div class="main-wrapper">
@@ -54,7 +55,7 @@ if(isset($_POST['save_attendance'])) {
         <?php csrf_field(); ?>
         <div class="form-group">
             <label>Date</label>
-            <input type="date" name="attendance_date" value="<?php echo htmlentities($attendanceDate); ?>" class="form-control" style="max-width:220px;" required>
+            <input type="date" name="attendance_date" value="<?php echo htmlentities($attendanceDate); ?>" class="form-control input-date-md" required>
         </div>
         <table class="table table-striped table-bordered">
             <thead><tr><th>#</th><th>Student</th><th>Admission No.</th><th>Status</th><th>Remarks</th></tr></thead>

@@ -22,6 +22,7 @@ $teacher = $query->fetch(PDO::FETCH_OBJ);
     <link rel="stylesheet" href="css/bootstrap.min.css" media="screen">
     <link rel="stylesheet" href="css/font-awesome.min.css" media="screen">
     <link rel="stylesheet" href="css/main.css" media="screen">
+    <link rel="stylesheet" href="css/custom.css" media="screen">
 </head>
 <body class="top-navbar-fixed">
 <div class="main-wrapper">
@@ -30,7 +31,7 @@ $teacher = $query->fetch(PDO::FETCH_OBJ);
 <?php include('includes/teacher-leftbar.php');?>
 <div class="main-page"><div class="container-fluid">
 <div class="row page-title-div"><div class="col-md-6"><h2 class="title">Profile</h2></div></div>
-<section class="section">
+<section class="section"><?php require_once 'includes/academic-teacher-summary.php'; ?><div class="panel panel-body"><?php academic_teacher_summary($dbh,teacher_id(),null,false,true); ?></div>
 <div class="panel"><div class="panel-heading"><h5>Teacher Profile</h5></div><div class="panel-body">
     <p><strong>Name:</strong> <?php echo htmlentities($teacher->FullName); ?></p>
     <p><strong>Staff Number:</strong> <?php echo htmlentities($teacher->StaffNumber); ?></p>
@@ -38,9 +39,8 @@ $teacher = $query->fetch(PDO::FETCH_OBJ);
     <p><strong>Email:</strong> <?php echo htmlentities($teacher->Email); ?></p>
     <p><strong>Email Status:</strong> <?php echo htmlentities($teacher->EmailStatus); ?><?php echo $teacher->EmailVerifiedAt ? ' on ' . htmlentities($teacher->EmailVerifiedAt) : ''; ?></p>
     <p><strong>Phone:</strong> <?php echo htmlentities($teacher->PhoneNumber); ?></p>
-    <p><strong>Role:</strong> <?php echo htmlentities(str_replace('_', ' ', $teacher->Role)); ?></p>
+    <p><strong>Account category:</strong> <?php echo htmlentities(str_replace('_', ' ', $teacher->Role)); ?></p>
     <p><strong>Department:</strong> <?php echo htmlentities($teacher->Department); ?></p>
-    <p><strong>Assigned Class:</strong> <?php echo $teacher->ClassName ? htmlentities($teacher->ClassName . ' Section-' . $teacher->Section) : 'Not assigned'; ?></p>
     <p><strong>Status:</strong> <?php echo $teacher->Status ? 'Active' : 'Inactive'; ?></p>
 </div></div>
 </section>

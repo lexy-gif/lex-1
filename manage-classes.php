@@ -14,9 +14,11 @@ $classid=$_GET['id'];
 $sql="delete from tblclasses where id = :classid";
 $query = $dbh->prepare($sql);
 $query->bindParam(':classid',$classid,PDO::PARAM_STR);
+try {
 $query->execute();
 echo '<script>alert("Data deleted.")</script>';
 echo "<script>window.location.href ='manage-classes.php'</script>";
+} catch(PDOException $e) { $error='This class has related school records or assignment history and cannot be deleted.'; }
 }    
 ?>
 <!DOCTYPE html>
@@ -34,26 +36,8 @@ echo "<script>window.location.href ='manage-classes.php'</script>";
     <link rel="stylesheet" href="css/prism/prism.css" media="screen"> <!-- USED FOR DEMO HELP - YOU CAN REMOVE IT -->
     <link rel="stylesheet" type="text/css" href="js/DataTables/datatables.min.css" />
     <link rel="stylesheet" href="css/main.css" media="screen">
+        <link rel="stylesheet" href="css/custom.css" media="screen">
     <script src="js/modernizr/modernizr.min.js"></script>
-    <style>
-    .errorWrap {
-        padding: 10px;
-        margin: 0 0 20px 0;
-        background: #fff;
-        border-left: 4px solid #dd3d36;
-        -webkit-box-shadow: 0 1px 1px 0 rgba(0, 0, 0, .1);
-        box-shadow: 0 1px 1px 0 rgba(0, 0, 0, .1);
-    }
-
-    .succWrap {
-        padding: 10px;
-        margin: 0 0 20px 0;
-        background: #fff;
-        border-left: 4px solid #5cb85c;
-        -webkit-box-shadow: 0 1px 1px 0 rgba(0, 0, 0, .1);
-        box-shadow: 0 1px 1px 0 rgba(0, 0, 0, .1);
-    }
-    </style>
 </head>
 
 <body class="top-navbar-fixed">

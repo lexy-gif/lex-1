@@ -1,0 +1,17 @@
+<?php
+$arYear=$year;$arTerm=$term;include __DIR__.'/academic-overview.php';
+$work=cbe_report($dbh,'workload',$year,$term);
+$stats=[
+ 'Total active students'=>(int)$dbh->query('SELECT COUNT(*) FROM tblstudents WHERE Status=1')->fetchColumn(),
+ 'Junior School classes'=>(int)$dbh->query('SELECT COUNT(*) FROM tblclasses c JOIN tblgrades g ON g.id=c.GradeId JOIN tblschoollevels l ON l.id=g.SchoolLevelId WHERE l.SeniorSchool=0 AND g.GradeNumber IN (SELECT GradeNumber FROM tblgrades WHERE SchoolLevelId=(SELECT id FROM tblschoollevels WHERE Name="Junior School" LIMIT 1))')->fetchColumn(),
+ 'Senior School classes'=>(int)$dbh->query('SELECT COUNT(*) FROM tblclasses c JOIN tblgrades g ON g.id=c.GradeId JOIN tblschoollevels l ON l.id=g.SchoolLevelId WHERE l.SeniorSchool=1')->fetchColumn(),
+ 'Pathway-entry learners without allocation'=>(int)academic_query($dbh,'SELECT COUNT(*) FROM tblstudents s JOIN tblclasses c ON c.id=s.ClassId JOIN tblgrades g ON g.id=c.GradeId WHERE g.PathwayEntry=1 AND s.Status=1 AND NOT EXISTS(SELECT 1 FROM tblstudentpathways p WHERE p.StudentId=s.StudentId AND p.AcademicYearId=? AND p.Status=1)',[$year])->fetchColumn(),
+ 'Upcoming assessments'=>(int)academic_query($dbh,'SELECT COUNT(*) FROM tblassessments WHERE AcademicYearId=? AND (?=0 OR TermId=?) AND AssessmentDate>=CURRENT_DATE AND Status NOT IN ("archived","published")',[$year,$term,$term])->fetchColumn(),
+ 'Upcoming exams'=>(int)academic_query($dbh,'SELECT COUNT(*) FROM tblexams WHERE AcademicYearId=? AND (?=0 OR TermId=?) AND StartDate>=CURRENT_DATE AND Status<>"archived"',[$year,$term,$term])->fetchColumn(),
+ 'Workload alerts'=>count(array_filter($work,fn($r)=>in_array($r['Workload'],['LOW','HIGH'],true))),
+ 'Class timetable conflicts'=>(int)academic_query($dbh,'SELECT COUNT(*) FROM tblclasstimetableentries a JOIN tblclasstimetableentries b ON a.id<b.id AND a.AcademicYearId=b.AcademicYearId AND a.TermId=b.TermId AND a.DayOfWeek=b.DayOfWeek AND a.StartTime<b.EndTime AND b.StartTime<a.EndTime AND (a.ClassId=b.ClassId OR a.TeacherId=b.TeacherId OR (a.RoomId IS NOT NULL AND a.RoomId=b.RoomId)) WHERE a.AcademicYearId=? AND (?=0 OR a.TermId=?) AND a.Status NOT IN ("cancelled","archived") AND b.Status NOT IN ("cancelled","archived")',[$year,$term,$term])->fetchColumn()
+];
+echo '<div class="cbe-cards">';foreach($stats as $label=>$n)echo '<div class="cbe-card"><strong>'.$n.'</strong>'.academic_h($label).'</div>';echo '</div>';
+$rows=cbe_report($dbh,'performance',$year,$term);echo '<div class="row"><div class="col-md-6">';cbe_chart('Performance by grade (%)',$rows,'Grade','Percentage');cbe_chart('Subject performance (%)',$rows,'Subject','Percentage');echo '</div><div class="col-md-6">';cbe_chart('Assessment trends (%)',$rows,'Date','Percentage');cbe_chart('Teacher workload (lessons)',$work,'Teacher','Lessons');echo '</div></div>';
+$pathways=cbe_rows($dbh,'SELECT p.Name Pathway,COUNT(a.id) Learners FROM tblpathways p LEFT JOIN tblpathwaytracks t ON t.PathwayId=p.id LEFT JOIN tblschoolcombinations c ON c.TrackId=t.id LEFT JOIN tblstudentpathways a ON a.CombinationId=c.id AND a.AcademicYearId=? AND a.Status=1 GROUP BY p.id,p.Name',[$year]);cbe_chart('Pathway distribution',$pathways,'Pathway','Learners');
+echo '<div class="panel panel-body"><h3>Recent Academic Activity</h3>';cbe_table(cbe_rows($dbh,"SELECT Actor,Action,EntityType,Details,CreationDate FROM tblauditlog WHERE Action NOT LIKE '%login%' AND EntityType NOT IN ('tblpayments','tblfeetypes','tblfeestructures') ORDER BY id DESC LIMIT 30"));echo '</div>';

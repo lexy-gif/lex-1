@@ -15,6 +15,7 @@ include('includes/config.php');
     <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
     <!-- Core theme CSS (includes Bootstrap)-->
     <link href="css/styles.css" rel="stylesheet" />
+    <link href="css/custom.css" rel="stylesheet" />
 </head>
 
 <body>
@@ -38,9 +39,8 @@ include('includes/config.php');
     </nav>
 
     <!-- Header -->
-    <header class="py-5 bg-image-full text-white d-flex align-items-center justify-content-center"
-        style="background-image: url('images/school system background.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; min-height: 40vh; position: relative;">
-        <div style="background: rgba(0,0,0,0.5); position: absolute; inset: 0;"></div>
+    <header class="py-5 bg-image-full text-white d-flex align-items-center justify-content-center public-hero public-hero--notice">
+        <div class="public-hero__overlay"></div>
         <div class="container position-relative text-center">
             <h1 class="fw-bold">Notice Details</h1>
             <p class="lead">Stay informed with the latest updates and announcements</p>
@@ -68,7 +68,7 @@ include('includes/config.php');
                     <p class="text-muted text-center mb-4"><strong>Posted on:</strong>
                         <?php echo htmlentities($result->postingDate); ?></p>
                     <hr class="mb-4" />
-                    <p class="fs-5" style="text-align: justify;">
+                    <p class="fs-5 notice-details-text">
                         <?php echo nl2br(htmlentities($result->noticeDetails)); ?>
                     </p>
 

@@ -8,13 +8,16 @@
                             <!-- /.user-info -->
 
                             <div class="sidebar-nav">
-                                <ul class="side-nav color-gray">
+                                <ul class="side-nav color-gray"><li><a href="dean-teacher-relationships.php"><i class="fa fa-users"></i> <span>Teacher Relationships</span></a></li><li><a href="student-subjects.php"><i class="fa fa-book"></i> <span>Student Subjects</span></a></li>
                                     <li class="nav-header">
                                         <span class="">Main Category</span>
                                     </li>
                                     <li>
                                         <a href="dashboard.php"><i class="fa fa-dashboard"></i> <span>Dean Dashboard</span> </a>
                                      
+                                    </li>
+                                    <li>
+                                        <a href="dean-academics.php"><i class="fa fa-graduation-cap"></i> <span>Academic Workspace</span></a>
                                     </li>
                                     <li class="has-children">
                                         <a href="#"><i class="fa fa-user-circle"></i> <span>Teachers</span> <i class="fa fa-angle-right arrow"></i></a>

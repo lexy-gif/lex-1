@@ -11,7 +11,8 @@ function timetable_active_period($dbh)
     $sql = "SELECT ay.id AS AcademicYearId, t.id AS TermId, ay.AcademicYear, t.TermName
             FROM tblterms t
             JOIN tblacademicyears ay ON ay.id = t.AcademicYearId
-            WHERE t.IsActive = 1
+            WHERE t.IsActive = 1 AND ay.IsActive = 1
+            ORDER BY ay.id DESC, t.id DESC
             LIMIT 1";
     $query = $dbh->prepare($sql);
     $query->execute();
@@ -31,7 +32,7 @@ function timetable_lesson_conflicts($dbh, $academicYearId, $termId, $classId, $t
                 WHERE e.AcademicYearId = :yearid
                   AND e.TermId = :termid
                   AND e.DayOfWeek = :day
-                  AND e.Status <> 'cancelled'
+                  AND e.Status NOT IN ('cancelled','archived')
                   AND e.id <> :ignoreid
                   AND e.StartTime < :endtime
                   AND :starttime < e.EndTime";
@@ -66,44 +67,26 @@ function timetable_lesson_conflicts($dbh, $academicYearId, $termId, $classId, $t
     return $conflicts;
 }
 
-function timetable_exam_conflicts($dbh, $examId, $classId, $roomId, $invigilatorId, $examDate, $startTime, $endTime, $ignoreId = 0)
+function timetable_exam_invigilators($dbh, $sessionId)
 {
-    $conflicts = array();
-    $base = "SELECT e.id, c.ClassName, c.Section, s.SubjectName, r.RoomName, u.FullName, e.StartTime, e.EndTime
-             FROM tblexamtimetableentries e
-             JOIN tblclasses c ON c.id = e.ClassId
-             JOIN tblsubjects s ON s.id = e.SubjectId
-             LEFT JOIN tblrooms r ON r.id = e.RoomId
-             LEFT JOIN tblusers u ON u.id = e.InvigilatorId
-             WHERE e.ExamId = :examid
-               AND e.ExamDate = :examdate
-               AND e.Status <> 'cancelled'
-               AND e.id <> :ignoreid
-               AND e.StartTime < :endtime
-               AND :starttime < e.EndTime";
+    // Keep older sessions that only have InvigilatorId visible until they are edited.
+    $q = $dbh->prepare('SELECT InvigilatorId FROM tblexamtimetableentries WHERE id=? AND InvigilatorId IS NOT NULL UNION SELECT TeacherId FROM tblexaminvigilators WHERE SessionId=?');
+    $q->execute([$sessionId, $sessionId]);
+    return array_map('intval', $q->fetchAll(PDO::FETCH_COLUMN));
+}
 
-    $query = $dbh->prepare($base . " AND e.ClassId = :classid");
-    $query->execute(array(':examid' => $examId, ':examdate' => $examDate, ':ignoreid' => $ignoreId, ':endtime' => $endTime, ':starttime' => $startTime, ':classid' => $classId));
-    foreach($query->fetchAll(PDO::FETCH_OBJ) as $row) {
-        $conflicts[] = "Class exam conflict: " . $row->ClassName . " Section-" . $row->Section . " already has " . $row->SubjectName . ".";
+function timetable_exam_conflicts($dbh, $examId, $classId, $roomId, $invigilators, $examDate, $startTime, $endTime, $ignoreId = 0)
+{
+    // ExamId remains in the signature for existing callers; resources are shared across exams.
+    $teachers = is_array($invigilators) ? $invigilators : ($invigilators ? [$invigilators] : []);
+    $q = $dbh->prepare("SELECT id,ClassId,RoomId FROM tblexamtimetableentries WHERE ExamDate=? AND Status NOT IN ('cancelled','archived') AND id<>? AND StartTime<? AND ?<EndTime");
+    $q->execute([$examDate, $ignoreId, $endTime, $startTime]);
+    $conflicts = [];
+    foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        if ((int)$row['ClassId'] === (int)$classId) $conflicts[] = 'Class conflict with examination session #'.$row['id'].'.';
+        if ($roomId && (int)$row['RoomId'] === (int)$roomId) $conflicts[] = 'Room conflict with examination session #'.$row['id'].'.';
+        if (array_intersect($teachers, timetable_exam_invigilators($dbh, $row['id']))) $conflicts[] = 'Invigilator conflict with examination session #'.$row['id'].'.';
     }
-
-    if($roomId) {
-        $query = $dbh->prepare($base . " AND e.RoomId = :roomid");
-        $query->execute(array(':examid' => $examId, ':examdate' => $examDate, ':ignoreid' => $ignoreId, ':endtime' => $endTime, ':starttime' => $startTime, ':roomid' => $roomId));
-        foreach($query->fetchAll(PDO::FETCH_OBJ) as $row) {
-            $conflicts[] = "Exam room conflict: " . ($row->RoomName ?: "Selected room") . " is already booked.";
-        }
-    }
-
-    if($invigilatorId) {
-        $query = $dbh->prepare($base . " AND e.InvigilatorId = :invigilatorid");
-        $query->execute(array(':examid' => $examId, ':examdate' => $examDate, ':ignoreid' => $ignoreId, ':endtime' => $endTime, ':starttime' => $startTime, ':invigilatorid' => $invigilatorId));
-        foreach($query->fetchAll(PDO::FETCH_OBJ) as $row) {
-            $conflicts[] = "Invigilator conflict: " . ($row->FullName ?: "Selected invigilator") . " is already assigned.";
-        }
-    }
-
     return $conflicts;
 }
 

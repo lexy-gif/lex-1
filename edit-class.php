@@ -1,31 +1,30 @@
 <?php
 session_start();
-error_reporting(0);
-include('includes/config.php');
-include('includes/csrf.php');
-if(strlen($_SESSION['alogin'])=="")
-    {   
-    header("Location: index.php"); 
-    }
-    else{
+require_once 'includes/config.php';
+require_once 'includes/csrf.php';
+require_once 'includes/dean-auth.php';
+require_once 'includes/cbe-academics.php';
+require_dean();
+$msg=$error='';
+$cid=filter_var($_GET['classid']??null,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]);
+$classValues=$cid?cbe_one($dbh,'SELECT * FROM tblclasses WHERE id=?',[$cid]):null;
+if(!$classValues) {http_response_code(404);exit('Class not found.');}
+// Preselect an unambiguous legacy grade; the link is saved only on submission.
+if(empty($classValues['GradeId']))$classValues['GradeId']=academic_query($dbh,'SELECT id FROM tblgrades WHERE GradeNumber=?',[$classValues['ClassNameNumeric']])->fetchColumn();
+$grades=cbe_rows($dbh,'SELECT id,Name,Status FROM tblgrades WHERE Status=1 OR id=? ORDER BY GradeNumber',[$classValues['GradeId']?:0]);
 if(isset($_POST['update']))
 {
 csrf_require_valid($_POST['csrf_token'] ?? '');
-$classname=$_POST['classname'];
-$classnamenumeric=$_POST['classnamenumeric']; 
-$section=$_POST['section'];
-$cid=intval($_GET['classid']);
-if($classnamenumeric < 1 || $classnamenumeric > 9) {
-    $error="Grade numeric must be between 1 and 9";
-} else {
-$sql="update  tblclasses set ClassName=:classname,ClassNameNumeric=:classnamenumeric,Section=:section where id=:cid ";
-$query = $dbh->prepare($sql);
-$query->bindParam(':classname',$classname,PDO::PARAM_STR);
-$query->bindParam(':classnamenumeric',$classnamenumeric,PDO::PARAM_STR);
-$query->bindParam(':section',$section,PDO::PARAM_STR);
-$query->bindParam(':cid',$cid,PDO::PARAM_STR);
-$query->execute();
-$msg="Data has been updated successfully";
+$classValues=['id'=>$cid,'ClassName'=>$_POST['classname']??'','GradeId'=>$_POST['GradeId']??'','Section'=>$_POST['section']??''];
+try {
+    $dbh->beginTransaction();
+    cbe_save_class($dbh,$classValues);
+    $dbh->commit();
+    $msg='Data has been updated successfully';
+} catch(Throwable $e) {
+    if($dbh->inTransaction())$dbh->rollBack();
+    $error=$e instanceof DomainException?$e->getMessage():'Could not save the class. Please try again.';
+    error_log($e->getMessage());
 }
 }
 ?>
@@ -42,6 +41,7 @@ $msg="Data has been updated successfully";
         <link rel="stylesheet" href="css/lobipanel/lobipanel.min.css" media="screen" >
         <link rel="stylesheet" href="css/prism/prism.css" media="screen" > <!-- USED FOR DEMO HELP - YOU CAN REMOVE IT -->
         <link rel="stylesheet" href="css/main.css" media="screen" >
+    <link rel="stylesheet" href="css/custom.css" media="screen">
         <script src="js/modernizr/modernizr.min.js"></script>
     </head>
     <body class="top-navbar-fixed">
@@ -62,7 +62,7 @@ $msg="Data has been updated successfully";
                         <div class="container-fluid">
                             <div class="row page-title-div">
                                 <div class="col-md-6">
-                                    <h2 class="title">Update Grade</h2>
+                                    <h2 class="title">Update Class</h2>
                                 </div>
                                 
                             </div>
@@ -93,7 +93,7 @@ $msg="Data has been updated successfully";
                                         <div class="panel">
                                             <div class="panel-heading">
                                                 <div class="panel-title">
-                                                    <h5>Update Grade Info</h5>
+                                                    <h5>Update Class Info</h5>
                                                 </div>
                                             </div>
 <?php if($msg){?>
@@ -108,41 +108,7 @@ else if($error){?>
 
                                                 <form method="post">
                                                     <?php csrf_field(); ?>
-<?php 
-$cid=intval($_GET['classid']);
-$sql = "SELECT * from tblclasses where id=:cid";
-$query = $dbh->prepare($sql);
-$query->bindParam(':cid',$cid,PDO::PARAM_STR);
-$query->execute();
-$results=$query->fetchAll(PDO::FETCH_OBJ);
-$cnt=1;
-if($query->rowCount() > 0)
-{
-foreach($results as $result)
-{   ?>
-
-                                                    <div class="form-group has-success">
-                                                        <label for="success" class="control-label">Grade Name</label>
-                                                		<div class="">
-                                                			<input type="text" name="classname" value="<?php echo htmlentities($result->ClassName);?>" required="required" class="form-control" id="success">
-                                                            <span class="help-block">Eg- Grade 1, Grade 2, Grade 9 etc</span>
-                                                		</div>
-                                                	</div>
-                                                       <div class="form-group has-success">
-                                                        <label for="success" class="control-label">Grade Numeric</label>
-                                                        <div class="">
-                                                            <input type="number" name="classnamenumeric" value="<?php echo htmlentities($result->ClassNameNumeric);?>" min="1" max="9" required="required" class="form-control" id="success">
-                                                            <span class="help-block">Eg- 1, 2, 3, up to 9</span>
-                                                        </div>
-                                                    </div>
-                                                     <div class="form-group has-success">
-                                                        <label for="success" class="control-label">Section</label>
-                                                        <div class="">
-                                                            <input type="text" name="section" value="<?php echo htmlentities($result->Section);?>" class="form-control" required="required" id="success">
-                                                            <span class="help-block">Eg- A,B,C etc</span>
-                                                        </div>
-                                                    </div>
-                                                    <?php }} ?>
+                                                    <?php include 'includes/cbe-class-fields.php'; ?>
   <div class="form-group has-success">
 
                                                         <div class="">
@@ -202,4 +168,3 @@ foreach($results as $result)
         <!-- ========== ADD custom.js FILE BELOW WITH YOUR CHANGES ========== -->
     </body>
 </html>
-<?php  } ?>

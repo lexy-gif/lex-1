@@ -15,6 +15,7 @@ include('includes/config.php');
     <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
     <!-- Core theme CSS (includes Bootstrap)-->
     <link href="css/styles.css" rel="stylesheet" />
+    <link href="css/custom.css" rel="stylesheet" />
 </head>
 
 <body>
@@ -39,9 +40,8 @@ include('includes/config.php');
     </nav>
 
     <!-- Hero Section -->
-    <header class="py-5 bg-image-full text-white d-flex align-items-center justify-content-center"
-        style="background-image: url('images/school system background.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; min-height: 60vh; position: relative;">
-        <div style="background: rgba(0,0,0,0.5); position: absolute; inset: 0;"></div>
+    <header class="py-5 bg-image-full text-white d-flex align-items-center justify-content-center public-hero public-hero--home">
+        <div class="public-hero__overlay"></div>
         <div class="container text-center position-relative">
             <h1 class="display-5 fw-bold">Welcome to the Student Result Management System</h1>
             <p class="lead mb-4">Effortlessly manage, view, and access student academic results online.</p>
@@ -88,8 +88,7 @@ include('includes/config.php');
 
                     <hr color="#000" />
 
-                    <ul
-                        style="display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; list-style: disc; padding-left: 40px; margin: 0;">
+                    <ul class="notice-list">
                         <?php 
               $sql = "SELECT * FROM tblnotice";
               $query = $dbh->prepare($sql);
@@ -98,7 +97,7 @@ include('includes/config.php');
               if($query->rowCount() > 0) {
                 foreach($results as $result) { 
             ?>
-                        <li style="margin: 0; padding: 0;">
+                        <li>
                             <a href="notice-details.php?nid=<?php echo htmlentities($result->id);?>" target="_blank"
                                 class="notice-link">
                                 <?php echo htmlentities($result->noticeTitle);?>
@@ -109,24 +108,6 @@ include('includes/config.php');
                 </div>
             </div>
         </div>
-
-        <style>
-        .notice-link {
-            color: #000;
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.3s ease;
-        }
-
-        .notice-link:hover {
-            color: #007bff;
-            text-decoration: underline;
-        }
-
-        ul {
-            list-style-position: outside;
-        }
-        </style>
     </section>
 
     <!-- Footer -->

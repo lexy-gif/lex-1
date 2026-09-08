@@ -39,6 +39,7 @@ $deliveries = $query->fetchAll(PDO::FETCH_OBJ);
     <link rel="stylesheet" href="css/font-awesome.min.css" media="screen">
     <link rel="stylesheet" type="text/css" href="js/DataTables/datatables.min.css">
     <link rel="stylesheet" href="css/main.css" media="screen">
+    <link rel="stylesheet" href="css/custom.css" media="screen">
 </head>
 <body class="top-navbar-fixed">
 <div class="main-wrapper">
@@ -54,7 +55,7 @@ $deliveries = $query->fetchAll(PDO::FETCH_OBJ);
         <?php foreach($allowed as $item) {
             $label = $item === 'all' ? 'All' : ucwords(strtolower($item));
             $class = $status === $item ? 'btn btn-primary btn-sm' : 'btn btn-default btn-sm';
-            echo '<a class="' . $class . '" href="dean-notification-deliveries.php?status=' . urlencode($item) . '" style="margin-right:6px;">' . htmlentities($label) . '</a>';
+            echo '<a class="' . $class . ' mr-5" href="dean-notification-deliveries.php?status=' . urlencode($item) . '">' . htmlentities($label) . '</a>';
         } ?>
     </p>
     <table id="example" class="display table table-striped table-bordered">

@@ -8,7 +8,9 @@
         <div class="sidebar-nav">
             <ul class="side-nav color-gray">
                 <li class="nav-header"><span>Main Category</span></li>
-                <?php if(($_SESSION['teacher_role'] ?? '') === 'class_teacher') { ?>
+                <li><a href="teacher-academic-assignments.php"><i class="fa fa-book"></i> <span>My Teaching Assignments</span></a></li>
+                <li><a href="teacher-academics.php"><i class="fa fa-graduation-cap"></i> <span>My Academic Workspace</span></a></li>
+                <?php if(teacher_class_id()) { ?>
                 <li><a href="teacher-dashboard.php"><i class="fa fa-dashboard"></i> <span>Dashboard</span></a></li>
                 <li><a href="teacher-students.php"><i class="fa fa-users"></i> <span>Students</span></a></li>
                 <li><a href="teacher-accounts.php"><i class="fa fa-user-plus"></i> <span>Manage Accounts</span></a></li>

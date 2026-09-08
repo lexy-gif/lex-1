@@ -1,7 +1,9 @@
 <?php
+require_once __DIR__.'/academic-assignments.php';
 function require_class_teacher()
 {
-    if (empty($_SESSION['teacher_user_id']) || ($_SESSION['teacher_role'] ?? '') !== 'class_teacher') {
+    require_teacher();
+    if (!teacher_class_id()) {
         header("Location: teacher-login.php");
         exit;
     }
@@ -23,15 +25,16 @@ function teacher_require_active_account()
     if(!isset($dbh) || empty($_SESSION['teacher_user_id'])) {
         return;
     }
-    $query = $dbh->prepare("SELECT Status FROM tblusers WHERE id = :teacherid LIMIT 1");
+    $query = $dbh->prepare("SELECT Status,Role FROM tblusers WHERE id = :teacherid LIMIT 1");
     $query->execute(array(':teacherid' => (int)$_SESSION['teacher_user_id']));
-    $status = $query->fetchColumn();
-    if((int)$status !== 1) {
+    $account = $query->fetch(PDO::FETCH_ASSOC);
+    if(!$account || (int)$account['Status'] !== 1 || !in_array($account['Role'], ['class_teacher','subject_teacher','head_of_department','exams_officer','deputy_dean'],true)) {
         session_unset();
         session_destroy();
         header("Location: teacher-login.php?deactivated=1");
         exit;
     }
+    $_SESSION['teacher_role'] = $account['Role'];
 }
 
 function teacher_id()
@@ -41,6 +44,10 @@ function teacher_id()
 
 function teacher_class_id()
 {
+    global $dbh;
+    if (isset($dbh) && academic_ready($dbh)) {
+        return (int)academic_query($dbh,'SELECT a.ClassId FROM tblclassteacherassignments a JOIN tblusers u ON u.id=a.TeacherId AND u.Status=1 JOIN tblacademicyears y ON y.id=a.AcademicYearId AND y.IsActive=1 WHERE a.TeacherId=? AND a.Status=1 LIMIT 1',[teacher_id()])->fetchColumn();
+    }
     return (int)($_SESSION['teacher_class_id'] ?? 0);
 }
 
@@ -51,6 +58,13 @@ function teacher_name()
 
 function teacher_role_label()
 {
+    global $dbh;
+    if (isset($dbh) && academic_ready($dbh)) {
+        $labels=[];
+        if(teacher_class_id()) $labels[]='Class Teacher';
+        if(academic_query($dbh,'SELECT a.id FROM tblsubjectteacherassignments a JOIN tblacademicyears y ON y.id=a.AcademicYearId AND y.IsActive=1 WHERE a.TeacherId=? AND a.Status=1 AND (a.TermId IS NULL OR EXISTS (SELECT 1 FROM tblterms t WHERE t.id=a.TermId AND t.IsActive=1)) LIMIT 1',[teacher_id()])->fetchColumn()) $labels[]='Subject Teacher';
+        return $labels?implode(' / ',$labels):'Teacher';
+    }
     return ucwords(str_replace('_', ' ', $_SESSION['teacher_role'] ?? 'teacher'));
 }
 ?>

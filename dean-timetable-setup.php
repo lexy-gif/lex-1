@@ -48,6 +48,7 @@ if(isset($_POST['save_period'])) {
     <link rel="stylesheet" href="css/font-awesome.min.css" media="screen">
     <link rel="stylesheet" type="text/css" href="js/DataTables/datatables.min.css">
     <link rel="stylesheet" href="css/main.css" media="screen">
+    <link rel="stylesheet" href="css/custom.css" media="screen">
 </head>
 <body class="top-navbar-fixed">
 <div class="main-wrapper">
@@ -68,7 +69,7 @@ if(isset($_POST['save_period'])) {
         </form>
     </div></div></div>
     <div class="col-md-8"><div class="panel"><div class="panel-heading"><h5>School Periods</h5></div><div class="panel-body">
-        <form method="post" class="form-inline" style="margin-bottom:15px;">
+        <form method="post" class="form-inline form-bottom-md">
             <?php csrf_field(); ?>
             <input type="text" name="periodname" class="form-control" placeholder="Period 1" required>
             <select name="dayofweek" class="form-control">

@@ -4,6 +4,7 @@ error_reporting(0);
 include('includes/config.php');
 include('includes/dean-auth.php');
 require_dean();
+require_once 'includes/academic-teacher-summary.php';
 
 $teacherRoles = array('class_teacher','subject_teacher','head_of_department','exams_officer','deputy_dean');
 $roleSql = "'" . implode("','", $teacherRoles) . "'";
@@ -12,9 +13,10 @@ $teacherId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if($teacherId <= 0) {
     $sql = "SELECT u.id, u.FullName, u.StaffNumber, u.Department, u.Role, u.Status, c.ClassName, c.Section,
             (SELECT COUNT(*) FROM tblclasstimetableentries t WHERE t.TeacherId = u.id AND t.Status <> 'cancelled') AS LessonCount,
-            (SELECT COUNT(*) FROM tblexamtimetableentries e WHERE e.InvigilatorId = u.id AND e.Status <> 'cancelled') AS ExamDutyCount
+            (SELECT COUNT(*) FROM tblexamtimetableentries e WHERE (e.InvigilatorId=u.id OR EXISTS(SELECT 1 FROM tblexaminvigilators i WHERE i.SessionId=e.id AND i.TeacherId=u.id)) AND e.Status NOT IN ('cancelled','archived')) AS ExamDutyCount
             FROM tblusers u
-            LEFT JOIN tblclasses c ON c.id = u.ClassId
+            LEFT JOIN tblclassteacherassignments ca ON ca.TeacherId=u.id AND ca.Status=1 AND ca.AcademicYearId=(SELECT id FROM tblacademicyears WHERE IsActive=1 ORDER BY id DESC LIMIT 1)
+            LEFT JOIN tblclasses c ON c.id=ca.ClassId
             WHERE u.Role IN ($roleSql)
             ORDER BY u.FullName";
     $query = $dbh->prepare($sql);
@@ -30,6 +32,7 @@ if($teacherId <= 0) {
     <link rel="stylesheet" href="css/bootstrap.min.css" media="screen">
     <link rel="stylesheet" href="css/font-awesome.min.css" media="screen">
     <link rel="stylesheet" href="css/main.css" media="screen">
+    <link rel="stylesheet" href="css/custom.css" media="screen">
 </head>
 <body class="top-navbar-fixed">
 <div class="main-wrapper">
@@ -38,17 +41,17 @@ if($teacherId <= 0) {
 <?php include('includes/leftbar.php');?>
 <div class="main-page"><div class="container-fluid">
 <div class="row page-title-div"><div class="col-md-8"><h2 class="title">Teacher Assignments</h2></div></div>
-<section class="section">
+<section class="section"><p><a class="btn btn-primary" href="dean-teacher-relationships.php?teacher=<?php echo (int)$teacherId; ?>">Manage Academic Assignments and Responsibilities</a></p>
 <div class="panel"><div class="panel-heading"><h5>Assignment Summary</h5></div><div class="panel-body">
 <table class="table table-striped table-bordered">
-    <thead><tr><th>Teacher</th><th>Staff Number</th><th>Department</th><th>Role</th><th>Class Teacher Of</th><th>Lessons/Week</th><th>Exam Duties</th><th>Status</th><th>Action</th></tr></thead>
+    <thead><tr><th>Teacher</th><th>Staff Number</th><th>Department</th><th>Academic Roles and Responsibilities</th><th>Class Teacher Of</th><th>Lessons/Week</th><th>Exam Duties</th><th>Status</th><th>Action</th></tr></thead>
     <tbody>
     <?php foreach($teachers as $teacher) { ?>
         <tr>
             <td><?php echo htmlentities($teacher->FullName); ?></td>
             <td><?php echo htmlentities($teacher->StaffNumber); ?></td>
             <td><?php echo htmlentities($teacher->Department); ?></td>
-            <td><?php echo htmlentities(ucwords(str_replace('_', ' ', $teacher->Role))); ?></td>
+            <td><?php academic_teacher_summary($dbh,(int)$teacher->id); ?></td>
             <td><?php echo $teacher->ClassName ? htmlentities($teacher->ClassName . ' Section-' . $teacher->Section) : '-'; ?></td>
             <td><?php echo htmlentities($teacher->LessonCount); ?></td>
             <td><?php echo htmlentities($teacher->ExamDutyCount); ?></td>
@@ -72,7 +75,8 @@ if($teacherId <= 0) {
 
 $teacherQuery = $dbh->prepare("SELECT u.*, c.ClassName, c.Section
                                FROM tblusers u
-                               LEFT JOIN tblclasses c ON c.id = u.ClassId
+                               LEFT JOIN tblclassteacherassignments ca ON ca.TeacherId=u.id AND ca.Status=1 AND ca.AcademicYearId=(SELECT id FROM tblacademicyears WHERE IsActive=1 ORDER BY id DESC LIMIT 1)
+            LEFT JOIN tblclasses c ON c.id=ca.ClassId
                                WHERE u.id = :teacherid AND u.Role IN ($roleSql)
                                LIMIT 1");
 $teacherQuery->execute(array(':teacherid' => $teacherId));
@@ -100,9 +104,9 @@ $examDuties = $dbh->prepare("SELECT e.*, ex.ExamName, c.ClassName, c.Section, s.
                              JOIN tblclasses c ON c.id = e.ClassId
                              JOIN tblsubjects s ON s.id = e.SubjectId
                              LEFT JOIN tblrooms r ON r.id = e.RoomId
-                             WHERE e.InvigilatorId = :teacherid AND e.Status <> 'cancelled'
+                             WHERE (e.InvigilatorId = :teacherid OR EXISTS(SELECT 1 FROM tblexaminvigilators i WHERE i.SessionId=e.id AND i.TeacherId=:memberid)) AND e.Status NOT IN ('cancelled','archived')
                              ORDER BY e.ExamDate, e.StartTime");
-$examDuties->execute(array(':teacherid' => $teacherId));
+$examDuties->execute(array(':teacherid' => $teacherId, ':memberid' => $teacherId));
 $examRows = $examDuties->fetchAll(PDO::FETCH_OBJ);
 ?>
 <!DOCTYPE html>
@@ -114,6 +118,7 @@ $examRows = $examDuties->fetchAll(PDO::FETCH_OBJ);
     <link rel="stylesheet" href="css/bootstrap.min.css" media="screen">
     <link rel="stylesheet" href="css/font-awesome.min.css" media="screen">
     <link rel="stylesheet" href="css/main.css" media="screen">
+    <link rel="stylesheet" href="css/custom.css" media="screen">
 </head>
 <body class="top-navbar-fixed">
 <div class="main-wrapper">
@@ -125,7 +130,7 @@ $examRows = $examDuties->fetchAll(PDO::FETCH_OBJ);
     <div class="col-md-8"><h2 class="title">Teacher Assignments</h2><p><?php echo htmlentities($teacher->FullName); ?></p></div>
     <div class="col-md-4 text-right"><a href="view-teacher.php?id=<?php echo htmlentities($teacher->id); ?>" class="btn btn-default">View Profile</a></div>
 </div>
-<section class="section">
+<section class="section"><p><a class="btn btn-primary" href="dean-teacher-relationships.php?teacher=<?php echo (int)$teacherId; ?>">Manage Academic Assignments and Responsibilities</a></p>
 <div class="panel"><div class="panel-heading"><h5>Class Teacher Assignment</h5></div><div class="panel-body">
     <p><?php echo $teacher->ClassName ? htmlentities($teacher->ClassName . ' Section-' . $teacher->Section) : 'No class-teacher assignment.'; ?></p>
 </div></div>

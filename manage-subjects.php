@@ -14,9 +14,11 @@ $subid=$_GET['id'];
 $sql="delete from tblsubjects where id = :subid";
 $query = $dbh->prepare($sql);
 $query->bindParam(':subid',$subid,PDO::PARAM_STR);
+try {
 $query->execute();
 echo '<script>alert("Data deleted.")</script>';
 echo "<script>window.location.href ='manage-subjects.php'</script>";
+} catch(PDOException $e) { $error='This subject has related school records or assignment history and cannot be deleted.'; }
 } 
 
 ?>
@@ -34,25 +36,8 @@ echo "<script>window.location.href ='manage-subjects.php'</script>";
         <link rel="stylesheet" href="css/prism/prism.css" media="screen" > <!-- USED FOR DEMO HELP - YOU CAN REMOVE IT -->
         <link rel="stylesheet" type="text/css" href="js/DataTables/datatables.min.css"/>
         <link rel="stylesheet" href="css/main.css" media="screen" >
+        <link rel="stylesheet" href="css/custom.css" media="screen">
         <script src="js/modernizr/modernizr.min.js"></script>
-          <style>
-        .errorWrap {
-    padding: 10px;
-    margin: 0 0 20px 0;
-    background: #fff;
-    border-left: 4px solid #dd3d36;
-    -webkit-box-shadow: 0 1px 1px 0 rgba(0,0,0,.1);
-    box-shadow: 0 1px 1px 0 rgba(0,0,0,.1);
-}
-.succWrap{
-    padding: 10px;
-    margin: 0 0 20px 0;
-    background: #fff;
-    border-left: 4px solid #5cb85c;
-    -webkit-box-shadow: 0 1px 1px 0 rgba(0,0,0,.1);
-    box-shadow: 0 1px 1px 0 rgba(0,0,0,.1);
-}
-        </style>
     </head>
     <body class="top-navbar-fixed">
         <div class="main-wrapper">
@@ -68,7 +53,7 @@ echo "<script>window.location.href ='manage-subjects.php'</script>";
                         <div class="container-fluid">
                             <div class="row page-title-div">
                                 <div class="col-md-6">
-                                    <h2 class="title">Manage Subjects</h2>
+                                    <p><a class="btn btn-primary" href="dean-teacher-relationships.php?role=subject">Manage Subject Teachers and Students</a></p><h2 class="title">Manage Subjects</h2>
                                 
                                 </div>
                                 
@@ -147,7 +132,7 @@ foreach($results as $result)
 {   ?>
 <tr>
  <td><?php echo htmlentities($cnt);?></td>
-                                                            <td><?php echo htmlentities($result->SubjectName);?></td>
+                                                            <td><?php echo htmlentities($result->SubjectName);?><?php include 'includes/academic-subject-summary.php'; ?></td>
                                                             <td><?php echo htmlentities($result->SubjectCode);?></td>
                                                             <td><?php echo htmlentities($result->Creationdate);?></td>
                                                             <td><?php echo htmlentities($result->UpdationDate);?></td>

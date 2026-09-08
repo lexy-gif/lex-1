@@ -42,9 +42,9 @@ $examDuties = $dbh->prepare("SELECT e.ExamDate, e.StartTime, e.EndTime, c.ClassN
                              JOIN tblclasses c ON c.id = e.ClassId
                              JOIN tblsubjects s ON s.id = e.SubjectId
                              LEFT JOIN tblrooms r ON r.id = e.RoomId
-                             WHERE e.InvigilatorId = :teacherid AND e.Status <> 'cancelled'
+                             WHERE (e.InvigilatorId = :teacherid OR EXISTS(SELECT 1 FROM tblexaminvigilators i WHERE i.SessionId=e.id AND i.TeacherId=:memberid)) AND e.Status NOT IN ('cancelled','archived')
                              ORDER BY e.ExamDate, e.StartTime");
-$examDuties->execute(array(':teacherid' => $teacherId));
+$examDuties->execute(array(':teacherid' => $teacherId, ':memberid' => $teacherId));
 $examRows = $examDuties->fetchAll(PDO::FETCH_OBJ);
 ?>
 <!DOCTYPE html>
@@ -56,6 +56,7 @@ $examRows = $examDuties->fetchAll(PDO::FETCH_OBJ);
     <link rel="stylesheet" href="css/bootstrap.min.css" media="screen">
     <link rel="stylesheet" href="css/font-awesome.min.css" media="screen">
     <link rel="stylesheet" href="css/main.css" media="screen">
+    <link rel="stylesheet" href="css/custom.css" media="screen">
 </head>
 <body class="top-navbar-fixed">
 <div class="main-wrapper">
@@ -68,6 +69,7 @@ $examRows = $examDuties->fetchAll(PDO::FETCH_OBJ);
     <div class="col-md-4 text-right"><a href="edit-teacher.php?id=<?php echo htmlentities($teacher->id); ?>" class="btn btn-primary">Edit Teacher</a></div>
 </div>
 <section class="section">
+<?php require_once 'includes/academic-teacher-summary.php'; if(academic_ready($dbh)) { ?><div class="panel panel-body"><h4>Academic relationships — active academic year</h4><?php academic_teacher_summary($dbh,(int)$teacher->id,null,true); ?><a href="dean-teacher-relationships.php?teacher=<?= (int)$teacher->id ?>">Change assignments / view history and other years</a></div><?php } ?>
 <div class="row">
     <div class="col-md-6"><div class="panel"><div class="panel-heading"><h5>Account Details</h5></div><div class="panel-body">
         <p><strong>Name:</strong> <?php echo htmlentities($teacher->FullName); ?></p>
@@ -76,16 +78,15 @@ $examRows = $examDuties->fetchAll(PDO::FETCH_OBJ);
         <p><strong>Phone:</strong> <?php echo htmlentities($teacher->PhoneNumber); ?></p>
         <p><strong>Username:</strong> <?php echo htmlentities($teacher->Username); ?></p>
         <p><strong>Department:</strong> <?php echo htmlentities($teacher->Department); ?></p>
-        <p><strong>Role:</strong> <?php echo htmlentities($teacherRoles[$teacher->Role] ?? $teacher->Role); ?></p>
+        <p><strong>Account category:</strong> <?php echo htmlentities($teacherRoles[$teacher->Role] ?? $teacher->Role); ?></p>
         <p><strong>Status:</strong> <?php echo $teacher->Status ? 'ACTIVE' : 'INACTIVE'; ?></p>
         <p><strong>Joined:</strong> <?php echo htmlentities($teacher->CreationDate); ?></p>
         <p><strong>Last Login:</strong> <?php echo $teacher->LastLoginAt ? htmlentities($teacher->LastLoginAt) : 'Never Logged In'; ?></p>
-        <p><strong>Class Teacher Of:</strong> <?php echo $teacher->ClassName ? htmlentities($teacher->ClassName . ' Section-' . $teacher->Section) : 'None'; ?></p>
     </div></div></div>
     <div class="col-md-6"><div class="panel"><div class="panel-heading"><h5>Assignment Summary</h5></div><div class="panel-body">
         <p><strong>Timetable Lessons:</strong> <?php echo count($lessonRows); ?></p>
         <p><strong>Exam Duties:</strong> <?php echo count($examRows); ?></p>
-        <p><a href="teacher-assignments.php?id=<?php echo htmlentities($teacher->id); ?>" class="btn btn-info">View Assignments</a></p>
+        <p><a href="dean-teacher-relationships.php?teacher=<?php echo htmlentities($teacher->id); ?>" class="btn btn-info">View Assignments</a></p>
     </div></div></div>
 </div>
 <div class="panel"><div class="panel-heading"><h5>Current Timetable Lessons</h5></div><div class="panel-body">

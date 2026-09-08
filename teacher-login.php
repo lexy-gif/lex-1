@@ -4,6 +4,7 @@ error_reporting(0);
 include('includes/config.php');
 include('includes/csrf.php');
 include('includes/audit.php');
+require_once 'includes/teacher-auth.php';
 
 if(isset($_POST['login'])) {
     csrf_require_valid($_POST['csrf_token'] ?? '');
@@ -29,7 +30,7 @@ if(isset($_POST['login'])) {
         $loginUpdate = $dbh->prepare("UPDATE tblusers SET LastLoginAt = NOW() WHERE id = :teacherid");
         $loginUpdate->execute(array(':teacherid' => $teacher->id));
         audit_log($dbh, 'teacher_login', 'tblusers', $teacher->id, 'Teacher logged in');
-        header("Location: " . ($teacher->Role === 'class_teacher' ? 'teacher-dashboard.php' : 'teacher-notifications.php'));
+        header("Location: " . (teacher_class_id() ? 'teacher-dashboard.php' : 'teacher-academic-assignments.php'));
         exit;
     } else {
         audit_log($dbh, 'teacher_login_failed', 'tblusers', null, 'Failed login for username: ' . $username);
@@ -46,30 +47,10 @@ if(isset($_POST['login'])) {
     <link rel="stylesheet" href="css/bootstrap.min.css" media="screen">
     <link rel="stylesheet" href="css/font-awesome.min.css" media="screen">
     <link rel="stylesheet" href="css/main.css" media="screen">
+    <link rel="stylesheet" href="css/custom.css" media="screen">
     <script src="js/modernizr/modernizr.min.js"></script>
-    <style>
-    body {
-        background-image: url('images/school system background.jpg');
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
-    }
-    .login-container {
-        background-color: rgba(255, 255, 255, 0.94);
-        padding: 35px;
-        border-radius: 8px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-        margin-top: 90px;
-    }
-    h1 {
-        color: #fff;
-        font-weight: 700;
-        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
-        margin-top: 30px;
-    }
-    </style>
 </head>
-<body>
+<body class="auth-page teacher-login-page">
     <div class="container">
         <h1 class="text-center">Student Result Management System</h1>
         <div class="row">

@@ -30,11 +30,8 @@ $_SESSION['classid'] = $classid;
     <link rel="stylesheet" href="css/lobipanel/lobipanel.min.css" media="screen">
     <link rel="stylesheet" href="css/prism/prism.css" media="screen">
     <link rel="stylesheet" href="css/main.css" media="screen">
+    <link rel="stylesheet" href="css/custom.css" media="screen">
     <script src="js/modernizr/modernizr.min.js"></script>
-    <style>
-        /* small cosmetic tweak to keep the print icon clickable area */
-        .print-icon { cursor: pointer; }
-    </style>
 </head>
 
 <body>
@@ -133,14 +130,14 @@ try {
                                                     </div>
                                                 </div>
 
-                                                <table class="table table-hover table-bordered" border="1" width="100%">
+                                                <table class="table table-hover table-bordered table-center" border="1" width="100%">
                                                     <thead>
-                                                        <tr style="text-align: center">
-                                                            <th style="text-align: center">#</th>
-                                                            <th style="text-align: center">Subject</th>
-                                                            <th style="text-align: center">Marks</th>
-                                                            <th style="text-align: center">Grade</th>
-                                                            <th style="text-align: center">Remark</th>
+                                                        <tr>
+                                                            <th>#</th>
+                                                            <th>Subject</th>
+                                                            <th>Marks</th>
+                                                            <th>Grade</th>
+                                                            <th>Remark</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -178,11 +175,11 @@ if ($subjectCount > 0):
         $totlcount += $marks;
 ?>
                                                         <tr>
-                                                            <th scope="row" style="text-align: center"><?php echo $cnt; ?></th>
-                                                            <td style="text-align: center"><?php echo htmlentities($result->SubjectName); ?></td>
-                                                            <td style="text-align: center"><?php echo htmlentities($marks); ?></td>
-                                                            <td style="text-align: center"><?php echo htmlentities($result->Grade ?: 'N/A'); ?></td>
-                                                            <td style="text-align: center"><?php echo htmlentities($result->Remark ?: 'N/A'); ?></td>
+                                                            <th scope="row"><?php echo $cnt; ?></th>
+                                                            <td><?php echo htmlentities($result->SubjectName); ?></td>
+                                                            <td><?php echo htmlentities($marks); ?></td>
+                                                            <td><?php echo htmlentities($result->Grade ?: 'N/A'); ?></td>
+                                                            <td><?php echo htmlentities($result->Remark ?: 'N/A'); ?></td>
                                                         </tr>
 <?php
         $cnt++;
@@ -234,18 +231,18 @@ if ($subjectCount > 0):
     }
 ?>
                                                         <tr>
-                                                            <th scope="row" colspan="4" style="text-align: center">Total Marks</th>
-                                                            <td style="text-align: center"><b><?php echo htmlentities($totlcount); ?></b> out of <b><?php echo htmlentities($outof); ?></b></td>
+                                                            <th scope="row" colspan="4">Total Marks</th>
+                                                            <td><b><?php echo htmlentities($totlcount); ?></b> out of <b><?php echo htmlentities($outof); ?></b></td>
                                                         </tr>
 
                                                         <tr>
-                                                            <th scope="row" colspan="4" style="text-align: center">Percentage</th>
-                                                            <td style="text-align: center"><b><?php echo $percentage; ?>%</b></td>
+                                                            <th scope="row" colspan="4">Percentage</th>
+                                                            <td><b><?php echo $percentage; ?>%</b></td>
                                                         </tr>
 
                                                         <tr>
-                                                            <th scope="row" colspan="4" style="text-align: center">Class Position</th>
-                                                            <td style="text-align: center"><b><?php echo $studentRank ?: 'N/A'; ?></b> out of <b><?php echo $totalStudents ?: 'N/A'; ?></b></td>
+                                                            <th scope="row" colspan="4">Class Position</th>
+                                                            <td><b><?php echo $studentRank ?: 'N/A'; ?></b> out of <b><?php echo $totalStudents ?: 'N/A'; ?></b></td>
                                                         </tr>
                                                     </tbody>
                                                 </table>
@@ -281,7 +278,7 @@ if ($subjectCount > 0):
                                                     <strong>Keep going, <?php echo htmlentities($student->StudentName); ?>!</strong>
                                                 </div>
 
-                                                <div class="text-center" style="padding:10px;">
+                                                <div class="text-center print-action">
                                                     <i class="fa fa-print fa-2x print-icon" aria-hidden="true" title="Print" onclick="CallPrint()"></i>
                                                 </div>
 

@@ -65,7 +65,7 @@ if($query -> rowCount() > 0)
 { ?>
 <p>
 <?php
-echo "<span style='color:red'> Result already declared for this student and exam.</span>";
+echo "<span class='text-danger'> Result already declared for this student and exam.</span>";
  echo "<script>$('#submit').prop('disabled',true);</script>";
  ?></p>
 <?php }

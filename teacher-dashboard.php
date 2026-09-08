@@ -51,6 +51,7 @@ $nextLesson = $nextLessonQuery->fetch(PDO::FETCH_OBJ);
     <link rel="stylesheet" href="css/bootstrap.min.css" media="screen">
     <link rel="stylesheet" href="css/font-awesome.min.css" media="screen">
     <link rel="stylesheet" href="css/main.css" media="screen">
+    <link rel="stylesheet" href="css/custom.css" media="screen">
     <script src="js/modernizr/modernizr.min.js"></script>
 </head>
 <body class="top-navbar-fixed">
@@ -74,7 +75,7 @@ $nextLesson = $nextLessonQuery->fetch(PDO::FETCH_OBJ);
                             <div class="col-md-3 col-sm-6"><a class="dashboard-stat bg-warning" href="teacher-results.php"><span class="number"><?php echo htmlentities($submittedResults); ?></span><span class="name">Results Submitted</span><span class="bg-icon"><i class="fa fa-check-square-o"></i></span></a></div>
                             <div class="col-md-3 col-sm-6"><a class="dashboard-stat bg-danger" href="teacher-attendance.php"><span class="number"><?php echo htmlentities($attendancePercent ?: '0'); ?>%</span><span class="name">Attendance</span><span class="bg-icon"><i class="fa fa-calendar-check-o"></i></span></a></div>
                         </div>
-                        <div class="row" style="margin-top:20px;">
+                        <div class="row action-top-md">
                             <div class="col-md-4">
                                 <div class="panel"><div class="panel-heading"><h5>Class Summary</h5></div><div class="panel-body">
                                     <p><strong>Subjects:</strong> <?php echo htmlentities($totalSubjects); ?></p>

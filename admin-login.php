@@ -4,7 +4,8 @@ error_reporting(0);
 include('includes/config.php');
 include('includes/csrf.php');
 include('includes/audit.php');
-if($_SESSION['alogin']!=''){
+include('includes/dean-account.php');
+if(!empty($_SESSION['alogin'])){
 $_SESSION['alogin']='';
 }
 if(isset($_POST['login']))
@@ -12,11 +13,7 @@ if(isset($_POST['login']))
 csrf_require_valid($_POST['csrf_token'] ?? '');
 $uname=$_POST['username'];
 $password=$_POST['password'];
-$sql ="SELECT UserName,Password FROM admin WHERE UserName=:uname LIMIT 1";
-$query= $dbh -> prepare($sql);
-$query-> bindParam(':uname', $uname, PDO::PARAM_STR);
-$query-> execute();
-$result=$query->fetch(PDO::FETCH_OBJ);
+$result=dean_find_by_username($dbh, $uname);
 $passwordMatches = false;
 
 if($result) {
@@ -25,10 +22,7 @@ if($result) {
     if(!$passwordMatches && hash_equals($result->Password, md5($password))) {
         $passwordMatches = true;
         $newHash = password_hash($password, PASSWORD_DEFAULT);
-        $update = $dbh->prepare("UPDATE admin SET Password=:password WHERE UserName=:uname");
-        $update->bindParam(':password', $newHash, PDO::PARAM_STR);
-        $update->bindParam(':uname', $uname, PDO::PARAM_STR);
-        $update->execute();
+        dean_update_password($dbh, $uname, $newHash);
     }
 }
 
@@ -36,10 +30,11 @@ if($passwordMatches)
 {
 session_regenerate_id(true);
 $_SESSION['alogin']=$result->UserName;
-audit_log($dbh, 'dean_login', 'admin', $result->UserName, 'Dean of Studies logged in');
-echo "<script type='text/javascript'> document.location = 'dashboard.php'; </script>";
+audit_log($dbh, 'dean_login', 'dean', $result->UserName, 'Dean of Studies logged in');
+header("Location: dashboard.php");
+exit;
 } else{
-    audit_log($dbh, 'dean_login_failed', 'admin', null, 'Failed Dean login for username: ' . $uname);
+    audit_log($dbh, 'dean_login_failed', 'dean', null, 'Failed Dean login for username: ' . $uname);
     echo "<script>alert('Invalid Details');</script>";
 }
 }
@@ -58,73 +53,17 @@ echo "<script type='text/javascript'> document.location = 'dashboard.php'; </scr
     <link rel="stylesheet" href="css/font-awesome.min.css" media="screen">
     <link rel="stylesheet" href="css/animate-css/animate.min.css" media="screen">
     <link rel="stylesheet" href="css/main.css" media="screen">
+    <link rel="stylesheet" href="css/custom.css" media="screen">
     <script src="js/modernizr/modernizr.min.js"></script>
-
-    <style>
-    body {
-        background-image: url('images/school system background.jpg');
-        /* ✅ Use your existing background image */
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-
-    .login-container {
-        background-color: rgba(255, 255, 255, 0.93);
-        padding: 40px;
-        border-radius: 10px;
-        box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.3);
-        margin-top: 70px;
-    }
-
-    h1 {
-        color: #fff;
-        font-weight: 700;
-        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
-        margin-top: 30px;
-    }
-
-    .panel-title h4 {
-        font-weight: 600;
-        color: #333;
-    }
-
-    footer {
-        margin-top: 60px;
-        background: rgba(0, 0, 0, 0.7);
-        color: #ccc;
-        padding: 15px 0;
-        text-align: center;
-    }
-
-    footer a {
-        color: #00bfff;
-        text-decoration: none;
-    }
-
-    footer a:hover {
-        text-decoration: underline;
-    }
-
-    .btn-success {
-        background-color: #28a745;
-        border: none;
-    }
-
-    .btn-success:hover {
-        background-color: #218838;
-    }
-    </style>
 </head>
 
-<body>
+<body class="auth-page auth-page--segoe admin-login-page">
     <div class="main-wrapper">
         <div class="container">
             <h1 align="center">Student Result Management System</h1>
             <div class="row justify-content-center">
                 <div class="col-lg-6 col-md-8 col-sm-10">
-                    <div class="login-container">
+                    <div class="login-container auth-card">
                         <section class="section">
                             <div class="panel">
                                 <div class="panel-heading">

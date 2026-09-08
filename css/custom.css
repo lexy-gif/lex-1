@@ -1,0 +1,394 @@
+/* ==========================================================================
+   SRMS Custom Styles
+   ========================================================================== */
+
+/* Notifications */
+.errorWrap,
+.succWrap {
+    padding: 10px;
+    margin: 0 0 20px 0;
+    background: #fff;
+    -webkit-box-shadow: 0 1px 1px 0 rgba(0, 0, 0, .1);
+    box-shadow: 0 1px 1px 0 rgba(0, 0, 0, .1);
+}
+
+.errorWrap {
+    border-left: 4px solid #dd3d36;
+}
+
+.succWrap {
+    border-left: 4px solid #5cb85c;
+}
+
+.notification-item {
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    background: #fff;
+    border-left: 4px solid #ddd;
+}
+
+.notification-item.unread {
+    background: #f7fbff;
+    border-left-color: #337ab7;
+}
+
+.notification-meta {
+    color: #777;
+    font-size: 12px;
+}
+
+.filter-links a {
+    margin-right: 8px;
+    margin-bottom: 8px;
+}
+
+/* Login Pages */
+.auth-page {
+    background-image: url('../images/school system background.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+}
+
+.auth-page--segoe {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.auth-page h1 {
+    color: #fff;
+    font-weight: 700;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, .5);
+    margin-top: 30px;
+}
+
+.student-login-page h1 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.auth-card,
+.login-box {
+    background-color: rgba(255, 255, 255, .93);
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, .3);
+}
+
+.login-container.auth-card {
+    margin-top: 70px;
+}
+
+.login-box {
+    margin-top: 90px;
+}
+
+.teacher-login-page .login-container {
+    background-color: rgba(255, 255, 255, .94);
+    padding: 35px;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, .3);
+    margin-top: 90px;
+}
+
+.auth-page .panel-title h4,
+.student-login-page h4 {
+    color: #333;
+    font-weight: 600;
+}
+
+.student-login-page h4 {
+    font-weight: 700;
+}
+
+.student-login-page label {
+    font-weight: 600;
+}
+
+.student-login-page .panel {
+    border: none;
+    box-shadow: none;
+}
+
+.auth-page .btn-success {
+    background-color: #28a745;
+    border: none;
+}
+
+.auth-page .btn-success:hover {
+    background-color: #218838;
+}
+
+.auth-page footer {
+    margin-top: 60px;
+    background: rgba(0, 0, 0, .7);
+    color: #ccc;
+    padding: 15px 0;
+    text-align: center;
+}
+
+.auth-page footer a {
+    color: #00bfff;
+    text-decoration: none;
+}
+
+.auth-page footer a:hover,
+.student-login-page .form-group a:hover {
+    text-decoration: underline;
+}
+
+.student-login-page .form-group a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+/* Dashboard */
+.dashboard-page {
+    background-image: url('../images/school system background.jpg');
+    background-size: cover;
+    background-attachment: fixed;
+    background-position: center;
+    position: relative;
+}
+
+.dashboard-page::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .45);
+    z-index: -1;
+}
+
+.dashboard-page .main-wrapper,
+.dashboard-page .content-wrapper,
+.dashboard-page .content-container {
+    color: #fff !important;
+}
+
+.dashboard-page .dashboard-stat {
+    background: rgba(0, 0, 0, .6) !important;
+    border: 1px solid rgba(255, 255, 255, .15);
+    transition: transform .3s ease, background .3s ease;
+}
+
+.dashboard-page .dashboard-stat:hover {
+    transform: scale(1.05);
+    background: rgba(0, 0, 0, .8) !important;
+}
+
+.dashboard-stat-spaced {
+    margin-top: 1%;
+}
+
+.info-section {
+    margin-top: 40px;
+}
+
+.info-card {
+    background: rgba(255, 255, 255, .15);
+    border-radius: 15px;
+    padding: 25px;
+    color: #fff;
+    backdrop-filter: blur(6px);
+    text-align: center;
+    transition: all .3s ease;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, .3);
+}
+
+.info-card:hover {
+    background: rgba(255, 255, 255, .25);
+    transform: translateY(-5px);
+}
+
+.info-card i {
+    font-size: 40px;
+    color: #00b4ff;
+    margin-bottom: 15px;
+}
+
+.info-card h5 {
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.dashboard-page footer {
+    background-color: rgba(0, 0, 0, .85);
+    color: #fff;
+    padding: 15px 0;
+    text-align: center;
+    margin-top: 50px;
+}
+
+/* Teachers */
+.summary-box {
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin-bottom: 15px;
+    min-height: 88px;
+}
+
+.summary-box .number {
+    display: block;
+    font-size: 26px;
+    font-weight: 700;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-active {
+    background: #dff0d8;
+    color: #2f6f2f;
+}
+
+.status-inactive {
+    background: #f2dede;
+    color: #8a1f11;
+}
+
+.teacher-card {
+    display: none;
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 12px;
+    margin-bottom: 10px;
+}
+
+@media (max-width: 767px) {
+    .teacher-table-wrapper {
+        display: none;
+    }
+
+    .teacher-card {
+        display: block;
+    }
+}
+
+/* Public Pages */
+.public-hero {
+    background-image: url('../images/school system background.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    position: relative;
+}
+
+.public-hero--home {
+    min-height: 60vh;
+}
+
+.public-hero--notice {
+    min-height: 40vh;
+}
+
+.public-hero__overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, .5);
+}
+
+.notice-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 30px;
+    list-style: disc;
+    list-style-position: outside;
+    padding-left: 40px;
+    margin: 0;
+}
+
+.notice-list li {
+    margin: 0;
+    padding: 0;
+}
+
+.notice-link {
+    color: #000;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color .3s ease;
+}
+
+.notice-link:hover {
+    color: #007bff;
+    text-decoration: underline;
+}
+
+.notice-details-text {
+    text-align: justify;
+}
+
+/* Utilities */
+.display-inline,
+.form-inline-action {
+    display: inline;
+}
+
+.display-inline-block,
+.form-inline-block {
+    display: inline-block;
+}
+
+.action-top-sm {
+    margin-top: 4px;
+}
+
+.action-top-md {
+    margin-top: 20px;
+}
+
+.form-bottom-md {
+    margin-bottom: 15px;
+}
+
+.input-password-sm {
+    display: inline-block;
+    width: 105px;
+}
+
+.input-password-md {
+    display: inline-block;
+    width: 130px;
+}
+
+.input-date-md {
+    max-width: 220px;
+}
+
+.dropdown-notifications {
+    width: 320px;
+    max-height: 420px;
+    overflow: auto;
+}
+
+.badge-hidden {
+    display: none;
+}
+
+.link-strong {
+    font-weight: 600;
+}
+
+.btn-link-reset {
+    padding: 0;
+}
+
+.table-center,
+.table-center th,
+.table-center td {
+    text-align: center;
+}
+
+.print-action {
+    padding: 10px;
+}
+
+.print-icon {
+    cursor: pointer;
+}

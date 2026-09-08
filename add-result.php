@@ -4,16 +4,23 @@ error_reporting(0);
 include('includes/config.php');
 include('includes/csrf.php');
 include('includes/sms.php');
+require_once 'includes/cbe-learning.php';
 if(strlen($_SESSION['alogin'])=="") {   
     header("Location: index.php"); 
 } else {
     if(isset($_POST['submit'])) {
         csrf_require_valid($_POST['csrf_token'] ?? '');
+        try {
+        $dbh->beginTransaction();
         $class = $_POST['class'];
         $examid = $_POST['examid'];
         $studentid = $_POST['studentid']; 
         $mark = $_POST['marks'];
         $examName = 'Selected Exam';
+        cbe_exam_writable($dbh,(int)$examid);
+        if(!is_array($mark)||!$mark)throw new DomainException('Enter marks for the selected subjects.');
+        foreach($mark as $value)cbe_number($value,0,100);
+        if(!academic_query($dbh,'SELECT StudentId FROM tblstudents WHERE StudentId=? AND ClassId=? AND Status=1',[(int)$studentid,(int)$class])->fetchColumn())throw new DomainException('Select an active student in this class.');
 
         $examStmt = $dbh->prepare("SELECT e.ExamName, e.Status, e.ClassId, ay.AcademicYear, t.TermName
                                    FROM tblexams e
@@ -73,6 +80,7 @@ if(strlen($_SESSION['alogin'])=="") {
 
         // ✅ RANK CALCULATION SECTION ADDED HERE
         if($lastInsertId) {
+            $dbh->commit();
             // Calculate total marks for each student in the same class
             $sql_rank = "SELECT StudentId, SUM(marks) AS totalMarks 
                          FROM tblresult 
@@ -125,6 +133,12 @@ if(strlen($_SESSION['alogin'])=="") {
         }
         }
         }
+        if($dbh->inTransaction())$dbh->rollBack();
+        } catch(Throwable $e) {
+            if($dbh->inTransaction())$dbh->rollBack();
+            $error=$e instanceof DomainException?$e->getMessage():'Could not save the result. Please try again.';
+            if(!($e instanceof DomainException))error_log($e->getMessage());
+        }
     }
 ?>
 <!DOCTYPE html>
@@ -142,6 +156,7 @@ if(strlen($_SESSION['alogin'])=="") {
     <link rel="stylesheet" href="css/prism/prism.css" media="screen">
     <link rel="stylesheet" href="css/select2/select2.min.css">
     <link rel="stylesheet" href="css/main.css" media="screen">
+    <link rel="stylesheet" href="css/custom.css" media="screen">
     <script src="js/modernizr/modernizr.min.js"></script>
     <script>
     function getStudent(val) {

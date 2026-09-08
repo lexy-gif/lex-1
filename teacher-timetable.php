@@ -9,6 +9,8 @@ include('includes/timetable.php');
 require_class_teacher();
 
 $classId = teacher_class_id();
+$activePeriod = timetable_active_period($dbh);
+$periodParams = [':classid'=>$classId, ':yearid'=>$activePeriod->AcademicYearId??0, ':termid'=>$activePeriod->TermId??0];
 
 if(isset($_POST['notify_teachers'])) {
     csrf_require_valid($_POST['csrf_token'] ?? '');
@@ -18,11 +20,11 @@ if(isset($_POST['notify_teachers'])) {
             JOIN tblsubjects s ON s.id = e.SubjectId
             LEFT JOIN tblrooms r ON r.id = e.RoomId
             WHERE e.ClassId = :classid
-              AND e.Status = 'published'
+              AND e.Status = 'published' AND e.AcademicYearId = :yearid AND e.TermId = :termid
               AND e.TeacherId IS NOT NULL
             ORDER BY e.TeacherId, FIELD(e.DayOfWeek,'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'), e.StartTime";
     $query = $dbh->prepare($sql);
-    $query->execute(array(':classid' => $classId));
+    $query->execute($periodParams);
     $sent = 0;
     foreach($query->fetchAll(PDO::FETCH_OBJ) as $lesson) {
         $message = $lesson->SubjectName . " with " . $lesson->ClassName . " Section-" . $lesson->Section . " on " . $lesson->DayOfWeek . " from " . $lesson->StartTime . " to " . $lesson->EndTime . ". Room: " . ($lesson->RoomName ?: 'Not assigned');
@@ -47,6 +49,7 @@ $class = $classQuery->fetch(PDO::FETCH_OBJ);
     <link rel="stylesheet" href="css/font-awesome.min.css" media="screen">
     <link rel="stylesheet" type="text/css" href="js/DataTables/datatables.min.css">
     <link rel="stylesheet" href="css/main.css" media="screen">
+    <link rel="stylesheet" href="css/custom.css" media="screen">
 </head>
 <body class="top-navbar-fixed">
 <div class="main-wrapper">
@@ -58,7 +61,7 @@ $class = $classQuery->fetch(PDO::FETCH_OBJ);
 <section class="section">
 <?php if($msg){?><div class="alert alert-success"><?php echo htmlentities($msg); ?></div><?php } ?>
 <div class="panel"><div class="panel-heading"><h5>Published Class Timetable</h5></div><div class="panel-body">
-<form method="post" style="margin-bottom:15px;">
+<form method="post" class="form-bottom-md">
     <?php csrf_field(); ?>
     <button type="submit" name="notify_teachers" class="btn btn-primary"><i class="fa fa-bell"></i> Notify Subject Teachers</button>
 </form>
@@ -70,10 +73,10 @@ $sql = "SELECT e.DayOfWeek, e.StartTime, e.EndTime, s.SubjectName, u.FullName, r
         JOIN tblsubjects s ON s.id = e.SubjectId
         LEFT JOIN tblusers u ON u.id = e.TeacherId
         LEFT JOIN tblrooms r ON r.id = e.RoomId
-        WHERE e.ClassId = :classid AND e.Status = 'published'
+        WHERE e.ClassId = :classid AND e.Status = 'published' AND e.AcademicYearId = :yearid AND e.TermId = :termid
         ORDER BY FIELD(e.DayOfWeek,'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'), e.StartTime";
 $query = $dbh->prepare($sql);
-$query->execute(array(':classid' => $classId));
+$query->execute($periodParams);
 foreach($query->fetchAll(PDO::FETCH_OBJ) as $lesson) {
     echo '<tr><td>'.htmlentities($lesson->DayOfWeek).'</td><td>'.htmlentities($lesson->StartTime.' - '.$lesson->EndTime).'</td><td>'.htmlentities($lesson->SubjectName).'</td><td>'.htmlentities($lesson->FullName).'</td><td>'.htmlentities($lesson->RoomName).'</td></tr>';
 }
@@ -82,18 +85,17 @@ foreach($query->fetchAll(PDO::FETCH_OBJ) as $lesson) {
 </div></div>
 <div class="panel"><div class="panel-heading"><h5>Published Examination Timetable</h5></div><div class="panel-body">
 <table id="examtable" class="display table table-striped table-bordered">
-<thead><tr><th>Exam</th><th>Date</th><th>Time</th><th>Subject</th><th>Room</th><th>Invigilator</th></tr></thead><tbody>
+<thead><tr><th>Exam</th><th>Date</th><th>Time</th><th>Subject</th><th>Room</th><th>Invigilators</th></tr></thead><tbody>
 <?php
-$sql = "SELECT ex.ExamName, et.ExamDate, et.StartTime, et.EndTime, s.SubjectName, r.RoomName, u.FullName
+$sql = "SELECT ex.ExamName, et.ExamDate, et.StartTime, et.EndTime, s.SubjectName, r.RoomName, (SELECT GROUP_CONCAT(u.FullName ORDER BY u.FullName SEPARATOR \", \") FROM tblusers u WHERE u.id=et.InvigilatorId OR EXISTS(SELECT 1 FROM tblexaminvigilators i WHERE i.SessionId=et.id AND i.TeacherId=u.id)) AS FullName
         FROM tblexamtimetableentries et
         JOIN tblexams ex ON ex.id = et.ExamId
         JOIN tblsubjects s ON s.id = et.SubjectId
         LEFT JOIN tblrooms r ON r.id = et.RoomId
-        LEFT JOIN tblusers u ON u.id = et.InvigilatorId
-        WHERE et.ClassId = :classid AND et.Status = 'published'
+        WHERE et.ClassId = :classid AND et.Status = 'published' AND ex.AcademicYearId = :yearid AND ex.TermId = :termid
         ORDER BY et.ExamDate, et.StartTime";
 $query = $dbh->prepare($sql);
-$query->execute(array(':classid' => $classId));
+$query->execute($periodParams);
 foreach($query->fetchAll(PDO::FETCH_OBJ) as $exam) {
     echo '<tr><td>'.htmlentities($exam->ExamName).'</td><td>'.htmlentities($exam->ExamDate).'</td><td>'.htmlentities($exam->StartTime.' - '.$exam->EndTime).'</td><td>'.htmlentities($exam->SubjectName).'</td><td>'.htmlentities($exam->RoomName).'</td><td>'.htmlentities($exam->FullName).'</td></tr>';
 }

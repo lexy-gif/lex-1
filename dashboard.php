@@ -43,88 +43,11 @@ $pendingResults = max(0, ((int)$totalStudents) - ((int)$resultsSubmitted));
     <link rel="stylesheet" href="css/toastr/toastr.min.css" media="screen">
     <link rel="stylesheet" href="css/icheck/skins/line/blue.css">
     <link rel="stylesheet" href="css/main.css" media="screen">
+    <link rel="stylesheet" href="css/custom.css" media="screen">
     <script src="js/modernizr/modernizr.min.js"></script>
-
-    <style>
-    /* Full background image */
-    body {
-        background-image: url('images/school system background.jpg');
-        background-size: cover;
-        background-attachment: fixed;
-        background-position: center;
-        position: relative;
-    }
-
-    /* Dark overlay for readability */
-    body::before {
-        content: "";
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.45);
-        z-index: -1;
-    }
-
-    /* Dashboard content readability */
-    .main-wrapper,
-    .content-wrapper,
-    .content-container {
-        color: #fff !important;
-    }
-
-    .dashboard-stat {
-        background: rgba(0, 0, 0, 0.6) !important;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        transition: transform 0.3s ease, background 0.3s ease;
-    }
-
-    .dashboard-stat:hover {
-        transform: scale(1.05);
-        background: rgba(0, 0, 0, 0.8) !important;
-    }
-
-    /* Info Cards Section */
-    .info-section {
-        margin-top: 40px;
-    }
-
-    .info-card {
-        background: rgba(255, 255, 255, 0.15);
-        border-radius: 15px;
-        padding: 25px;
-        color: #fff;
-        backdrop-filter: blur(6px);
-        text-align: center;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    }
-
-    .info-card:hover {
-        background: rgba(255, 255, 255, 0.25);
-        transform: translateY(-5px);
-    }
-
-    .info-card i {
-        font-size: 40px;
-        color: #00b4ff;
-        margin-bottom: 15px;
-    }
-
-    .info-card h5 {
-        font-weight: bold;
-        margin-bottom: 10px;
-    }
-
-    footer {
-        background-color: rgba(0, 0, 0, 0.85);
-        color: #fff;
-        padding: 15px 0;
-        text-align: center;
-        margin-top: 50px;
-    }
-    </style>
 </head>
 
-<body class="top-navbar-fixed">
+<body class="top-navbar-fixed dashboard-page">
     <div class="main-wrapper">
         <?php include('includes/topbar.php');?>
         <div class="content-wrapper">
@@ -140,14 +63,17 @@ $pendingResults = max(0, ((int)$totalStudents) - ((int)$resultsSubmitted));
                                 <p class="text-white">Academic Year: <?php echo $activePeriod ? htmlentities($activePeriod->AcademicYear) : 'Not set'; ?> | Term: <?php echo $activePeriod ? htmlentities($activePeriod->TermName) : 'Not set'; ?></p>
                             </div>
                             <div class="col-sm-6 text-right">
-                                <a href="manage-teachers.php" class="btn btn-primary" style="margin-top:20px;">
+                                <a href="dean-academics.php" class="btn btn-primary action-top-md">
+                                    <i class="fa fa-graduation-cap"></i> Open Academic Workspace
+                                </a>
+                                <a href="manage-teachers.php" class="btn btn-primary action-top-md">
                                     <i class="fa fa-user-circle"></i> Manage Teachers
                                 </a>
                             </div>
                         </div>
                     </div>
 
-                    <section class="section">
+                    <section class="section"><?php include 'includes/academic-overview.php'; ?>
                         <div class="container-fluid">
                             <div class="row">
 
@@ -170,7 +96,7 @@ $pendingResults = max(0, ((int)$totalStudents) - ((int)$resultsSubmitted));
                                 </div>
 
                                 <!-- Classes -->
-                                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12" style="margin-top:1%;">
+                                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 dashboard-stat-spaced">
                                     <a class="dashboard-stat bg-warning" href="manage-classes.php">
                                         <span class="number counter"><?php echo htmlentities($totalClasses);?></span>
                                         <span class="name">Total Classes</span>
@@ -179,7 +105,7 @@ $pendingResults = max(0, ((int)$totalStudents) - ((int)$resultsSubmitted));
                                 </div>
 
                                 <!-- Results -->
-                                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12" style="margin-top:1%;">
+                                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 dashboard-stat-spaced">
                                     <a class="dashboard-stat bg-success" href="manage-results.php">
                                         <span class="number counter"><?php echo htmlentities($totalSubjects);?></span>
                                         <span class="name">Total Subjects</span>
@@ -187,7 +113,7 @@ $pendingResults = max(0, ((int)$totalStudents) - ((int)$resultsSubmitted));
                                     </a>
                                 </div>
 
-                                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12" style="margin-top:1%;">
+                                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 dashboard-stat-spaced">
                                     <a class="dashboard-stat bg-primary" href="manage-exams.php">
                                         <span class="number counter"><?php echo htmlentities($activeExamCount);?></span>
                                         <span class="name">Active Examinations</span>
@@ -195,7 +121,7 @@ $pendingResults = max(0, ((int)$totalStudents) - ((int)$resultsSubmitted));
                                     </a>
                                 </div>
 
-                                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12" style="margin-top:1%;">
+                                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 dashboard-stat-spaced">
                                     <a class="dashboard-stat bg-success" href="manage-results.php">
                                         <span class="number counter"><?php echo htmlentities($resultsSubmitted);?></span>
                                         <span class="name">Results Submitted</span>
@@ -203,7 +129,7 @@ $pendingResults = max(0, ((int)$totalStudents) - ((int)$resultsSubmitted));
                                     </a>
                                 </div>
 
-                                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12" style="margin-top:1%;">
+                                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 dashboard-stat-spaced">
                                     <a class="dashboard-stat bg-warning" href="dean-result-approvals.php">
                                         <span class="number counter"><?php echo htmlentities($classesAwaitingApproval);?></span>
                                         <span class="name">Classes Awaiting Approval</span>
@@ -211,7 +137,7 @@ $pendingResults = max(0, ((int)$totalStudents) - ((int)$resultsSubmitted));
                                     </a>
                                 </div>
 
-                                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12" style="margin-top:1%;">
+                                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 dashboard-stat-spaced">
                                     <a class="dashboard-stat bg-danger" href="dean-result-approvals.php">
                                         <span class="number counter"><?php echo htmlentities($schoolMean ?: 0);?></span>
                                         <span class="name">School Mean Performance</span>
@@ -219,7 +145,7 @@ $pendingResults = max(0, ((int)$totalStudents) - ((int)$resultsSubmitted));
                                     </a>
                                 </div>
 
-                                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12" style="margin-top:1%;">
+                                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 dashboard-stat-spaced">
                                     <a class="dashboard-stat bg-primary" href="dean-class-timetable.php">
                                         <span class="number counter"><?php echo htmlentities($classesScheduled);?> / <?php echo htmlentities($totalClasses);?></span>
                                         <span class="name">Classes Scheduled</span>
@@ -227,7 +153,7 @@ $pendingResults = max(0, ((int)$totalStudents) - ((int)$resultsSubmitted));
                                     </a>
                                 </div>
 
-                                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12" style="margin-top:1%;">
+                                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 dashboard-stat-spaced">
                                     <a class="dashboard-stat bg-warning" href="dean-exam-timetable.php">
                                         <span class="number"><?php echo htmlentities($examTimetableStatus ? ucfirst(str_replace('_', ' ', $examTimetableStatus)) : 'Draft');?></span>
                                         <span class="name">Exam Timetable</span>
@@ -235,7 +161,7 @@ $pendingResults = max(0, ((int)$totalStudents) - ((int)$resultsSubmitted));
                                     </a>
                                 </div>
 
-                                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12" style="margin-top:1%;">
+                                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 dashboard-stat-spaced">
                                     <a class="dashboard-stat bg-success" href="manage-teachers.php">
                                         <span class="number counter"><?php echo htmlentities($activeTeachers);?></span>
                                         <span class="name">Active Teachers</span>
@@ -243,7 +169,7 @@ $pendingResults = max(0, ((int)$totalStudents) - ((int)$resultsSubmitted));
                                     </a>
                                 </div>
 
-                                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12" style="margin-top:1%;">
+                                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 dashboard-stat-spaced">
                                     <a class="dashboard-stat bg-danger" href="manage-teachers.php">
                                         <span class="number counter"><?php echo htmlentities($inactiveTeachers);?></span>
                                         <span class="name">Inactive Teachers</span>

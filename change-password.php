@@ -4,7 +4,8 @@ error_reporting(0);
 include('includes/config.php');
 include('includes/csrf.php');
 include('includes/audit.php');
-if(strlen($_SESSION['alogin'])=="")
+include('includes/dean-account.php');
+if(empty($_SESSION['alogin']))
     {   
     header("Location: index.php"); 
     }
@@ -15,20 +16,12 @@ csrf_require_valid($_POST['csrf_token'] ?? '');
 $password=$_POST['password'];
 $newpassword=password_hash($_POST['newpassword'], PASSWORD_DEFAULT);
 $username=$_SESSION['alogin'];
-    $sql ="SELECT Password FROM admin WHERE UserName=:username LIMIT 1";
-$query= $dbh -> prepare($sql);
-$query-> bindParam(':username', $username, PDO::PARAM_STR);
-$query-> execute();
-$result = $query -> fetch(PDO::FETCH_OBJ);
+$result = dean_find_by_username($dbh, $username);
 $passwordMatches = $result && (password_verify($password, $result->Password) || hash_equals($result->Password, md5($password)));
 if($passwordMatches)
 {
-$con="update admin set Password=:newpassword where UserName=:username";
-$chngpwd1 = $dbh->prepare($con);
-$chngpwd1-> bindParam(':username', $username, PDO::PARAM_STR);
-$chngpwd1-> bindParam(':newpassword', $newpassword, PDO::PARAM_STR);
-$chngpwd1->execute();
-audit_log($dbh, 'dean_password_changed', 'admin', $username, 'Dean changed password');
+dean_update_password($dbh, $username, $newpassword);
+audit_log($dbh, 'dean_password_changed', 'dean', $username, 'Dean changed password');
 $msg="Your password was successfully changed";
 }
 else {
@@ -49,6 +42,7 @@ $error="Your current password is wrong";
         <link rel="stylesheet" href="css/lobipanel/lobipanel.min.css" media="screen" >
         <link rel="stylesheet" href="css/prism/prism.css" media="screen" > <!-- USED FOR DEMO HELP - YOU CAN REMOVE IT -->
         <link rel="stylesheet" href="css/main.css" media="screen" >
+        <link rel="stylesheet" href="css/custom.css" media="screen">
         <script src="js/modernizr/modernizr.min.js"></script>
         <script type="text/javascript">
 function valid()
@@ -62,24 +56,6 @@ return false;
 return true;
 }
 </script>
-         <style>
-        .errorWrap {
-    padding: 10px;
-    margin: 0 0 20px 0;
-    background: #fff;
-    border-left: 4px solid #dd3d36;
-    -webkit-box-shadow: 0 1px 1px 0 rgba(0,0,0,.1);
-    box-shadow: 0 1px 1px 0 rgba(0,0,0,.1);
-}
-.succWrap{
-    padding: 10px;
-    margin: 0 0 20px 0;
-    background: #fff;
-    border-left: 4px solid #5cb85c;
-    -webkit-box-shadow: 0 1px 1px 0 rgba(0,0,0,.1);
-    box-shadow: 0 1px 1px 0 rgba(0,0,0,.1);
-}
-        </style>
     </head>
     <body class="top-navbar-fixed">
         <div class="main-wrapper">

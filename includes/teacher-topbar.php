@@ -8,7 +8,7 @@ $teacherRecentNotifications = function_exists('teacher_id') ? notification_recen
     <div class="container-fluid">
         <div class="row">
             <div class="navbar-header no-padding">
-                <a class="navbar-brand" href="<?php echo ($_SESSION['teacher_role'] ?? '') === 'class_teacher' ? 'teacher-dashboard.php' : 'teacher-notifications.php'; ?>">SRMS | <?php echo htmlentities(function_exists('teacher_role_label') ? teacher_role_label() : 'Teacher'); ?></a>
+                <a class="navbar-brand" href="<?php echo teacher_class_id() ? 'teacher-dashboard.php' : 'teacher-academic-assignments.php'; ?>">SRMS | <?php echo htmlentities(function_exists('teacher_role_label') ? teacher_role_label() : 'Teacher'); ?></a>
                 <span class="small-nav-handle hidden-sm hidden-xs"><i class="fa fa-outdent"></i></span>
                 <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse-1" aria-expanded="false">
                     <span class="sr-only">Toggle navigation</span>
@@ -23,14 +23,14 @@ $teacherRecentNotifications = function_exists('teacher_id') ? notification_recen
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
                             <i class="fa fa-bell"></i>
-                            <span id="teacher-notification-badge" class="badge badge-danger" style="<?php echo $teacherNotificationCount > 0 ? '' : 'display:none;'; ?>"><?php echo $teacherNotificationCount > 0 ? htmlentities($teacherNotificationCount) : ''; ?></span>
+                            <span id="teacher-notification-badge" class="badge badge-danger <?php echo $teacherNotificationCount > 0 ? '' : 'badge-hidden'; ?>"><?php echo $teacherNotificationCount > 0 ? htmlentities($teacherNotificationCount) : ''; ?></span>
                         </a>
-                        <ul class="dropdown-menu" style="width:320px; max-height:420px; overflow:auto;">
+                        <ul class="dropdown-menu dropdown-notifications">
                             <li class="dropdown-header">
                                 Notifications
-                                <form method="post" action="teacher-notifications.php" class="pull-right" style="display:inline;">
+                                <form method="post" action="teacher-notifications.php" class="pull-right form-inline-action">
                                     <?php csrf_field(); ?>
-                                    <button type="submit" name="mark_all_read" class="btn btn-link btn-xs" style="padding:0;">Mark all as read</button>
+                                    <button type="submit" name="mark_all_read" class="btn btn-link btn-xs btn-link-reset">Mark all as read</button>
                                 </form>
                             </li>
                             <li class="divider"></li>
@@ -40,7 +40,7 @@ $teacherRecentNotifications = function_exists('teacher_id') ? notification_recen
                                     $isUnread = $note->ReadAt === null;
                             ?>
                                 <li>
-                                    <a href="teacher-notifications.php?action=open&id=<?php echo htmlentities($note->id); ?>&redirect=<?php echo urlencode($noteUrl); ?>" style="<?php echo $isUnread ? 'font-weight:600;' : ''; ?>">
+                                    <a href="teacher-notifications.php?action=open&id=<?php echo htmlentities($note->id); ?>&redirect=<?php echo urlencode($noteUrl); ?>" class="<?php echo $isUnread ? 'link-strong' : ''; ?>">
                                         <?php echo $isUnread ? '<i class="fa fa-circle text-primary"></i> ' : '<i class="fa fa-check text-muted"></i> '; ?>
                                         <?php echo htmlentities($note->Title); ?><br>
                                         <small class="text-muted"><?php echo htmlentities(substr($note->Message, 0, 72)); ?></small>

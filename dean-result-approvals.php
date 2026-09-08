@@ -44,6 +44,7 @@ if(isset($_POST['decision'])) {
     <link rel="stylesheet" href="css/font-awesome.min.css" media="screen">
     <link rel="stylesheet" type="text/css" href="js/DataTables/datatables.min.css">
     <link rel="stylesheet" href="css/main.css" media="screen">
+    <link rel="stylesheet" href="css/custom.css" media="screen">
 </head>
 <body class="top-navbar-fixed">
 <div class="main-wrapper">
@@ -90,9 +91,9 @@ foreach($query->fetchAll(PDO::FETCH_OBJ) as $row) { ?>
             <input type="hidden" name="classid" value="<?php echo htmlentities($row->ClassId); ?>">
             <input type="hidden" name="examid" value="<?php echo htmlentities($row->ExamId); ?>">
             <input type="text" name="reason" class="form-control input-sm" placeholder="Reason if rejecting or returning">
-            <button type="submit" name="decision" value="approve" class="btn btn-xs btn-success" style="margin-top:4px;">Approve</button>
-            <button type="submit" name="decision" value="publish" class="btn btn-xs btn-primary" style="margin-top:4px;">Publish</button>
-            <button type="submit" name="decision" value="reject" class="btn btn-xs btn-warning" style="margin-top:4px;">Return</button>
+            <button type="submit" name="decision" value="approve" class="btn btn-xs btn-success action-top-sm">Approve</button>
+            <button type="submit" name="decision" value="publish" class="btn btn-xs btn-primary action-top-sm">Publish</button>
+            <button type="submit" name="decision" value="reject" class="btn btn-xs btn-warning action-top-sm">Return</button>
         </form>
     </td>
 </tr>

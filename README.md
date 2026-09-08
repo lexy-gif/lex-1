@@ -60,3 +60,12 @@ Author
 Alex Mwangi
 
 Networking | Cloud | DevOps
+# Teacher academic relationships
+
+See [Relational teacher management](docs/RELATIONAL_TEACHER_MANAGEMENT.md) for Dean workflows, student subject registration, migrations and validation commands.
+
+# Dean academic workspace
+
+After signing in, choose **Open Academic Workspace** on the Dean dashboard or **Academic Workspace** in the sidebar. The workspace is at [http://localhost:5000/dean-academics.php](http://localhost:5000/dean-academics.php). Teachers have a **My Academic Workspace** sidebar link.
+
+See [CBE workspace usage and validation](docs/CBE_WORKSPACE.md) for the current flows, database prerequisite, checks and remaining integration work.

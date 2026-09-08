@@ -1,38 +1,26 @@
 <?php
 session_start();
-error_reporting(0);
-include('includes/config.php');
-include('includes/csrf.php');
-if(strlen($_SESSION['alogin'])=="")
-    {   
-    header("Location: index.php"); 
-    }
-    else{
+require_once 'includes/config.php';
+require_once 'includes/csrf.php';
+require_once 'includes/dean-auth.php';
+require_once 'includes/cbe-academics.php';
+require_dean();
+$msg=$error='';
+$classValues=['ClassName'=>'','GradeId'=>'','Section'=>''];
+$grades=cbe_rows($dbh,'SELECT id,Name,Status FROM tblgrades WHERE Status=1 ORDER BY GradeNumber');
 if(isset($_POST['submit']))
 {
 csrf_require_valid($_POST['csrf_token'] ?? '');
-$classname=$_POST['classname'];
-$classnamenumeric=$_POST['classnamenumeric']; 
-$section=$_POST['section'];
-if($classnamenumeric < 1 || $classnamenumeric > 9) {
-    $error="Grade numeric must be between 1 and 9";
-} else {
-$sql="INSERT INTO  tblclasses(ClassName,ClassNameNumeric,Section) VALUES(:classname,:classnamenumeric,:section)";
-$query = $dbh->prepare($sql);
-$query->bindParam(':classname',$classname,PDO::PARAM_STR);
-$query->bindParam(':classnamenumeric',$classnamenumeric,PDO::PARAM_STR);
-$query->bindParam(':section',$section,PDO::PARAM_STR);
-$query->execute();
-$lastInsertId = $dbh->lastInsertId();
-if($lastInsertId)
-{
-$msg="Class Created successfully";
-}
-else 
-{
-$error="Something went wrong. Please try again";
-}
-
+$classValues=['ClassName'=>$_POST['classname']??'','GradeId'=>$_POST['GradeId']??'','Section'=>$_POST['section']??''];
+try {
+    $dbh->beginTransaction();
+    cbe_save_class($dbh,$classValues);
+    $dbh->commit();
+    $msg='Class Created successfully';
+} catch(Throwable $e) {
+    if($dbh->inTransaction())$dbh->rollBack();
+    $error=$e instanceof DomainException?$e->getMessage():'Could not save the class. Please try again.';
+    error_log($e->getMessage());
 }
 }
 ?>
@@ -49,25 +37,8 @@ $error="Something went wrong. Please try again";
         <link rel="stylesheet" href="css/lobipanel/lobipanel.min.css" media="screen" >
         <link rel="stylesheet" href="css/prism/prism.css" media="screen" > <!-- USED FOR DEMO HELP - YOU CAN REMOVE IT -->
         <link rel="stylesheet" href="css/main.css" media="screen" >
+        <link rel="stylesheet" href="css/custom.css" media="screen">
         <script src="js/modernizr/modernizr.min.js"></script>
-         <style>
-        .errorWrap {
-    padding: 10px;
-    margin: 0 0 20px 0;
-    background: #fff;
-    border-left: 4px solid #dd3d36;
-    -webkit-box-shadow: 0 1px 1px 0 rgba(0,0,0,.1);
-    box-shadow: 0 1px 1px 0 rgba(0,0,0,.1);
-}
-.succWrap{
-    padding: 10px;
-    margin: 0 0 20px 0;
-    background: #fff;
-    border-left: 4px solid #5cb85c;
-    -webkit-box-shadow: 0 1px 1px 0 rgba(0,0,0,.1);
-    box-shadow: 0 1px 1px 0 rgba(0,0,0,.1);
-}
-        </style>
     </head>
     <body class="top-navbar-fixed">
         <div class="main-wrapper">
@@ -87,7 +58,7 @@ $error="Something went wrong. Please try again";
                         <div class="container-fluid">
                             <div class="row page-title-div">
                                 <div class="col-md-6">
-                                    <h2 class="title">Create Grade</h2>
+                                    <h2 class="title">Create Class</h2>
                                 </div>
                                 
                             </div>
@@ -118,7 +89,7 @@ $error="Something went wrong. Please try again";
                                         <div class="panel">
                                             <div class="panel-heading">
                                                 <div class="panel-title">
-                                                    <h5>Create Grade</h5>
+                                                    <h5>Create Class</h5>
                                                 </div>
                                             </div>
            <?php if($msg){?>
@@ -135,27 +106,7 @@ else if($error){?>
 
                                                 <form method="post">
                                                     <?php csrf_field(); ?>
-                                                    <div class="form-group has-success">
-                                                        <label for="success" class="control-label">Grade Name</label>
-                                                		<div class="">
-                                                			<input type="text" name="classname" class="form-control" required="required" id="success">
-                                                            <span class="help-block">Eg- Grade 1, Grade 2, Grade 9 etc</span>
-                                                		</div>
-                                                	</div>
-                                                       <div class="form-group has-success">
-                                                        <label for="success" class="control-label">Grade Numeric</label>
-                                                        <div class="">
-                                                            <input type="number" name="classnamenumeric" min="1" max="9" required="required" class="form-control" id="success">
-                                                            <span class="help-block">Eg- 1, 2, 3, up to 9</span>
-                                                        </div>
-                                                    </div>
-                                                     <div class="form-group has-success">
-                                                        <label for="success" class="control-label">Section</label>
-                                                        <div class="">
-                                                            <input type="text" name="section" class="form-control" required="required" id="success">
-                                                            <span class="help-block">Eg- A,B,C etc</span>
-                                                        </div>
-                                                    </div>
+                                                    <?php include 'includes/cbe-class-fields.php'; ?>
   <div class="form-group has-success">
 
                                                         <div class="">
@@ -212,4 +163,3 @@ else if($error){?>
         <!-- ========== ADD custom.js FILE BELOW WITH YOUR CHANGES ========== -->
     </body>
 </html>
-<?php  } ?>

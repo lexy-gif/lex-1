@@ -57,6 +57,7 @@ $selectedExamId = isset($_GET['examid']) ? intval($_GET['examid']) : ($exams[0]-
     <link rel="stylesheet" href="css/font-awesome.min.css" media="screen">
     <link rel="stylesheet" type="text/css" href="js/DataTables/datatables.min.css">
     <link rel="stylesheet" href="css/main.css" media="screen">
+    <link rel="stylesheet" href="css/custom.css" media="screen">
 </head>
 <body class="top-navbar-fixed">
 <div class="main-wrapper">
@@ -109,12 +110,12 @@ $selectedExamId = isset($_GET['examid']) ? intval($_GET['examid']) : ($exams[0]-
                     <input type="hidden" name="studentid" value="<?php echo htmlentities($student->StudentId); ?>">
                     <input type="hidden" name="examid" value="<?php echo htmlentities($selectedExamId); ?>">
                     <textarea name="comment" class="form-control" rows="2" placeholder="Teacher comment" required><?php echo htmlentities($student->CommentText); ?></textarea>
-                    <select name="status" class="form-control input-sm" style="margin-top:4px;">
+                    <select name="status" class="form-control input-sm action-top-sm">
                         <option value="draft">Draft</option>
                         <option value="submitted">Submit</option>
                     </select>
-                    <button type="submit" name="save_comment" class="btn btn-xs btn-primary" style="margin-top:4px;">Save</button>
-                    <button type="button" onclick="window.print();" class="btn btn-xs btn-default" style="margin-top:4px;">Print</button>
+                    <button type="submit" name="save_comment" class="btn btn-xs btn-primary action-top-sm">Save</button>
+                    <button type="button" onclick="window.print();" class="btn btn-xs btn-default action-top-sm">Print</button>
                 </form>
             </td>
         </tr>

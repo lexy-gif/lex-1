@@ -7,6 +7,8 @@ include('includes/audit.php');
 include('includes/dean-auth.php');
 include('includes/notification-service.php');
 require_dean();
+require_once 'includes/academic-assignments.php';
+require_once 'includes/academic-teacher-summary.php';
 
 $teacherRoles = array(
     'class_teacher' => 'Class Teacher',
@@ -22,8 +24,8 @@ function teacher_assignment_counts($dbh, $teacherId)
 {
     $lessonQuery = $dbh->prepare("SELECT COUNT(*) FROM tblclasstimetableentries WHERE TeacherId = :teacherid AND Status <> 'cancelled'");
     $lessonQuery->execute(array(':teacherid' => $teacherId));
-    $examQuery = $dbh->prepare("SELECT COUNT(*) FROM tblexamtimetableentries WHERE InvigilatorId = :teacherid AND Status <> 'cancelled'");
-    $examQuery->execute(array(':teacherid' => $teacherId));
+    $examQuery = $dbh->prepare("SELECT COUNT(*) FROM tblexamtimetableentries e WHERE (e.InvigilatorId=:teacherid OR EXISTS(SELECT 1 FROM tblexaminvigilators i WHERE i.SessionId=e.id AND i.TeacherId=:memberid)) AND e.Status NOT IN ('cancelled','archived')");
+    $examQuery->execute(array(':teacherid' => $teacherId, ':memberid' => $teacherId));
     return array('lessons' => (int)$lessonQuery->fetchColumn(), 'exams' => (int)$examQuery->fetchColumn());
 }
 
@@ -43,8 +45,8 @@ if(isset($_POST['submit'])) {
     $email = notification_normalize_email($_POST['email']);
     $phoneNumber = trim($_POST['phonenumber']);
     $department = trim($_POST['department']);
-    $role = $_POST['role'];
-    $classId = $_POST['class'] === '' ? null : $_POST['class'];
+    $role = $_POST['role'] ?? 'subject_teacher';
+    $classId = null; // Academic class assignments are stored separately.
     $password = $_POST['password'];
     $confirmPassword = $_POST['confirmpassword'];
     $status = $_POST['status'];
@@ -57,10 +59,14 @@ if(isset($_POST['submit'])) {
         $error = "Please enter a valid email address.";
     } elseif(!isset($teacherRoles[$role])) {
         $error = "Please select a valid teacher role.";
+    } elseif(strlen($password) < 8) {
+        $error = "Password must be at least 8 characters.";
     } elseif($password !== $confirmPassword) {
         $error = "Password and confirm password do not match.";
     } else {
         try {
+            if (!in_array((string)$status, ['0','1'], true)) throw new DomainException('Select a valid account status.');
+            $dbh->beginTransaction();
             $sql = "INSERT INTO tblusers(FirstName, MiddleName, LastName, FullName, StaffNumber, Username, Email, PhoneNumber, PasswordHash, MustChangePassword, Role, Department, ClassId, Status, CreatedBy)
                     VALUES(:firstname, :middlename, :lastname, :fullname, :staffnumber, :username, :email, :phonenumber, :passwordhash, 1, :role, :department, :classid, :status, :createdby)";
             $query = $dbh->prepare($sql);
@@ -81,6 +87,7 @@ if(isset($_POST['submit'])) {
                 ':createdby' => $createdBy
             ));
             $teacherId = $dbh->lastInsertId();
+            if(academic_ready($dbh)) academic_creation_assignments($dbh, $teacherId, $_POST);
             notification_create($dbh, $teacherId, 'Welcome to the School SRMS', "Hello " . $fullName . ",\n\nAn account has been created for you on the Student Result Management System.\n\nUsername: " . $username . "\nRole: " . $teacherRoles[$role] . "\n\nPlease log into the SRMS to access your assigned classes, subjects, timetables and academic activities.\n\nFor security reasons, your password is not included in this email.", array(
                 'category' => 'ACCOUNT',
                 'type' => 'TEACHER_ACCOUNT_CREATED',
@@ -89,9 +96,12 @@ if(isset($_POST['submit'])) {
                 'action_url' => 'teacher-profile.php'
             ));
             audit_log($dbh, 'teacher_account_created', 'tblusers', $teacherId, 'Role: ' . $role . ', Staff Number: ' . $staffNumber);
-            $msg = "Teacher account created successfully.";
+            $dbh->commit();
+            $_SESSION['teacher_created_notice'] = 'Teacher account and assignments created successfully.';
+            header('Location: manage-teachers.php'); exit;
         } catch(Exception $e) {
-            $error = "Could not create teacher. Check duplicate username, staff number, or email.";
+            if($dbh->inTransaction()) $dbh->rollBack();
+            $error = $e instanceof DomainException ? $e->getMessage() : 'Could not create teacher. Check duplicate username, staff number, or email.';
         }
     }
 }
@@ -150,11 +160,12 @@ if(isset($_POST['reset_password'])) {
     }
 }
 
+if(isset($_SESSION['teacher_created_notice'])) { $msg=$_SESSION['teacher_created_notice']; unset($_SESSION['teacher_created_notice']); }
 $summary = array();
 $summary['total'] = $dbh->query("SELECT COUNT(*) FROM tblusers WHERE Role IN ($roleSql)")->fetchColumn();
 $summary['active'] = $dbh->query("SELECT COUNT(*) FROM tblusers WHERE Role IN ($roleSql) AND Status = 1")->fetchColumn();
 $summary['inactive'] = $dbh->query("SELECT COUNT(*) FROM tblusers WHERE Role IN ($roleSql) AND Status = 0")->fetchColumn();
-$summary['classTeachers'] = $dbh->query("SELECT COUNT(*) FROM tblusers WHERE Role = 'class_teacher'")->fetchColumn();
+$summary['classTeachers'] = academic_ready($dbh) ? academic_query($dbh, 'SELECT COUNT(DISTINCT TeacherId) FROM tblclassteacherassignments WHERE Status=1 AND AcademicYearId=?', [academic_year($dbh)])->fetchColumn() : 0;
 $summary['hods'] = $dbh->query("SELECT COUNT(*) FROM tblusers WHERE Role = 'head_of_department'")->fetchColumn();
 
 $search = trim($_GET['search'] ?? '');
@@ -180,8 +191,11 @@ if($statusFilter === 'active' || $statusFilter === 'inactive') {
     $params[':status'] = $statusFilter === 'active' ? 1 : 0;
 }
 if($roleFilter !== 'all' && isset($teacherRoles[$roleFilter])) {
-    $where .= " AND u.Role = :role";
-    $params[':role'] = $roleFilter;
+    if (academic_ready($dbh) && in_array($roleFilter,['class_teacher','subject_teacher'],true)) {
+        $assignmentTable=$roleFilter==='class_teacher'?'tblclassteacherassignments':'tblsubjectteacherassignments';
+        $where .= " AND EXISTS (SELECT 1 FROM $assignmentTable a WHERE a.TeacherId=u.id AND a.Status=1 AND a.AcademicYearId=:role_year)";
+        $params[':role_year']=academic_year($dbh);
+    } else { $where .= " AND u.Role = :role"; $params[':role'] = $roleFilter; }
 }
 
 $countQuery = $dbh->prepare("SELECT COUNT(*) FROM tblusers u $where");
@@ -191,7 +205,7 @@ $totalPages = max(1, (int)ceil($totalRows / $perPage));
 
 $sql = "SELECT u.id, u.FullName, u.Username, u.Email, u.StaffNumber, u.Department, u.Role, u.Status, u.CreationDate, u.LastLoginAt, c.ClassName, c.Section,
         (SELECT COUNT(*) FROM tblclasstimetableentries t WHERE t.TeacherId = u.id AND t.Status <> 'cancelled') AS LessonCount,
-        (SELECT COUNT(*) FROM tblexamtimetableentries et WHERE et.InvigilatorId = u.id AND et.Status <> 'cancelled') AS ExamDutyCount
+        (SELECT COUNT(*) FROM tblexamtimetableentries et WHERE (et.InvigilatorId=u.id OR EXISTS(SELECT 1 FROM tblexaminvigilators i WHERE i.SessionId=et.id AND i.TeacherId=u.id)) AND et.Status NOT IN ('cancelled','archived')) AS ExamDutyCount
         FROM tblusers u
         LEFT JOIN tblclasses c ON c.id = u.ClassId
         $where
@@ -212,18 +226,7 @@ $departments = $dbh->query("SELECT DISTINCT Department FROM tblusers WHERE Role 
     <link rel="stylesheet" href="css/bootstrap.min.css" media="screen">
     <link rel="stylesheet" href="css/font-awesome.min.css" media="screen">
     <link rel="stylesheet" href="css/main.css" media="screen">
-    <style>
-        .summary-box { background:#fff; border:1px solid #ddd; padding:15px; margin-bottom:15px; min-height:88px; }
-        .summary-box .number { font-size:26px; font-weight:700; display:block; }
-        .status-badge { display:inline-block; padding:4px 8px; border-radius:3px; font-weight:600; font-size:12px; }
-        .status-active { background:#dff0d8; color:#2f6f2f; }
-        .status-inactive { background:#f2dede; color:#8a1f11; }
-        .teacher-card { display:none; background:#fff; border:1px solid #ddd; padding:12px; margin-bottom:10px; }
-        @media (max-width: 767px) {
-            .teacher-table-wrapper { display:none; }
-            .teacher-card { display:block; }
-        }
-    </style>
+    <link rel="stylesheet" href="css/custom.css" media="screen">
 </head>
 <body class="top-navbar-fixed">
 <div class="main-wrapper">
@@ -236,6 +239,7 @@ $departments = $dbh->query("SELECT DISTINCT Department FROM tblusers WHERE Role 
     <div class="col-md-4 text-right"><a href="#create-teacher" class="btn btn-primary"><i class="fa fa-plus"></i> Create Teacher</a></div>
 </div>
 <section class="section">
+<?php include 'includes/academic-overview.php'; ?>
 <?php if($msg){?><div class="alert alert-success"><?php echo htmlentities($msg); ?></div><?php } ?>
 <?php if($error){?><div class="alert alert-danger"><?php echo htmlentities($error); ?></div><?php } ?>
 
@@ -252,7 +256,7 @@ $departments = $dbh->query("SELECT DISTINCT Department FROM tblusers WHERE Role 
     <div class="col-sm-4"><div class="form-group"><label>Search</label><input type="text" name="search" class="form-control" value="<?php echo htmlentities($search); ?>" placeholder="Name, staff no., email, username, department"></div></div>
     <div class="col-sm-3"><div class="form-group"><label>Department</label><select name="department" class="form-control"><option value="">All Departments</option><?php foreach($departments as $dept){ ?><option value="<?php echo htmlentities($dept); ?>" <?php echo $department === $dept ? 'selected' : ''; ?>><?php echo htmlentities($dept); ?></option><?php } ?></select></div></div>
     <div class="col-sm-2"><div class="form-group"><label>Status</label><select name="status" class="form-control"><option value="all">All</option><option value="active" <?php echo $statusFilter === 'active' ? 'selected' : ''; ?>>Active</option><option value="inactive" <?php echo $statusFilter === 'inactive' ? 'selected' : ''; ?>>Inactive</option></select></div></div>
-    <div class="col-sm-3"><div class="form-group"><label>Role</label><select name="role" class="form-control"><option value="all">All Roles</option><?php foreach($teacherRoles as $key => $label){ ?><option value="<?php echo htmlentities($key); ?>" <?php echo $roleFilter === $key ? 'selected' : ''; ?>><?php echo htmlentities($label); ?></option><?php } ?></select></div></div>
+        <input type="hidden" name="role" value="subject_teacher">
     <div class="col-sm-12"><button type="submit" class="btn btn-primary">Apply Filters</button> <a href="manage-teachers.php" class="btn btn-default">Clear</a> <a href="teacher-departments.php" class="btn btn-default">Departments</a></div>
 </form>
 </div></div>
@@ -263,7 +267,7 @@ $departments = $dbh->query("SELECT DISTINCT Department FROM tblusers WHERE Role 
 </form>
 <div class="teacher-table-wrapper">
 <table class="table table-striped table-bordered">
-    <thead><tr><th><input type="checkbox" id="select-all"></th><th>Teacher</th><th>Staff Number</th><th>Email</th><th>Department</th><th>Role</th><th>Class Teacher Of</th><th>Assignments</th><th>Status</th><th>Last Login</th><th>Actions</th></tr></thead>
+    <thead><tr><th><input type="checkbox" id="select-all"></th><th>Teacher</th><th>Staff Number</th><th>Email</th><th>Department</th><th>Account Category</th><th>Class Teacher Of</th><th>Assignments</th><th>Status</th><th>Last Login</th><th>Actions</th></tr></thead>
     <tbody>
     <?php foreach($teachers as $teacher) {
         $counts = teacher_assignment_counts($dbh, $teacher->id);
@@ -275,25 +279,25 @@ $departments = $dbh->query("SELECT DISTINCT Department FROM tblusers WHERE Role 
             <td><?php echo htmlentities($teacher->StaffNumber); ?></td>
             <td><?php echo htmlentities($teacher->Email); ?></td>
             <td><?php echo htmlentities($teacher->Department); ?></td>
-            <td><?php echo htmlentities($teacherRoles[$teacher->Role] ?? $teacher->Role); ?></td>
-            <td><?php echo $teacher->ClassName ? htmlentities($teacher->ClassName . ' Section-' . $teacher->Section) : '-'; ?></td>
-            <td><?php echo htmlentities($teacher->LessonCount); ?> lessons/week<br><?php echo htmlentities($teacher->ExamDutyCount); ?> exam duties</td>
+            <td><?php echo in_array($teacher->Role,['class_teacher','subject_teacher'],true) ? 'Teacher' : htmlentities($teacherRoles[$teacher->Role] ?? $teacher->Role); ?></td>
+            <td><?php if(academic_ready($dbh)) { $names=academic_query($dbh,'SELECT CONCAT(c.ClassName," ",c.Section) FROM tblclassteacherassignments a JOIN tblclasses c ON c.id=a.ClassId WHERE a.TeacherId=? AND a.AcademicYearId=? AND a.Status=1',[$teacher->id,academic_year($dbh)])->fetchAll(PDO::FETCH_COLUMN); echo academic_h(implode(", ",$names)); } ?></td>
+            <td><?php academic_teacher_summary($dbh,(int)$teacher->id); ?><?php echo htmlentities($teacher->LessonCount); ?> lessons/week<br><?php echo htmlentities($teacher->ExamDutyCount); ?> exam duties</td>
             <td><span class="status-badge <?php echo $teacher->Status ? 'status-active' : 'status-inactive'; ?>"><?php echo teacher_status_label($teacher->Status); ?></span></td>
             <td><?php echo $teacher->LastLoginAt ? htmlentities($teacher->LastLoginAt) : 'Never Logged In'; ?></td>
             <td>
                 <a href="view-teacher.php?id=<?php echo htmlentities($teacher->id); ?>" class="btn btn-xs btn-default">View</a>
                 <a href="edit-teacher.php?id=<?php echo htmlentities($teacher->id); ?>" class="btn btn-xs btn-primary">Edit</a>
-                <a href="teacher-assignments.php?id=<?php echo htmlentities($teacher->id); ?>" class="btn btn-xs btn-info">Assignments</a>
-                <form method="post" style="display:inline-block;">
+                <a href="dean-teacher-relationships.php?teacher=<?php echo htmlentities($teacher->id); ?>" class="btn btn-xs btn-info">Assignments</a>
+                <form method="post" class="form-inline-block">
                     <?php csrf_field(); ?>
                     <input type="hidden" name="teacherid" value="<?php echo htmlentities($teacher->id); ?>">
                     <input type="hidden" name="status" value="<?php echo $teacher->Status ? '0' : '1'; ?>">
                     <button type="submit" name="update_status" class="btn btn-xs btn-warning" onclick="return confirm('<?php echo $teacher->Status ? 'Deactivate ' . addslashes($teacher->FullName) . '? This teacher will no longer be able to log in. Existing records stay available. Current responsibilities: ' . addslashes($warning) : 'Activate ' . addslashes($teacher->FullName) . '?'; ?>');"><?php echo $teacher->Status ? 'Deactivate' : 'Activate'; ?></button>
                 </form>
-                <form method="post" style="display:inline-block; margin-top:4px;">
+                <form method="post" class="form-inline-block action-top-sm">
                     <?php csrf_field(); ?>
                     <input type="hidden" name="teacherid" value="<?php echo htmlentities($teacher->id); ?>">
-                    <input type="password" name="newpassword" class="form-control input-sm" placeholder="Min 8 chars" required style="width:105px; display:inline-block;">
+                    <input type="password" name="newpassword" class="form-control input-sm input-password-sm" placeholder="Min 8 chars" required>
                     <button type="submit" name="reset_password" class="btn btn-xs btn-danger">Reset</button>
                 </form>
             </td>
@@ -311,7 +315,7 @@ $departments = $dbh->query("SELECT DISTINCT Department FROM tblusers WHERE Role 
     <p>Last Login: <?php echo $teacher->LastLoginAt ? htmlentities($teacher->LastLoginAt) : 'Never Logged In'; ?></p>
     <a href="view-teacher.php?id=<?php echo htmlentities($teacher->id); ?>" class="btn btn-xs btn-default">View</a>
     <a href="edit-teacher.php?id=<?php echo htmlentities($teacher->id); ?>" class="btn btn-xs btn-primary">Edit</a>
-    <a href="teacher-assignments.php?id=<?php echo htmlentities($teacher->id); ?>" class="btn btn-xs btn-info">Assignments</a>
+    <a href="dean-teacher-relationships.php?teacher=<?php echo htmlentities($teacher->id); ?>" class="btn btn-xs btn-info">Assignments</a>
 </div>
 <?php } ?>
 
@@ -343,15 +347,15 @@ $departments = $dbh->query("SELECT DISTINCT Department FROM tblusers WHERE Role 
     </div>
     <div class="row">
         <div class="col-sm-4"><div class="form-group"><label>Username</label><input type="text" name="username" class="form-control" required></div></div>
-        <div class="col-sm-4"><div class="form-group"><label>Role</label><select name="role" class="form-control" required><?php foreach($teacherRoles as $key => $label){ ?><option value="<?php echo htmlentities($key); ?>"><?php echo htmlentities($label); ?></option><?php } ?></select></div></div>
+        <input type="hidden" name="role" value="subject_teacher">
         <div class="col-sm-4"><div class="form-group"><label>Department</label><input type="text" name="department" class="form-control"></div></div>
     </div>
     <div class="row">
-        <div class="col-sm-4"><div class="form-group"><label>Assigned Class</label><select name="class" class="form-control"><option value="">No class assignment</option><?php $classQuery = $dbh->prepare("SELECT id, ClassName, Section FROM tblclasses ORDER BY ClassNameNumeric, Section"); $classQuery->execute(); foreach($classQuery->fetchAll(PDO::FETCH_OBJ) as $class) { echo '<option value="'.htmlentities($class->id).'">'.htmlentities($class->ClassName.' Section-'.$class->Section).'</option>'; } ?></select></div></div>
         <div class="col-sm-4"><div class="form-group"><label>Password</label><input type="password" name="password" class="form-control" required></div></div>
         <div class="col-sm-4"><div class="form-group"><label>Confirm Password</label><input type="password" name="confirmpassword" class="form-control" required></div></div>
     </div>
     <div class="form-group"><label>Account Status</label><select name="status" class="form-control"><option value="1">Active</option><option value="0">Inactive</option></select></div>
+    <?php include 'includes/academic-assignment-form.php'; ?>
     <button type="submit" name="submit" class="btn btn-primary">Create Teacher</button>
 </form>
 </div></div>

@@ -3,6 +3,7 @@ session_start();
 error_reporting(0);
 include('includes/config.php');
 include('includes/csrf.php');
+require_once 'includes/cbe-learning.php';
 if(strlen($_SESSION['alogin'])=="")
     {   
     header("Location: index.php"); 
@@ -15,20 +16,22 @@ if(isset($_POST['submit']))
 {
 csrf_require_valid($_POST['csrf_token'] ?? '');
 
-$rowid=$_POST['id'];
-$marks=$_POST['marks']; 
-
-foreach($_POST['id'] as $count => $id){
-$mrks=$marks[$count];
-$iid=$rowid[$count];
-
-$sql="update tblresult  set marks=:mrks where id=:iid ";
-$query = $dbh->prepare($sql);
-$query->bindParam(':mrks',$mrks,PDO::PARAM_STR);
-$query->bindParam(':iid',$iid,PDO::PARAM_STR);
-$query->execute();
-
-$msg="Result info updated successfully";
+try {
+    $dbh->beginTransaction();
+    cbe_exam_writable($dbh,$examid);
+    $rowid=cbe_ids($_POST['id']??[]);$marks=$_POST['marks']??[];
+    if(!$rowid||!is_array($marks)||count($rowid)!==count($marks))throw new DomainException('Select valid result rows and marks.');
+    foreach($rowid as $count=>$id) {
+        $row=cbe_one($dbh,'SELECT id FROM tblresult WHERE id=? AND StudentId=? AND ExamId=? FOR UPDATE',[$id,$stid,$examid]);
+        if(!$row)throw new DomainException('A result row does not belong to this student and examination.');
+        $mark=cbe_number($marks[$count],0,100);
+        academic_query($dbh,'UPDATE tblresult SET marks=? WHERE id=? AND StudentId=? AND ExamId=?',[$mark,$id,$stid,$examid]);
+    }
+    $dbh->commit();$msg='Result info updated successfully';
+} catch(Throwable $e) {
+    if($dbh->inTransaction())$dbh->rollBack();
+    $error=$e instanceof DomainException?$e->getMessage():'Could not update the results. Please try again.';
+    if(!($e instanceof DomainException))error_log($e->getMessage());
 }
 }
 
@@ -48,6 +51,7 @@ $msg="Result info updated successfully";
             <link rel="stylesheet" href="css/prism/prism.css" media="screen">
             <link rel="stylesheet" href="css/select2/select2.min.css">
             <link rel="stylesheet" href="css/main.css" media="screen">
+    <link rel="stylesheet" href="css/custom.css" media="screen">
             <script src="js/modernizr/modernizr.min.js"></script>
 </head>
 

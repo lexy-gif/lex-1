@@ -42,8 +42,9 @@ if(isset($_POST['update'])) {
     $phoneNumber = trim($_POST['phonenumber']);
     $department = trim($_POST['department']);
     $role = $_POST['role'];
-    $classId = $_POST['class'] === '' ? null : $_POST['class'];
+    $classId = $teacher->ClassId; // Legacy field is read-only; use relationship management.
     $status = $_POST['status'];
+    if (!in_array((string)$status, ['0','1'], true)) { http_response_code(400); exit('Invalid account status.'); }
 
     if($firstName === '' || $lastName === '' || $staffNumber === '' || $username === '' || $email === '' || $role === '') {
         $error = "First name, last name, staff number, email, username, and role are required.";
@@ -146,6 +147,7 @@ if(isset($_POST['update'])) {
     <link rel="stylesheet" href="css/bootstrap.min.css" media="screen">
     <link rel="stylesheet" href="css/font-awesome.min.css" media="screen">
     <link rel="stylesheet" href="css/main.css" media="screen">
+    <link rel="stylesheet" href="css/custom.css" media="screen">
 </head>
 <body class="top-navbar-fixed">
 <div class="main-wrapper">
@@ -175,7 +177,7 @@ if(isset($_POST['update'])) {
         <div class="col-sm-6"><div class="form-group"><label>Phone Number</label><input type="text" name="phonenumber" class="form-control" value="<?php echo htmlentities($teacher->PhoneNumber); ?>"></div></div>
     </div>
     <div class="row">
-        <div class="col-sm-6"><div class="form-group"><label>Role</label><select name="role" class="form-control" required>
+        <div class="col-sm-6"><div class="form-group"><label>Account category</label><select name="role" class="form-control" required>
             <?php foreach($teacherRoles as $key => $label) { ?>
             <option value="<?php echo htmlentities($key); ?>" <?php echo $teacher->Role === $key ? 'selected' : ''; ?>><?php echo htmlentities($label); ?></option>
             <?php } ?>
@@ -183,17 +185,7 @@ if(isset($_POST['update'])) {
         <div class="col-sm-6"><div class="form-group"><label>Department</label><input type="text" name="department" class="form-control" value="<?php echo htmlentities($teacher->Department); ?>"></div></div>
     </div>
     <div class="row">
-        <div class="col-sm-6"><div class="form-group"><label>Assigned Class</label><select name="class" class="form-control">
-            <option value="">No class assignment</option>
-            <?php
-            $classQuery = $dbh->prepare("SELECT id, ClassName, Section FROM tblclasses ORDER BY ClassNameNumeric, Section");
-            $classQuery->execute();
-            foreach($classQuery->fetchAll(PDO::FETCH_OBJ) as $class) {
-                $selected = (string)$teacher->ClassId === (string)$class->id ? 'selected' : '';
-                echo '<option value="'.htmlentities($class->id).'" '.$selected.'>'.htmlentities($class->ClassName.' Section-'.$class->Section).'</option>';
-            }
-            ?>
-        </select></div></div>
+        <div class="col-sm-6"><p><a class="btn btn-info" href="dean-teacher-relationships.php?teacher=<?php echo (int)$teacher->id; ?>">Change Teaching / Class Assignments and Responsibilities</a></p></div>
         <div class="col-sm-6"><div class="form-group"><label>Account Status</label><select name="status" class="form-control">
             <option value="1" <?php echo (int)$teacher->Status === 1 ? 'selected' : ''; ?>>Active</option>
             <option value="0" <?php echo (int)$teacher->Status === 0 ? 'selected' : ''; ?>>Inactive</option>

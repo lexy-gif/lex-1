@@ -87,6 +87,7 @@ if(isset($_POST['reset_password'])) {
     <link rel="stylesheet" href="css/font-awesome.min.css" media="screen">
     <link rel="stylesheet" type="text/css" href="js/DataTables/datatables.min.css">
     <link rel="stylesheet" href="css/main.css" media="screen">
+    <link rel="stylesheet" href="css/custom.css" media="screen">
 </head>
 <body class="top-navbar-fixed">
 <div class="main-wrapper">
@@ -141,16 +142,16 @@ if(isset($_POST['reset_password'])) {
                     <td><?php echo htmlentities($account->Email); ?></td>
                     <td><?php echo $account->Status ? 'Active' : 'Inactive'; ?></td>
                     <td>
-                        <form method="post" style="display:inline-block;">
+                        <form method="post" class="form-inline-block">
                             <?php csrf_field(); ?>
                             <input type="hidden" name="accountid" value="<?php echo htmlentities($account->id); ?>">
                             <input type="hidden" name="status" value="<?php echo $account->Status ? '0' : '1'; ?>">
                             <button type="submit" name="update_status" class="btn btn-xs btn-warning"><?php echo $account->Status ? 'Deactivate' : 'Activate'; ?></button>
                         </form>
-                        <form method="post" style="display:inline-block; margin-top:4px;">
+                        <form method="post" class="form-inline-block action-top-sm">
                             <?php csrf_field(); ?>
                             <input type="hidden" name="accountid" value="<?php echo htmlentities($account->id); ?>">
-                            <input type="password" name="newpassword" class="form-control input-sm" placeholder="New password" required style="width:130px; display:inline-block;">
+                            <input type="password" name="newpassword" class="form-control input-sm input-password-md" placeholder="New password" required>
                             <button type="submit" name="reset_password" class="btn btn-xs btn-info">Reset</button>
                         </form>
                     </td>

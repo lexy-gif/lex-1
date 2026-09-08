@@ -1,0 +1,645 @@
+tblacademiccalendar 0 rows
+CREATE TABLE `tblacademiccalendar` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `AcademicYearId` int DEFAULT NULL,
+  `TermId` int DEFAULT NULL,
+  `EventTitle` varchar(150) COLLATE utf8mb4_general_ci NOT NULL,
+  `EventType` varchar(80) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `StartDate` date NOT NULL,
+  `EndDate` date DEFAULT NULL,
+  `Description` text COLLATE utf8mb4_general_ci,
+  `Status` tinyint(1) NOT NULL DEFAULT '1',
+  `CreationDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_calendar_dates` (`StartDate`,`EndDate`),
+  KEY `fk_calendar_year` (`AcademicYearId`),
+  KEY `fk_calendar_term` (`TermId`),
+  CONSTRAINT `fk_calendar_term` FOREIGN KEY (`TermId`) REFERENCES `tblterms` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_calendar_year` FOREIGN KEY (`AcademicYearId`) REFERENCES `tblacademicyears` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+tblacademicyears 1 rows
+CREATE TABLE `tblacademicyears` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `AcademicYear` varchar(20) COLLATE utf8mb4_general_ci NOT NULL,
+  `StartDate` date DEFAULT NULL,
+  `EndDate` date DEFAULT NULL,
+  `IsActive` tinyint(1) NOT NULL DEFAULT '0',
+  `CreationDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdationDate` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_academic_year` (`AcademicYear`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+tblattendance 0 rows
+CREATE TABLE `tblattendance` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `StudentId` int NOT NULL,
+  `ClassId` int NOT NULL,
+  `AttendanceDate` date NOT NULL,
+  `Status` enum('present','absent','late','excused') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'present',
+  `Remarks` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `RecordedBy` int DEFAULT NULL,
+  `CreationDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdationDate` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_student_attendance_date` (`StudentId`,`AttendanceDate`),
+  KEY `idx_attendance_class_date` (`ClassId`,`AttendanceDate`),
+  CONSTRAINT `fk_attendance_class` FOREIGN KEY (`ClassId`) REFERENCES `tblclasses` (`id`),
+  CONSTRAINT `fk_attendance_student` FOREIGN KEY (`StudentId`) REFERENCES `tblstudents` (`StudentId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+tblauditlog 24 rows
+CREATE TABLE `tblauditlog` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `Actor` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `Action` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `EntityType` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `EntityId` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `Details` text COLLATE utf8mb4_general_ci,
+  `IpAddress` varchar(45) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `CreationDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_audit_entity` (`EntityType`,`EntityId`),
+  KEY `idx_audit_action_date` (`Action`,`CreationDate`)
+) ENGINE=InnoDB AUTO_INCREMENT=29 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+tblclasses 9 rows
+CREATE TABLE `tblclasses` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `ClassName` varchar(80) DEFAULT NULL,
+  `ClassNameNumeric` int DEFAULT NULL,
+  `Section` varchar(5) DEFAULT NULL,
+  `CreationDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdationDate` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=latin1;
+tblclassteacherassignments 1 rows
+CREATE TABLE `tblclassteacherassignments` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `TeacherId` int NOT NULL,
+  `ClassId` int NOT NULL,
+  `AcademicYearId` int NOT NULL,
+  `Status` tinyint NOT NULL DEFAULT '1',
+  `AssignedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `EndedAt` timestamp NULL DEFAULT NULL,
+  `ActiveClassId` int GENERATED ALWAYS AS ((case when (`Status` = 1) then `ClassId` else NULL end)) STORED,
+  `ActiveTeacherId` int GENERATED ALWAYS AS ((case when (`Status` = 1) then `TeacherId` else NULL end)) STORED,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_class_teacher_year` (`ActiveClassId`,`AcademicYearId`),
+  UNIQUE KEY `uk_teacher_class_year` (`ActiveTeacherId`,`AcademicYearId`),
+  KEY `TeacherId` (`TeacherId`),
+  KEY `ClassId` (`ClassId`),
+  KEY `AcademicYearId` (`AcademicYearId`),
+  CONSTRAINT `tblclassteacherassignments_ibfk_1` FOREIGN KEY (`TeacherId`) REFERENCES `tblusers` (`id`),
+  CONSTRAINT `tblclassteacherassignments_ibfk_2` FOREIGN KEY (`ClassId`) REFERENCES `tblclasses` (`id`),
+  CONSTRAINT `tblclassteacherassignments_ibfk_3` FOREIGN KEY (`AcademicYearId`) REFERENCES `tblacademicyears` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+tblclasstimetableentries 2 rows
+CREATE TABLE `tblclasstimetableentries` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `AcademicYearId` int NOT NULL,
+  `TermId` int NOT NULL,
+  `ClassId` int NOT NULL,
+  `SubjectId` int NOT NULL,
+  `TeacherId` int DEFAULT NULL,
+  `RoomId` int DEFAULT NULL,
+  `DayOfWeek` enum('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday') COLLATE utf8mb4_general_ci NOT NULL,
+  `StartTime` time NOT NULL,
+  `EndTime` time NOT NULL,
+  `Status` enum('draft','ready_for_review','approved','published','updated','archived','cancelled') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'draft',
+  `ChangeReason` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `CreatedBy` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `CreationDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdationDate` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_class_timetable_class` (`AcademicYearId`,`TermId`,`ClassId`,`DayOfWeek`),
+  KEY `idx_class_timetable_teacher` (`TeacherId`,`DayOfWeek`,`StartTime`,`EndTime`),
+  KEY `idx_class_timetable_room` (`RoomId`,`DayOfWeek`,`StartTime`,`EndTime`),
+  KEY `fk_cte_term` (`TermId`),
+  KEY `fk_cte_class` (`ClassId`),
+  KEY `fk_cte_subject` (`SubjectId`),
+  CONSTRAINT `fk_cte_class` FOREIGN KEY (`ClassId`) REFERENCES `tblclasses` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_cte_room` FOREIGN KEY (`RoomId`) REFERENCES `tblrooms` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_cte_subject` FOREIGN KEY (`SubjectId`) REFERENCES `tblsubjects` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_cte_teacher` FOREIGN KEY (`TeacherId`) REFERENCES `tblusers` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_cte_term` FOREIGN KEY (`TermId`) REFERENCES `tblterms` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_cte_year` FOREIGN KEY (`AcademicYearId`) REFERENCES `tblacademicyears` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+tbldean 1 rows
+CREATE TABLE `tbldean` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `UserName` varchar(100) DEFAULT NULL,
+  `Password` varchar(100) DEFAULT NULL,
+  `updationDate` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+tbldeanapprovals 0 rows
+CREATE TABLE `tbldeanapprovals` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `ClassId` int NOT NULL,
+  `ExamId` int NOT NULL,
+  `ApprovedBy` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `Status` enum('pending','approved','rejected','published') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'pending',
+  `DecisionReason` text COLLATE utf8mb4_general_ci,
+  `CreationDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdationDate` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_dean_approval_scope` (`ClassId`,`ExamId`),
+  KEY `idx_dean_approvals_status` (`Status`),
+  KEY `fk_dean_approvals_exam` (`ExamId`),
+  CONSTRAINT `fk_dean_approvals_class` FOREIGN KEY (`ClassId`) REFERENCES `tblclasses` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_dean_approvals_exam` FOREIGN KEY (`ExamId`) REFERENCES `tblexams` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+tbldepartments 0 rows
+CREATE TABLE `tbldepartments` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `DepartmentName` varchar(120) COLLATE utf8mb4_general_ci NOT NULL,
+  `HeadTeacherId` int DEFAULT NULL,
+  `Status` tinyint(1) NOT NULL DEFAULT '1',
+  `CreationDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdationDate` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_department_name` (`DepartmentName`),
+  KEY `fk_departments_head_teacher` (`HeadTeacherId`),
+  CONSTRAINT `fk_departments_head_teacher` FOREIGN KEY (`HeadTeacherId`) REFERENCES `tblusers` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+tblexams 1 rows
+CREATE TABLE `tblexams` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `AcademicYearId` int NOT NULL,
+  `TermId` int NOT NULL,
+  `ExamName` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `ClassId` int DEFAULT NULL,
+  `StartDate` date DEFAULT NULL,
+  `EndDate` date DEFAULT NULL,
+  `MarksOpenDate` date DEFAULT NULL,
+  `MarksDeadline` date DEFAULT NULL,
+  `Status` enum('draft','marks_entry','submitted','under_review','approved','published','archived') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'draft',
+  `CreationDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdationDate` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_exam_scope` (`AcademicYearId`,`TermId`,`ExamName`,`ClassId`),
+  KEY `idx_exams_term` (`TermId`),
+  KEY `idx_exams_class` (`ClassId`),
+  CONSTRAINT `fk_exams_academic_year` FOREIGN KEY (`AcademicYearId`) REFERENCES `tblacademicyears` (`id`),
+  CONSTRAINT `fk_exams_class` FOREIGN KEY (`ClassId`) REFERENCES `tblclasses` (`id`),
+  CONSTRAINT `fk_exams_term` FOREIGN KEY (`TermId`) REFERENCES `tblterms` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+tblexamtimetableentries 0 rows
+CREATE TABLE `tblexamtimetableentries` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `ExamId` int NOT NULL,
+  `ClassId` int NOT NULL,
+  `SubjectId` int NOT NULL,
+  `RoomId` int DEFAULT NULL,
+  `InvigilatorId` int DEFAULT NULL,
+  `ExamDate` date NOT NULL,
+  `StartTime` time NOT NULL,
+  `EndTime` time NOT NULL,
+  `Status` enum('draft','ready_for_review','approved','published','updated','archived','cancelled') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'draft',
+  `ChangeReason` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `CreatedBy` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `CreationDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdationDate` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_exam_timetable_class` (`ExamId`,`ClassId`,`ExamDate`),
+  KEY `idx_exam_timetable_room` (`RoomId`,`ExamDate`,`StartTime`,`EndTime`),
+  KEY `idx_exam_timetable_invigilator` (`InvigilatorId`,`ExamDate`,`StartTime`,`EndTime`),
+  KEY `fk_ete_class` (`ClassId`),
+  KEY `fk_ete_subject` (`SubjectId`),
+  CONSTRAINT `fk_ete_class` FOREIGN KEY (`ClassId`) REFERENCES `tblclasses` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_ete_exam` FOREIGN KEY (`ExamId`) REFERENCES `tblexams` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_ete_invigilator` FOREIGN KEY (`InvigilatorId`) REFERENCES `tblusers` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_ete_room` FOREIGN KEY (`RoomId`) REFERENCES `tblrooms` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_ete_subject` FOREIGN KEY (`SubjectId`) REFERENCES `tblsubjects` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+tblfeestructures 0 rows
+CREATE TABLE `tblfeestructures` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `ClassId` int NOT NULL,
+  `FeeTypeId` int NOT NULL,
+  `AcademicYearId` int NOT NULL,
+  `TermId` int DEFAULT NULL,
+  `Amount` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `DueDate` date DEFAULT NULL,
+  `CreationDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdationDate` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_fee_structure` (`ClassId`,`FeeTypeId`,`AcademicYearId`,`TermId`),
+  KEY `idx_fee_structure_year` (`AcademicYearId`),
+  KEY `idx_fee_structure_term` (`TermId`),
+  KEY `fk_fee_structure_type` (`FeeTypeId`),
+  CONSTRAINT `fk_fee_structure_class` FOREIGN KEY (`ClassId`) REFERENCES `tblclasses` (`id`),
+  CONSTRAINT `fk_fee_structure_term` FOREIGN KEY (`TermId`) REFERENCES `tblterms` (`id`),
+  CONSTRAINT `fk_fee_structure_type` FOREIGN KEY (`FeeTypeId`) REFERENCES `tblfeetypes` (`id`),
+  CONSTRAINT `fk_fee_structure_year` FOREIGN KEY (`AcademicYearId`) REFERENCES `tblacademicyears` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+tblfeetypes 0 rows
+CREATE TABLE `tblfeetypes` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `FeeName` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `Description` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `Status` tinyint(1) NOT NULL DEFAULT '1',
+  `CreationDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_fee_name` (`FeeName`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+tblgradingscales 5 rows
+CREATE TABLE `tblgradingscales` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `Grade` varchar(10) COLLATE utf8mb4_general_ci NOT NULL,
+  `MinMark` decimal(5,2) NOT NULL,
+  `MaxMark` decimal(5,2) NOT NULL,
+  `Remark` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `CreationDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_grade` (`Grade`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+tblnotice 0 rows
+CREATE TABLE `tblnotice` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `noticeTitle` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `noticeDetails` mediumtext COLLATE utf8mb4_general_ci,
+  `postingDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+tblnotificationdeliveries 3 rows
+CREATE TABLE `tblnotificationdeliveries` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `NotificationId` int DEFAULT NULL,
+  `UserId` int NOT NULL,
+  `Channel` enum('IN_APP','EMAIL','SMS','WHATSAPP','PUSH') COLLATE utf8mb4_general_ci NOT NULL,
+  `Destination` varchar(180) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `Status` enum('PENDING','SENT','FAILED','RETRYING','SKIPPED') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'PENDING',
+  `SentAt` datetime DEFAULT NULL,
+  `FailedAt` datetime DEFAULT NULL,
+  `RetryCount` int NOT NULL DEFAULT '0',
+  `ErrorMessage` text COLLATE utf8mb4_general_ci,
+  `CreationDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_notification_deliveries_notification` (`NotificationId`),
+  KEY `idx_notification_deliveries_user` (`UserId`,`Channel`,`Status`),
+  CONSTRAINT `fk_notification_deliveries_notification` FOREIGN KEY (`NotificationId`) REFERENCES `tblteachernotifications` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_notification_deliveries_user` FOREIGN KEY (`UserId`) REFERENCES `tblusers` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+tblnotificationpreferences 0 rows
+CREATE TABLE `tblnotificationpreferences` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `UserId` int NOT NULL,
+  `Category` enum('ACCOUNT','CLASS_ASSIGNMENT','SUBJECT_ASSIGNMENT','TIMETABLE','EXAM_TIMETABLE','RESULTS','MARKS','DEADLINE','ATTENDANCE','SYSTEM') COLLATE utf8mb4_general_ci NOT NULL,
+  `EmailEnabled` tinyint(1) NOT NULL DEFAULT '1',
+  `InAppEnabled` tinyint(1) NOT NULL DEFAULT '1',
+  `CreationDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdationDate` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_notification_preferences_user_category` (`UserId`,`Category`),
+  CONSTRAINT `fk_notification_preferences_user` FOREIGN KEY (`UserId`) REFERENCES `tblusers` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+tblpayments 0 rows
+CREATE TABLE `tblpayments` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `StudentId` int NOT NULL,
+  `FeeStructureId` int NOT NULL,
+  `AmountPaid` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `PaymentDate` date NOT NULL,
+  `PaymentMode` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `ReceiptNo` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `ReceivedBy` int DEFAULT NULL,
+  `CreationDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_receipt_no` (`ReceiptNo`),
+  KEY `idx_payments_student` (`StudentId`),
+  KEY `idx_payments_fee_structure` (`FeeStructureId`),
+  CONSTRAINT `fk_payments_fee_structure` FOREIGN KEY (`FeeStructureId`) REFERENCES `tblfeestructures` (`id`),
+  CONSTRAINT `fk_payments_student` FOREIGN KEY (`StudentId`) REFERENCES `tblstudents` (`StudentId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+tblresponsibilitytypes 10 rows
+CREATE TABLE `tblresponsibilitytypes` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `Name` varchar(150) NOT NULL,
+  `Description` text,
+  `Active` tinyint NOT NULL DEFAULT '1',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `Name` (`Name`)
+) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+tblresult 0 rows
+CREATE TABLE `tblresult` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `StudentId` int DEFAULT NULL,
+  `ClassId` int DEFAULT NULL,
+  `ExamId` int DEFAULT NULL,
+  `SubjectId` int DEFAULT NULL,
+  `marks` int DEFAULT NULL,
+  `PostingDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdationDate` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_result_student_subject_exam` (`StudentId`,`ClassId`,`SubjectId`,`ExamId`),
+  KEY `idx_result_exam` (`ExamId`),
+  CONSTRAINT `fk_result_exam` FOREIGN KEY (`ExamId`) REFERENCES `tblexams` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+tblresultreviews 0 rows
+CREATE TABLE `tblresultreviews` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `ClassId` int NOT NULL,
+  `ExamId` int NOT NULL,
+  `ReviewedBy` int NOT NULL,
+  `Status` enum('pending','approved','correction_requested') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'pending',
+  `CorrectionReason` text COLLATE utf8mb4_general_ci,
+  `CreationDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdationDate` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_result_review_scope` (`ClassId`,`ExamId`),
+  KEY `idx_result_reviews_status` (`Status`),
+  KEY `fk_result_reviews_exam` (`ExamId`),
+  KEY `fk_result_reviews_teacher` (`ReviewedBy`),
+  CONSTRAINT `fk_result_reviews_class` FOREIGN KEY (`ClassId`) REFERENCES `tblclasses` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_result_reviews_exam` FOREIGN KEY (`ExamId`) REFERENCES `tblexams` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_result_reviews_teacher` FOREIGN KEY (`ReviewedBy`) REFERENCES `tblusers` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+tblrooms 6 rows
+CREATE TABLE `tblrooms` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `RoomName` varchar(80) COLLATE utf8mb4_general_ci NOT NULL,
+  `Capacity` int DEFAULT NULL,
+  `Status` tinyint(1) NOT NULL DEFAULT '1',
+  `CreationDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_room_name` (`RoomName`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+tblscheduledreminders 0 rows
+CREATE TABLE `tblscheduledreminders` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `ReminderType` enum('lesson','exam') COLLATE utf8mb4_general_ci NOT NULL,
+  `RelatedId` int NOT NULL,
+  `RecipientUserId` int DEFAULT NULL,
+  `ReminderMinutes` int NOT NULL DEFAULT '15',
+  `SentAt` timestamp NULL DEFAULT NULL,
+  `CreationDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_scheduled_reminder` (`ReminderType`,`RelatedId`,`RecipientUserId`,`ReminderMinutes`),
+  KEY `fk_scheduled_reminder_user` (`RecipientUserId`),
+  CONSTRAINT `fk_scheduled_reminder_user` FOREIGN KEY (`RecipientUserId`) REFERENCES `tblusers` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+tblschemamigrations 1 rows
+CREATE TABLE `tblschemamigrations` (
+  `Name` varchar(150) NOT NULL,
+  `AppliedAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`Name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+tblstudents 1 rows
+CREATE TABLE `tblstudents` (
+  `StudentId` int NOT NULL AUTO_INCREMENT,
+  `StudentName` varchar(100) DEFAULT NULL,
+  `RollId` varchar(100) DEFAULT NULL,
+  `StudentEmail` varchar(100) DEFAULT NULL,
+  `ParentPhone` varchar(30) DEFAULT NULL,
+  `Gender` varchar(10) DEFAULT NULL,
+  `DOB` varchar(100) DEFAULT NULL,
+  `ClassId` int DEFAULT NULL,
+  `RegDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdationDate` timestamp NULL DEFAULT NULL,
+  `Status` int DEFAULT NULL,
+  PRIMARY KEY (`StudentId`)
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=latin1;
+tblstudentsubjects 0 rows
+CREATE TABLE `tblstudentsubjects` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `StudentId` int NOT NULL,
+  `SubjectId` int NOT NULL,
+  `ClassId` int NOT NULL,
+  `AcademicYearId` int NOT NULL,
+  `Status` tinyint NOT NULL DEFAULT '1',
+  `CreationDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdationDate` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_student_subject_year` (`StudentId`,`SubjectId`,`ClassId`,`AcademicYearId`),
+  KEY `SubjectId` (`SubjectId`),
+  KEY `ClassId` (`ClassId`),
+  KEY `AcademicYearId` (`AcademicYearId`),
+  CONSTRAINT `tblstudentsubjects_ibfk_1` FOREIGN KEY (`StudentId`) REFERENCES `tblstudents` (`StudentId`),
+  CONSTRAINT `tblstudentsubjects_ibfk_2` FOREIGN KEY (`SubjectId`) REFERENCES `tblsubjects` (`id`),
+  CONSTRAINT `tblstudentsubjects_ibfk_3` FOREIGN KEY (`ClassId`) REFERENCES `tblclasses` (`id`),
+  CONSTRAINT `tblstudentsubjects_ibfk_4` FOREIGN KEY (`AcademicYearId`) REFERENCES `tblacademicyears` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+tblsubjectcombination 0 rows
+CREATE TABLE `tblsubjectcombination` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `ClassId` int DEFAULT NULL,
+  `SubjectId` int DEFAULT NULL,
+  `status` int DEFAULT NULL,
+  `CreationDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `Updationdate` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=latin1;
+tblsubjects 10 rows
+CREATE TABLE `tblsubjects` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `SubjectName` varchar(100) NOT NULL,
+  `SubjectCode` varchar(100) DEFAULT NULL,
+  `Creationdate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdationDate` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=latin1;
+tblsubjectteacherassignments 0 rows
+CREATE TABLE `tblsubjectteacherassignments` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `TeacherId` int NOT NULL,
+  `ClassId` int NOT NULL,
+  `SubjectId` int NOT NULL,
+  `AcademicYearId` int NOT NULL,
+  `TermId` int DEFAULT NULL,
+  `Status` tinyint(1) NOT NULL DEFAULT '1',
+  `AssignedBy` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `CreationDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdationDate` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  `EndedAt` timestamp NULL DEFAULT NULL,
+  `ActiveSubjectId` int GENERATED ALWAYS AS ((case when (`Status` = 1) then `SubjectId` else NULL end)) STORED,
+  `PeriodTermId` int GENERATED ALWAYS AS (coalesce(`TermId`,0)) STORED,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_primary_subject_period` (`ClassId`,`ActiveSubjectId`,`AcademicYearId`,`PeriodTermId`),
+  KEY `idx_subject_teacher_class` (`ClassId`,`SubjectId`),
+  KEY `fk_academic_sta_subject` (`SubjectId`),
+  KEY `fk_academic_sta_year` (`AcademicYearId`),
+  KEY `fk_academic_sta_term` (`TermId`),
+  KEY `idx_assignment_teacher` (`TeacherId`),
+  CONSTRAINT `fk_academic_sta_class` FOREIGN KEY (`ClassId`) REFERENCES `tblclasses` (`id`),
+  CONSTRAINT `fk_academic_sta_subject` FOREIGN KEY (`SubjectId`) REFERENCES `tblsubjects` (`id`),
+  CONSTRAINT `fk_academic_sta_teacher` FOREIGN KEY (`TeacherId`) REFERENCES `tblusers` (`id`),
+  CONSTRAINT `fk_academic_sta_term` FOREIGN KEY (`TermId`) REFERENCES `tblterms` (`id`),
+  CONSTRAINT `fk_academic_sta_year` FOREIGN KEY (`AcademicYearId`) REFERENCES `tblacademicyears` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+tblteacheravailability 0 rows
+CREATE TABLE `tblteacheravailability` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `TeacherId` int NOT NULL,
+  `DayOfWeek` enum('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday') COLLATE utf8mb4_general_ci NOT NULL,
+  `StartTime` time NOT NULL,
+  `EndTime` time NOT NULL,
+  `Reason` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `CreationDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_teacher_availability` (`TeacherId`,`DayOfWeek`,`StartTime`,`EndTime`),
+  CONSTRAINT `fk_teacher_availability_teacher` FOREIGN KEY (`TeacherId`) REFERENCES `tblusers` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+tblteachercomments 0 rows
+CREATE TABLE `tblteachercomments` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `StudentId` int NOT NULL,
+  `ClassId` int NOT NULL,
+  `ExamId` int DEFAULT NULL,
+  `TeacherId` int NOT NULL,
+  `CommentText` text COLLATE utf8mb4_general_ci NOT NULL,
+  `Status` enum('draft','submitted','published') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'draft',
+  `CreationDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdationDate` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_teacher_comment_scope` (`StudentId`,`ExamId`,`TeacherId`),
+  KEY `idx_teacher_comments_class` (`ClassId`,`ExamId`),
+  KEY `fk_teacher_comments_exam` (`ExamId`),
+  KEY `fk_teacher_comments_teacher` (`TeacherId`),
+  CONSTRAINT `fk_teacher_comments_class` FOREIGN KEY (`ClassId`) REFERENCES `tblclasses` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_teacher_comments_exam` FOREIGN KEY (`ExamId`) REFERENCES `tblexams` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_teacher_comments_student` FOREIGN KEY (`StudentId`) REFERENCES `tblstudents` (`StudentId`) ON DELETE CASCADE,
+  CONSTRAINT `fk_teacher_comments_teacher` FOREIGN KEY (`TeacherId`) REFERENCES `tblusers` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+tblteachernotifications 6 rows
+CREATE TABLE `tblteachernotifications` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `TeacherId` int DEFAULT NULL,
+  `ClassId` int DEFAULT NULL,
+  `Type` varchar(80) COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'GENERAL',
+  `Category` enum('ACCOUNT','CLASS_ASSIGNMENT','SUBJECT_ASSIGNMENT','TIMETABLE','EXAM_TIMETABLE','RESULTS','MARKS','DEADLINE','ATTENDANCE','SYSTEM') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'SYSTEM',
+  `SubjectId` int DEFAULT NULL,
+  `RelatedEntityType` varchar(80) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `RelatedEntityId` int DEFAULT NULL,
+  `ActionUrl` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `Title` varchar(150) COLLATE utf8mb4_general_ci NOT NULL,
+  `Message` text COLLATE utf8mb4_general_ci NOT NULL,
+  `IsRead` tinyint(1) NOT NULL DEFAULT '0',
+  `ReadAt` datetime DEFAULT NULL,
+  `CreationDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_teacher_notifications_teacher` (`TeacherId`,`IsRead`),
+  KEY `idx_teacher_notifications_class` (`ClassId`,`IsRead`),
+  KEY `idx_teacher_notifications_filter` (`TeacherId`,`Category`,`ReadAt`,`CreationDate`),
+  KEY `idx_teacher_notifications_subject` (`SubjectId`),
+  CONSTRAINT `fk_teacher_notifications_class` FOREIGN KEY (`ClassId`) REFERENCES `tblclasses` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_teacher_notifications_teacher` FOREIGN KEY (`TeacherId`) REFERENCES `tblusers` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+tblteacherresponsibilities 1 rows
+CREATE TABLE `tblteacherresponsibilities` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `TeacherId` int NOT NULL,
+  `ResponsibilityTypeId` int NOT NULL,
+  `AcademicYearId` int NOT NULL,
+  `StartDate` date NOT NULL,
+  `EndDate` date DEFAULT NULL,
+  `Status` tinyint NOT NULL DEFAULT '1',
+  `Notes` text,
+  `CreationDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `ActiveTypeId` int GENERATED ALWAYS AS ((case when (`Status` = 1) then `ResponsibilityTypeId` else NULL end)) STORED,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_teacher_responsibility` (`TeacherId`,`ActiveTypeId`,`AcademicYearId`),
+  KEY `ResponsibilityTypeId` (`ResponsibilityTypeId`),
+  KEY `AcademicYearId` (`AcademicYearId`),
+  CONSTRAINT `tblteacherresponsibilities_ibfk_1` FOREIGN KEY (`TeacherId`) REFERENCES `tblusers` (`id`),
+  CONSTRAINT `tblteacherresponsibilities_ibfk_2` FOREIGN KEY (`ResponsibilityTypeId`) REFERENCES `tblresponsibilitytypes` (`id`),
+  CONSTRAINT `tblteacherresponsibilities_ibfk_3` FOREIGN KEY (`AcademicYearId`) REFERENCES `tblacademicyears` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+tblterms 1 rows
+CREATE TABLE `tblterms` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `AcademicYearId` int NOT NULL,
+  `TermName` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `StartDate` date DEFAULT NULL,
+  `EndDate` date DEFAULT NULL,
+  `IsActive` tinyint(1) NOT NULL DEFAULT '0',
+  `CreationDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdationDate` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_year_term` (`AcademicYearId`,`TermName`),
+  KEY `idx_terms_year` (`AcademicYearId`),
+  CONSTRAINT `fk_terms_academic_year` FOREIGN KEY (`AcademicYearId`) REFERENCES `tblacademicyears` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+tbltimetable 0 rows
+CREATE TABLE `tbltimetable` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `ClassId` int NOT NULL,
+  `SubjectId` int NOT NULL,
+  `TeacherId` int DEFAULT NULL,
+  `DayOfWeek` enum('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday') COLLATE utf8mb4_general_ci NOT NULL,
+  `StartTime` time NOT NULL,
+  `EndTime` time NOT NULL,
+  `Room` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `Status` enum('draft','published','archived') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'draft',
+  `CreationDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdationDate` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_timetable_class_day` (`ClassId`,`DayOfWeek`),
+  KEY `idx_timetable_teacher_day` (`TeacherId`,`DayOfWeek`),
+  KEY `fk_timetable_subject` (`SubjectId`),
+  CONSTRAINT `fk_timetable_class` FOREIGN KEY (`ClassId`) REFERENCES `tblclasses` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_timetable_subject` FOREIGN KEY (`SubjectId`) REFERENCES `tblsubjects` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_timetable_teacher` FOREIGN KEY (`TeacherId`) REFERENCES `tblusers` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+tbltimetableperiods 26 rows
+CREATE TABLE `tbltimetableperiods` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `PeriodName` varchar(80) COLLATE utf8mb4_general_ci NOT NULL,
+  `DayOfWeek` enum('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday') COLLATE utf8mb4_general_ci NOT NULL,
+  `StartTime` time NOT NULL,
+  `EndTime` time NOT NULL,
+  `PeriodType` enum('lesson','break','lunch','assembly','games','club','activity') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'lesson',
+  `Status` tinyint(1) NOT NULL DEFAULT '1',
+  `CreationDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_timetable_period` (`DayOfWeek`,`StartTime`,`EndTime`)
+) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+tbltimetableversions 2 rows
+CREATE TABLE `tbltimetableversions` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `TimetableType` enum('class','exam') COLLATE utf8mb4_general_ci NOT NULL,
+  `RelatedId` int DEFAULT NULL,
+  `VersionNo` int NOT NULL DEFAULT '1',
+  `Action` varchar(80) COLLATE utf8mb4_general_ci NOT NULL,
+  `PreviousValue` text COLLATE utf8mb4_general_ci,
+  `NewValue` text COLLATE utf8mb4_general_ci,
+  `Reason` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `CreatedBy` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `CreationDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_timetable_versions_related` (`TimetableType`,`RelatedId`,`VersionNo`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+tblusers 2 rows
+CREATE TABLE `tblusers` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `FirstName` varchar(80) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `MiddleName` varchar(80) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `LastName` varchar(80) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `StaffNumber` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `FullName` varchar(150) COLLATE utf8mb4_general_ci NOT NULL,
+  `Username` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `Email` varchar(150) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `EmailStatus` enum('UNVERIFIED','VERIFIED','BOUNCED','DISABLED') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'UNVERIFIED',
+  `EmailVerifiedAt` datetime DEFAULT NULL,
+  `PhoneNumber` varchar(30) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `PasswordHash` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `MustChangePassword` tinyint(1) NOT NULL DEFAULT '1',
+  `Role` enum('class_teacher','subject_teacher','head_of_department','exams_officer','deputy_dean','student','parent','accountant') COLLATE utf8mb4_general_ci NOT NULL,
+  `Department` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `ClassId` int DEFAULT NULL,
+  `StudentId` int DEFAULT NULL,
+  `ParentPhone` varchar(30) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `Status` tinyint(1) NOT NULL DEFAULT '1',
+  `CanCreateAdmin` tinyint(1) NOT NULL DEFAULT '0',
+  `CreatedBy` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `CreationDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdationDate` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  `LastLoginAt` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_users_username` (`Username`),
+  UNIQUE KEY `uk_users_email` (`Email`),
+  UNIQUE KEY `uk_users_student` (`StudentId`),
+  UNIQUE KEY `uk_users_staff_number` (`StaffNumber`),
+  KEY `idx_users_role_class` (`Role`,`ClassId`),
+  KEY `fk_users_class` (`ClassId`),
+  CONSTRAINT `fk_users_class` FOREIGN KEY (`ClassId`) REFERENCES `tblclasses` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_users_student` FOREIGN KEY (`StudentId`) REFERENCES `tblstudents` (`StudentId`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

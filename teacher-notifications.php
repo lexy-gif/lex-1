@@ -71,12 +71,7 @@ $notes = $query->fetchAll(PDO::FETCH_OBJ);
     <link rel="stylesheet" href="css/bootstrap.min.css" media="screen">
     <link rel="stylesheet" href="css/font-awesome.min.css" media="screen">
     <link rel="stylesheet" href="css/main.css" media="screen">
-    <style>
-        .notification-item { border-left: 4px solid #ddd; padding: 12px 15px; margin-bottom: 10px; background: #fff; }
-        .notification-item.unread { border-left-color: #337ab7; background: #f7fbff; }
-        .notification-meta { color: #777; font-size: 12px; }
-        .filter-links a { margin-right: 8px; margin-bottom: 8px; }
-    </style>
+    <link rel="stylesheet" href="css/custom.css" media="screen">
 </head>
 <body class="top-navbar-fixed">
 <div class="main-wrapper">
@@ -122,7 +117,7 @@ $notes = $query->fetchAll(PDO::FETCH_OBJ);
                 <div class="col-sm-4 text-right">
                     <a class="btn btn-xs btn-success" href="teacher-notifications.php?action=open&id=<?php echo htmlentities($note->id); ?>&redirect=<?php echo urlencode($actionUrl); ?>">Open</a>
                     <?php if($isUnread) { ?>
-                    <form method="post" style="display:inline;">
+                    <form method="post" class="form-inline-action">
                         <?php csrf_field(); ?>
                         <input type="hidden" name="notificationid" value="<?php echo htmlentities($note->id); ?>">
                         <button type="submit" name="mark_read" class="btn btn-xs btn-default">Mark as Read</button>

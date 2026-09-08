@@ -16,87 +16,11 @@ include('includes/config.php');
     <link rel="stylesheet" href="css/animate-css/animate.min.css" media="screen">
     <link rel="stylesheet" href="css/icheck/skins/flat/blue.css">
     <link rel="stylesheet" href="css/main.css" media="screen">
+    <link rel="stylesheet" href="css/custom.css" media="screen">
     <script src="js/modernizr/modernizr.min.js"></script>
-
-    <style>
-    body {
-        background-image: url('images/school system background.jpg');
-        /* ✅ use your existing image */
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-
-    .login-box {
-        background-color: rgba(255, 255, 255, 0.93);
-        padding: 40px;
-        border-radius: 10px;
-        box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.3);
-        margin-top: 90px;
-    }
-
-    h4 {
-        font-weight: 700;
-        color: #333;
-    }
-
-    h1 {
-        color: #fff;
-        text-align: center;
-        font-weight: 700;
-        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
-        margin-top: 30px;
-        margin-bottom: 20px;
-    }
-
-    label {
-        font-weight: 600;
-    }
-
-    .btn-success {
-        background-color: #28a745;
-        border: none;
-    }
-
-    .btn-success:hover {
-        background-color: #218838;
-    }
-
-    footer {
-        margin-top: 60px;
-        background: rgba(0, 0, 0, 0.7);
-        color: #ccc;
-        padding: 15px 0;
-        text-align: center;
-    }
-
-    footer a {
-        color: #00bfff;
-        text-decoration: none;
-    }
-
-    footer a:hover {
-        text-decoration: underline;
-    }
-
-    .panel {
-        border: none;
-        box-shadow: none;
-    }
-
-    .form-group a {
-        color: #007bff;
-        text-decoration: none;
-    }
-
-    .form-group a:hover {
-        text-decoration: underline;
-    }
-    </style>
 </head>
 
-<body>
+<body class="auth-page auth-page--segoe student-login-page">
     <div class="main-wrapper">
         <div class="container">
             <h1>Student Result Management System</h1>
