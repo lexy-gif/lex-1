@@ -32,7 +32,7 @@ if($teacherId <= 0) {
     <link rel="stylesheet" href="css/bootstrap.min.css" media="screen">
     <link rel="stylesheet" href="css/font-awesome.min.css" media="screen">
     <link rel="stylesheet" href="css/main.css" media="screen">
-    <link rel="stylesheet" href="css/custom.css" media="screen">
+    <link rel="stylesheet" href="css/bootstrap.min.css" media="screen"><link rel="stylesheet" href="css/font-awesome.min.css" media="screen"><link rel="stylesheet" href="css/main.css" media="screen"><link rel="stylesheet" href="css/custom.css"><link rel="stylesheet" href="css/custom.css">
 </head>
 <body class="top-navbar-fixed">
 <div class="main-wrapper">
@@ -115,10 +115,10 @@ $examRows = $examDuties->fetchAll(PDO::FETCH_OBJ);
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Teacher Assignments | SRMS</title>
-    <link rel="stylesheet" href="css/bootstrap.min.css" media="screen">
-    <link rel="stylesheet" href="css/font-awesome.min.css" media="screen">
-    <link rel="stylesheet" href="css/main.css" media="screen">
-    <link rel="stylesheet" href="css/custom.css" media="screen">
+    
+    
+    
+    
 </head>
 <body class="top-navbar-fixed">
 <div class="main-wrapper">

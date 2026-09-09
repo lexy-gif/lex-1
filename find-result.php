@@ -16,7 +16,7 @@ include('includes/config.php');
     <link rel="stylesheet" href="css/animate-css/animate.min.css" media="screen">
     <link rel="stylesheet" href="css/icheck/skins/flat/blue.css">
     <link rel="stylesheet" href="css/main.css" media="screen">
-    <link rel="stylesheet" href="css/custom.css" media="screen">
+    <link rel="stylesheet" href="css/custom.css">
     <script src="js/modernizr/modernizr.min.js"></script>
 </head>
 

@@ -19,13 +19,18 @@ $(function($) {
 		event.preventDefault();
 		$('.left-sidebar').toggleClass('small-nav');
 		$('.navbar-header').toggleClass('small-nav-header');
+		var expanded = !$('.left-sidebar').hasClass('small-nav');
+		$(this).attr('aria-expanded', expanded).attr('aria-label', expanded ? 'Collapse sidebar' : 'Expand sidebar').attr('title', expanded ? 'Collapse sidebar' : 'Expand sidebar');
 	});
 
 	// Toggle Mobile Nav
 	$('.mobile-nav-toggle').on('click', function(event){
 		event.preventDefault();
-		$('.left-sidebar').toggle();
-	})
+		$('.left-sidebar').removeClass('small-nav');
+		$('.navbar-header').removeClass('small-nav-header');
+		$('body').toggleClass('srms-nav-open');
+		$(this).attr('aria-expanded', $('body').hasClass('srms-nav-open'));
+	});
 
 	// Toggle tooltips
 	$('[data-toggle="tooltip"]').tooltip();
@@ -49,7 +54,7 @@ $(function($) {
 	});
 
 	// Initialize panel controls
-	$('[data-panel-control]').lobiPanel();
+	if ($.fn.lobiPanel) { $('[data-panel-control]').lobiPanel(); }
 
 	// Visibility of source code button
 	$('.src-btn').hide();
@@ -68,6 +73,11 @@ $(function($) {
 	// Toggle full screen
 	$('.full-screen-handle').on('click', function(event){
 		event.preventDefault();
+		if (document.documentElement.requestFullscreen) {
+			var fullscreenRequest = document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+			if (fullscreenRequest && fullscreenRequest.catch) { fullscreenRequest.catch(function() {}); }
+			return;
+		}
 		if ((document.fullScreenElement && document.fullScreenElement !== null) ||
 			(!document.mozFullScreen && !document.webkitIsFullScreen)) {
 			if (document.documentElement.requestFullScreen) {
@@ -92,8 +102,12 @@ $(function($) {
 	$('.has-children').not('.open').find('.child-nav').slideUp('100');
 	$('.has-children>a').on('click', function(event){
 		event.preventDefault();
+		$('.left-sidebar').removeClass('small-nav');
+		$('.navbar-header').removeClass('small-nav-header');
+		$('.small-nav-handle').attr('aria-expanded', 'true').attr('aria-label', 'Collapse sidebar');
 		$(this).parent().toggleClass('open');
-		$(this).parent().find('.child-nav').slideToggle('500');
+		$(this).attr('aria-expanded', $(this).parent().hasClass('open'));
+		$(this).parent().find('.child-nav').stop(true, true).slideToggle(window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 160);
 	});
 
 	// For Dropdown menu animation

@@ -226,7 +226,7 @@ $departments = $dbh->query("SELECT DISTINCT Department FROM tblusers WHERE Role 
     <link rel="stylesheet" href="css/bootstrap.min.css" media="screen">
     <link rel="stylesheet" href="css/font-awesome.min.css" media="screen">
     <link rel="stylesheet" href="css/main.css" media="screen">
-    <link rel="stylesheet" href="css/custom.css" media="screen">
+    <link rel="stylesheet" href="css/custom.css">
 </head>
 <body class="top-navbar-fixed">
 <div class="main-wrapper">

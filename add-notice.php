@@ -40,7 +40,7 @@ echo '<script>alert("Something went wrong. Please try again.")</script>';
         <link rel="stylesheet" href="css/lobipanel/lobipanel.min.css" media="screen" >
         <link rel="stylesheet" href="css/prism/prism.css" media="screen" > <!-- USED FOR DEMO HELP - YOU CAN REMOVE IT -->
         <link rel="stylesheet" href="css/main.css" media="screen" >
-        <link rel="stylesheet" href="css/custom.css" media="screen">
+        <link rel="stylesheet" href="css/custom.css">
         <script src="js/modernizr/modernizr.min.js"></script>
     </head>
     <body class="top-navbar-fixed">

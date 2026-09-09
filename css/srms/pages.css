@@ -1,0 +1,496 @@
+/* Dashboard and teaching summaries share the same quiet surface treatment. */
+
+.dashboard-page {
+    background: var(--background-color);
+}
+
+.dashboard-stat, .summary-box {
+    display: block;
+    position: relative;
+    padding: 20px;
+    margin-bottom: var(--space-5);
+    min-height: 120px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: var(--surface-color);
+    box-shadow: var(--box-shadow);
+}
+
+.dashboard-stat {
+    text-align: left;
+    color: var(--text-primary) !important;
+    /* Legacy bg-* utilities force white text. */
+}
+
+.dashboard-stat:hover {
+    background: var(--surface-color) !important; /* Overrides the template's black hover background. */
+    border-color: #afc8e3;
+    box-shadow: 0 4px 12px rgb(23 43 67 / 7%);
+    transform: none;
+    text-decoration: none;
+}
+
+.dashboard-stat .number, .summary-box .number {
+    display: block;
+    margin: 0 44px 6px 0;
+    font-size: 29px;
+    line-height: 1.3;
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.5px;
+}
+
+.dashboard-stat .name {
+    display: block;
+    margin: 0 20px 0 0;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: none;
+}
+
+.dashboard-stat .bg-icon {
+    position: absolute;
+    inset: 20px 16px auto auto;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--border-radius);
+    color: var(--primary-color);
+    background: var(--primary-soft);
+    font-size: 18px;
+    line-height: 1;
+    transform: none;
+    opacity: 1;
+}
+
+.dashboard-stat .bg-icon .fa {
+    font-size: inherit;
+}
+
+.dashboard-stat-spaced {
+    margin-top: 0;
+}
+
+.dashboard-page .info-section {
+    width: auto;
+    max-width: none;
+    padding: 0 15px;
+    margin: 8px 0 24px;
+}
+
+.info-card {
+    padding: 24px;
+    height: 100%;
+    margin-bottom: 20px;
+}
+
+.info-card i {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    margin-bottom: 16px;
+    font-size: 19px;
+    color: var(--primary-color);
+    background: var(--primary-soft);
+    border-radius: var(--border-radius);
+}
+
+.info-card h5 {
+    margin: 0 0 8px;
+}
+
+.info-card p {
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.dashboard-page footer {
+    margin-left: var(--sidebar-width);
+    padding: 20px;
+    border-top: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    background: var(--surface-color);
+    text-align: center;
+    font-size: 12px;
+}
+
+.teacher-card {
+    display: none;
+    padding: 16px;
+    margin-bottom: 14px;
+}
+
+.teacher-card p {
+    margin-bottom: 8px;
+}
+
+.summary-box {
+    min-height: 98px;
+}
+
+/* Login screens use one centered card instead of overlapping page-specific offsets. */
+
+.auth-page {
+    min-height: 100vh;
+    background: var(--background-color);
+    font-family: var(--font-family);
+}
+
+.auth-page .main-wrapper {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.auth-page .main-wrapper > .container {
+    flex: 1;
+    width: 100%;
+    max-width: 960px;
+    padding: 48px 20px 32px;
+}
+
+.auth-page .main-wrapper > .container > h1 {
+    max-width: 650px;
+    margin: 0 auto 32px;
+    text-align: center;
+    color: var(--text-primary);
+    font-size: 26px;
+    font-weight: 650;
+    text-shadow: none;
+}
+
+.auth-page .main-wrapper > .container > .row {
+    display: flex;
+    justify-content: center;
+    margin: 0;
+}
+
+.auth-page .main-wrapper > .container > .row > [class*="col-"] {
+    float: none;
+    width: 100%;
+    max-width: 480px;
+    padding: 0;
+    margin: 0;
+}
+
+.auth-card, .login-box, .teacher-login-page .login-container {
+    margin: 0;
+    padding: 16px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: var(--surface-color);
+    box-shadow: var(--box-shadow);
+}
+
+.auth-page .login-container.auth-card {
+    margin-top: 0;
+}
+
+.auth-card > .section {
+    padding: 0;
+}
+
+.auth-card .panel, .teacher-login-page .login-container .panel {
+    margin: 0;
+    border: 0;
+    box-shadow: none;
+}
+
+.auth-page .panel-heading {
+    padding: 20px 16px;
+    background: transparent;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.auth-page .panel-body {
+    padding: 24px 16px 16px;
+}
+
+.auth-page .panel-title h4, .student-login-page h4 {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 19px;
+}
+
+.auth-page .form-horizontal .form-group {
+    margin-right: 0;
+    margin-left: 0;
+}
+
+.auth-page .btn-success {
+    color: #fff;
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.auth-page .btn-success:hover {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+}
+
+.auth-page footer {
+    margin-top: 24px;
+    padding: 20px;
+    color: var(--text-secondary);
+    background: transparent;
+    border-top: 1px solid var(--border-color);
+    text-align: center;
+    font-size: 12px;
+}
+
+.auth-page footer a {
+    color: var(--primary-color);
+}
+
+/* Public pages keep their Bootstrap 5 bundle isolated from the application shell. */
+
+body.public-page {
+    font-size: 16px;
+    background: var(--surface-color);
+}
+
+.public-page .navbar {
+    min-height: var(--navbar-height);
+    padding: 14px 0;
+}
+
+.public-page .navbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #fff;
+    font-size: 17px;
+    font-weight: 650;
+    white-space: normal;
+}
+
+.public-page .navbar-brand small {
+    display: block;
+    max-width: 260px;
+    font-size: 11px;
+    color: #b7c9dc;
+    font-weight: 400;
+}
+
+.public-page .navbar .nav-link {
+    padding: 9px 12px;
+    border-radius: var(--radius-sm);
+    color: #c8d5e5;
+    font-size: 14px;
+}
+
+.public-page .navbar .nav-link:hover, .public-page .navbar .nav-link.active {
+    color: #fff;
+    background: #29425f;
+}
+
+.public-page .navbar.bg-dark, .public-page footer.bg-dark {
+    background: var(--sidebar-color) !important;
+    /* Bootstrap 5 background utility. */
+}
+
+.public-page .navbar-toggler {
+    padding: 6px;
+    border: 1px solid #536880;
+    box-shadow: none;
+}
+
+.public-hero {
+    position: relative;
+    background: #183553 url("../../images/school system background.jpg") center / cover no-repeat;
+}
+
+.public-hero--home {
+    min-height: 420px;
+}
+
+.public-hero--notice {
+    min-height: 235px;
+}
+
+.public-hero__overlay {
+    position: absolute;
+    inset: 0;
+    background: rgb(15 37 61 / 79%);
+}
+
+.public-hero h1 {
+    max-width: 770px;
+    margin: 0 auto 20px;
+    color: #fff;
+    font-size: clamp(28px, 3.2vw, 42px);
+    line-height: 1.2;
+}
+
+.public-hero p {
+    max-width: 630px;
+    margin-right: auto;
+    margin-left: auto;
+    color: #d4e3f4;
+    font-size: 17px;
+}
+
+.public-hero .btn {
+    margin-bottom: 8px;
+}
+
+.public-page .btn-outline-light {
+    border-color: #9cb5d0;
+    color: #fff;
+    background: transparent;
+}
+
+.public-page .btn-outline-light:hover {
+    background: #fff;
+    color: var(--primary-color);
+}
+
+.public-feature {
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 24px;
+    text-align: left;
+    background: var(--surface-color);
+    box-shadow: var(--box-shadow);
+    height: 100%;
+}
+
+.public-feature h5 {
+    margin-bottom: 12px;
+    font-size: 17px;
+}
+
+.public-feature p {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.notice-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+    gap: 12px;
+    padding: 0;
+    margin: 24px 0 0;
+    list-style: none;
+    text-align: left;
+}
+
+.notice-list li {
+    padding: 0;
+    margin: 0;
+}
+
+.notice-link {
+    display: block;
+    padding: 16px 18px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--surface-muted);
+    color: var(--primary-color);
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+}
+
+.notice-link:hover {
+    background: var(--primary-soft);
+    text-decoration: none;
+}
+
+.notice-details-text {
+    max-width: 75ch;
+    margin: 0 auto;
+    color: var(--text-secondary);
+    text-align: left;
+    line-height: 1.8;
+    overflow-wrap: anywhere;
+}
+
+.result-page .navbar-inverse {
+    padding: 10px 16px;
+    background: var(--sidebar-color);
+}
+
+.result-page .navbar-brand {
+    height: auto;
+    color: #fff;
+    white-space: normal;
+    font-size: 16px;
+}
+
+.result-page .navbar-nav > li > a {
+    color: #d8e5f4;
+}
+
+.result-page .main-page {
+    display: block;
+}
+
+@media (max-width: 991px) {
+    .dashboard-page footer {
+        margin-left: 0;
+    }
+
+    .public-page .navbar-collapse {
+        padding-top: 12px;
+    }
+}
+
+@media (max-width: 767px) {
+    .teacher-table-wrapper {
+        display: none;
+    }
+
+    .teacher-card {
+        display: block;
+    }
+
+    .dashboard-stat {
+        min-height: 115px;
+        padding: 18px;
+    }
+
+    .dashboard-stat .number {
+        font-size: 27px;
+    }
+
+    .auth-page .main-wrapper > .container {
+        padding: 28px 16px;
+    }
+
+    .auth-page .main-wrapper > .container > h1 {
+        font-size: 23px;
+        margin-bottom: 24px;
+    }
+
+    .auth-card, .login-box, .teacher-login-page .login-container {
+        padding: 8px;
+    }
+
+    .public-hero--home {
+        min-height: 370px;
+    }
+
+    .public-page .navbar-brand small {
+        max-width: 220px;
+    }
+
+    .public-page .notice-content {
+        padding: 24px !important;
+        /* Overrides the Bootstrap spacing utility on the existing card. */
+    }
+
+    .result-page .navbar-header {
+        min-width: 0;
+    }
+
+    .result-page .navbar-nav {
+        margin: 0;
+    }
+}

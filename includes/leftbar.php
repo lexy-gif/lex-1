@@ -1,7 +1,7 @@
-<div class="left-sidebar bg-black-300 box-shadow ">
+<div class="left-sidebar bg-black-300 box-shadow" id="srms-sidebar" role="navigation" aria-label="Dean navigation">
                         <div class="sidebar-content">
                             <div class="user-info closed">
-                                <img src="http://placehold.it/90/c2c2c2?text=User" alt="John Doe" class="img-circle profile-img">
+                                <span class="srms-avatar profile-img" aria-hidden="true"><i class="fa fa-user"></i></span>
                                 <h6 class="title">Dean of Studies</h6>
                                 <small class="info">Academic Administrator</small>
                             </div>
@@ -20,7 +20,7 @@
                                         <a href="dean-academics.php"><i class="fa fa-graduation-cap"></i> <span>Academic Workspace</span></a>
                                     </li>
                                     <li class="has-children">
-                                        <a href="#"><i class="fa fa-user-circle"></i> <span>Teachers</span> <i class="fa fa-angle-right arrow"></i></a>
+                                        <a href="#"><i class="fa fa-user"></i> <span>Teachers</span> <i class="fa fa-angle-right arrow"></i></a>
                                         <ul class="child-nav">
                                             <li><a href="manage-teachers.php"><i class="fa fa-users"></i> <span>Manage Teachers</span></a></li>
                                             <li><a href="create-teacher.php"><i class="fa fa-user-plus"></i> <span>Create Teacher</span></a></li>
@@ -49,7 +49,7 @@
                                             <li><a href="create-subject.php"><i class="fa fa-bars"></i> <span>Create Subject</span></a></li>
                                             <li><a href="manage-subjects.php"><i class="fa fa fa-server"></i> <span>Manage Subjects</span></a></li>
                                            <li><a href="add-subjectcombination.php"><i class="fa fa-newspaper-o"></i> <span>Add Subject Combination </span></a></li>
-                                           <a href="manage-subjectcombination.php"><i class="fa fa-newspaper-o"></i> <span>Manage Subject Combination </span></a></li>
+                                           <li><a href="manage-subjectcombination.php"><i class="fa fa-newspaper-o"></i> <span>Manage Subject Combination </span></a></li>
                                         </ul>
                                     </li>
    <li class="has-children">
@@ -95,6 +95,7 @@
                                         <li><a href="change-password.php"><i class="fa fa fa-server"></i> <span> Dean Change Password</span></a></li>
                                            
                             
+                                </ul>
                             </div>
                             <!-- /.sidebar-nav -->
                         </div>

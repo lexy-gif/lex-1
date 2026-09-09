@@ -106,7 +106,7 @@ if($formValue('class')!=='' && $formValue('examid')!=='' && $formValue('studenti
     <link rel="stylesheet" href="css/prism/prism.css" media="screen">
     <link rel="stylesheet" href="css/select2/select2.min.css">
     <link rel="stylesheet" href="css/main.css" media="screen">
-    <link rel="stylesheet" href="css/custom.css" media="screen">
+    <link rel="stylesheet" href="css/custom.css">
     <script src="js/modernizr/modernizr.min.js"></script>
 </head>
 

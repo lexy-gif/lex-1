@@ -18,11 +18,11 @@ include('includes/config.php');
     <link href="css/custom.css" rel="stylesheet" />
 </head>
 
-<body>
+<body class="public-page">
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="index.php">SRMS - Student Result Management System</a>
+            <a class="navbar-brand" href="index.php"><span class="srms-brand-text">SRMS<small>Student Result Management System</small></span></a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                 data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
                 aria-label="Toggle navigation">
@@ -30,7 +30,7 @@ include('includes/config.php');
             </button>
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                    <li class="nav-item"><a class="nav-link active" href="#!">Home</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="index.php">Home</a></li>
                     <li class="nav-item"><a class="nav-link" href="find-result.php">Students</a></li>
                     <li class="nav-item"><a class="nav-link" href="teacher-login.php">Class Teacher</a></li>
                     <li class="nav-item"><a class="nav-link" href="admin-login.php">Dean of Studies</a></li>
@@ -56,21 +56,21 @@ include('includes/config.php');
             <h2 class="fw-bold mb-4">Why Choose SRMS?</h2>
             <div class="row justify-content-center">
                 <div class="col-md-4 mb-4">
-                    <div class="p-4 border rounded-3 shadow-sm bg-white h-100">
-                        <h5 class="fw-bold mb-2">🎓 Student Access</h5>
+                    <div class="public-feature">
+                        <h5 class="fw-bold mb-2">Student Access</h5>
                         <p>Easily check your academic performance and download results anytime, anywhere.</p>
                     </div>
                 </div>
                 <div class="col-md-4 mb-4">
-                    <div class="p-4 border rounded-3 shadow-sm bg-white h-100">
-                        <h5 class="fw-bold mb-2">🧑‍💼 Class Teacher Management</h5>
+                    <div class="public-feature">
+                        <h5 class="fw-bold mb-2">Class Teacher Management</h5>
                         <p>Class Teacher can efficiently upload results, manage students, and post important notices.
                         </p>
                     </div>
                 </div>
                 <div class="col-md-4 mb-4">
-                    <div class="p-4 border rounded-3 shadow-sm bg-white h-100">
-                        <h5 class="fw-bold mb-2">📢 Notice Board</h5>
+                    <div class="public-feature">
+                        <h5 class="fw-bold mb-2">Notice Board</h5>
                         <p>Stay informed with the latest academic announcements and school updates.</p>
                     </div>
                 </div>
@@ -83,7 +83,7 @@ include('includes/config.php');
         <div class="container my-5">
             <div class="row justify-content-center">
                 <div class="col-lg-10 text-center">
-                    <h2>📢 Our Class Notice Board</h2>
+                    <h2>Our Class Notice Board</h2>
                     <p class="text-muted">Click the links below to view and read the latest school notices.</p>
 
                     <hr color="#000" />

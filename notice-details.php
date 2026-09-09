@@ -18,11 +18,11 @@ include('includes/config.php');
     <link href="css/custom.css" rel="stylesheet" />
 </head>
 
-<body>
+<body class="public-page">
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="index.php">SRMS - Student Result Management System</a>
+            <a class="navbar-brand" href="index.php"><span class="srms-brand-text">SRMS<small>Student Result Management System</small></span></a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                 data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
                 aria-label="Toggle navigation">
@@ -51,7 +51,7 @@ include('includes/config.php');
     <section class="py-5">
         <div class="container my-4">
             <div class="row justify-content-center">
-                <div class="col-lg-10 bg-white p-5 rounded shadow-sm">
+                <div class="col-lg-10 bg-white p-5 rounded shadow-sm notice-content">
 
                     <?php 
           $noticeid = $_GET['nid'];

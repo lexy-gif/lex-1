@@ -1,1 +1,154 @@
-.cbe-heading{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin:24px 0}.cbe-heading h2{margin:0}.cbe-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:20px 0}.cbe-card{background:#fff;border:1px solid #e2e8f0;border-left:4px solid #337ab7;border-radius:8px;padding:18px;color:#334155}.cbe-card strong{display:block;font-size:28px;color:#173b63}.cbe-form summary{cursor:pointer;padding:6px 0}.cbe-form form{margin-top:18px}.cbe-chart-row{display:grid;grid-template-columns:minmax(90px,1fr) 2fr 60px;align-items:center;gap:10px;margin:12px 0}.cbe-chart-row .progress{margin:0;height:12px}.cbe-nav{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}.cbe-filters{display:flex;flex-wrap:wrap;gap:12px;align-items:end}.cbe-filters .form-group{flex:1;min-width:130px}.cbe-table td{white-space:normal!important}.cbe-table{font-size:13px}.cbe-print-title{margin-bottom:20px}@media print{.left-sidebar,.top-navbar,.cbe-nav,.cbe-filters,.cbe-form,.dataTables_filter,.dataTables_length,.dataTables_paginate,.cbe-no-print{display:none!important}.main-page{margin-left:0!important;width:100%!important}.main-wrapper,.content-wrapper,.content-container,.container-fluid{margin:0!important;padding:0!important}.panel{break-inside:avoid}.table-responsive{overflow:visible!important}body{padding:0!important;background:#fff!important}.cbe-cards{grid-template-columns:repeat(4,1fr)}}
+/* Academic workspace variants. Shared controls and table styles live in srms/. */
+
+.cbe-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    margin: 0 0 var(--space-5);
+}
+
+.cbe-heading h2 {
+    margin: 0;
+}
+
+.cbe-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: var(--space-4);
+    margin: 20px 0;
+}
+
+.cbe-card {
+    padding: 20px;
+    border-top: 3px solid #a9c5e5;
+}
+
+.cbe-card strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 28px;
+    line-height: 1.3;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+.cbe-form summary {
+    cursor: pointer;
+    padding: 2px 0;
+    color: var(--primary-color);
+}
+
+.cbe-form[open] summary {
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.cbe-form form {
+    margin-top: 18px;
+}
+
+.cbe-form .row {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.cbe-form .row > [class*="col-"] {
+    width: 50%;
+}
+
+.cbe-chart-row {
+    display: grid;
+    grid-template-columns: minmax(90px, 1fr) 2fr 60px;
+    align-items: center;
+    gap: 12px;
+    margin: 16px 0;
+    font-size: 13px;
+}
+
+.cbe-chart-row > span {
+    overflow-wrap: anywhere;
+}
+
+.cbe-chart-row > strong {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.cbe-chart-row .progress {
+    margin: 0;
+    height: 9px;
+}
+
+.cbe-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 16px 0 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.cbe-nav .btn {
+    font-size: 12px;
+}
+
+.cbe-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.cbe-filters .form-group {
+    flex: 1 1 145px;
+    min-width: 0;
+    margin: 0;
+}
+
+.cbe-filters > .btn {
+    margin-bottom: 0;
+}
+
+.cbe-table {
+    font-size: 13px;
+}
+
+.cbe-print-title {
+    margin-bottom: 20px;
+}
+
+@media (max-width: 767px) {
+    .cbe-heading {
+        align-items: flex-start;
+    }
+
+    .cbe-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .cbe-card {
+        padding: 14px;
+        font-size: 12px;
+    }
+
+    .cbe-card strong {
+        font-size: 25px;
+    }
+
+    .cbe-form .row > [class*="col-"] {
+        width: 100%;
+    }
+
+    .cbe-filters .form-group {
+        flex-basis: calc(50% - 16px);
+    }
+
+    .cbe-chart-row {
+        grid-template-columns: minmax(70px, 1fr) 1fr 45px;
+        font-size: 12px;
+    }
+}

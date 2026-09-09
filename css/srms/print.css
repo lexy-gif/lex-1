@@ -1,0 +1,61 @@
+@media print {
+    /* Print overrides must win over Bootstrap utilities and inline plugin widths. */
+
+    .left-sidebar, .top-navbar, .srms-nav-backdrop, .breadcrumb-div,
+    .cbe-nav, .cbe-filters, .cbe-form, .cbe-no-print, .print-action,
+    .dataTables_filter, .dataTables_length, .dataTables_paginate {
+        display: none !important;
+    }
+
+    html, body {
+        background: #fff !important;
+        color: #000;
+        font-size: 11px;
+        padding: 0 !important;
+    }
+
+    .top-navbar-fixed .main-page, .main-page, .top-navbar-fixed .content-wrapper,
+    .main-wrapper, .content-wrapper, .content-container, .container-fluid {
+        display: block !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .table-responsive, .srms-table-scroll {
+        overflow: visible !important;
+        border: 0;
+    }
+
+    .table, table.dataTable {
+        width: 100% !important;
+        min-width: 0 !important;
+        font-size: 10px;
+    }
+
+    .table td, .table th {
+        padding: 6px !important;
+        white-space: normal !important;
+    }
+
+    .panel, .dashboard-stat, .cbe-card {
+        box-shadow: none;
+        break-inside: avoid;
+    }
+
+    thead {
+        display: table-header-group;
+    }
+
+    tr {
+        break-inside: avoid;
+    }
+
+    .main-page .cbe-cards {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .dashboard-page footer {
+        margin: 0;
+    }
+}

@@ -51,7 +51,7 @@ $nextLesson = $nextLessonQuery->fetch(PDO::FETCH_OBJ);
     <link rel="stylesheet" href="css/bootstrap.min.css" media="screen">
     <link rel="stylesheet" href="css/font-awesome.min.css" media="screen">
     <link rel="stylesheet" href="css/main.css" media="screen">
-    <link rel="stylesheet" href="css/custom.css" media="screen">
+    <link rel="stylesheet" href="css/custom.css">
     <script src="js/modernizr/modernizr.min.js"></script>
 </head>
 <body class="top-navbar-fixed">

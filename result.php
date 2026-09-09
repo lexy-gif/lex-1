@@ -30,11 +30,12 @@ $_SESSION['classid'] = $classid;
     <link rel="stylesheet" href="css/lobipanel/lobipanel.min.css" media="screen">
     <link rel="stylesheet" href="css/prism/prism.css" media="screen">
     <link rel="stylesheet" href="css/main.css" media="screen">
-    <link rel="stylesheet" href="css/custom.css" media="screen">
+    <link rel="stylesheet" href="css/bootstrap.min.css"><link rel="stylesheet" href="css/custom.css">
     <script src="js/modernizr/modernizr.min.js"></script>
+    <script src="js/srms-ui.js" defer></script>
 </head>
 
-<body>
+<body class="result-page">
     <div class="main-wrapper">
         <nav class="navbar navbar-inverse">
             <div class="container-fluid">
@@ -120,7 +121,7 @@ try {
                                             <div class="panel-body p-20">
                                                 <div class="panel panel-info">
                                                     <div class="panel-heading text-center">
-                                                        <h3 class="panel-title"><i class="fa fa-user-circle"></i>
+                                                        <h3 class="panel-title"><i class="fa fa-user"></i>
                                                             Welcome, <?php echo htmlentities($student->StudentName); ?>!
                                                         </h3>
                                                     </div>
@@ -321,8 +322,8 @@ if ($subjectCount > 0):
             var WinPrint = window.open('', '', 'left=0,top=0,width=900,height=900,toolbar=0,scrollbars=1,status=0');
             WinPrint.document.write('<html><head><title>Print Result</title>');
             // Optionally copy bootstrap CSS links for print styling:
-            WinPrint.document.write('<link rel="stylesheet" href="css/bootstrap.min.css">');
-            WinPrint.document.write('</head><body>');
+            WinPrint.document.write('');
+            WinPrint.document.write('</head><body class="result-page">');
             WinPrint.document.write(prtContent.innerHTML);
             WinPrint.document.write('</body></html>');
             WinPrint.document.close();

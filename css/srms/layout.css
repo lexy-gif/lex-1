@@ -1,0 +1,500 @@
+/* Application shell; the public Bootstrap 5 navbar is scoped in pages.css. */
+
+.top-navbar-fixed .content-wrapper {
+    display: block;
+    width: 100%;
+    margin-top: var(--navbar-height);
+    min-height: calc(100vh - var(--navbar-height));
+}
+
+.top-navbar-fixed .content-container {
+    display: block;
+}
+
+.top-navbar-fixed .main-page {
+    display: block;
+    width: auto;
+    min-width: 0;
+    margin-left: var(--sidebar-width);
+    padding: var(--space-5) var(--space-3) var(--space-6);
+}
+
+.main-page > .container-fluid {
+    max-width: 1680px;
+}
+
+.main-page .page-title-div {
+    padding: 0 0 var(--space-4);
+    background: transparent;
+}
+
+.main-page .page-title-div .title {
+    margin: 0 0 var(--space-2);
+}
+
+.main-page .page-title-div p {
+    margin-bottom: 0;
+}
+
+.main-page .breadcrumb-div {
+    background: transparent;
+    padding: 0;
+}
+
+.main-page .breadcrumb {
+    padding: 0 0 var(--space-3);
+    margin: 0;
+    font-size: 12px;
+    background: transparent;
+}
+
+.main-page .section {
+    padding: var(--space-4) 0;
+}
+
+.main-page > .section {
+    padding-right: 15px;
+    padding-left: 15px;
+}
+
+.main-page > .container-fluid > h2 {
+    margin: 0 0 var(--space-5);
+}
+
+.main-page .row > [class*="col-"] {
+    min-width: 0;
+}
+
+.top-navbar-fixed .top-navbar {
+    position: fixed;
+    inset: 0 0 auto;
+    min-height: var(--navbar-height);
+    border: 0;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--surface-color);
+    box-shadow: 0 1px 4px rgb(23 43 67 / 3%);
+    z-index: 1030;
+}
+
+.top-navbar > .container-fluid {
+    padding: 0 var(--space-5);
+}
+
+.top-navbar .srms-navbar-inner {
+    display: flex;
+    align-items: center;
+    min-height: var(--navbar-height);
+    gap: var(--space-4);
+}
+
+.top-navbar .navbar-header, .top-navbar .navbar-header.small-nav-header {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    width: auto;
+    float: none;
+    overflow: visible;
+    padding: 0;
+}
+
+.top-navbar .navbar-brand, .top-navbar .small-nav-header .navbar-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    height: auto;
+    margin: 0;
+    padding: 0;
+    color: var(--text-primary);
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.top-navbar > .container-fluid .navbar-brand {
+    margin-left: 0;
+}
+
+.srms-brand-mark, .srms-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--border-radius);
+    background: var(--primary-soft);
+    color: var(--primary-color);
+}
+
+.srms-brand-mark {
+    background: var(--primary-color);
+    color: #fff;
+}
+
+.srms-brand-text small {
+    display: block;
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    margin-top: 3px;
+}
+
+.srms-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 13px;
+}
+
+.srms-profile-name {
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.top-navbar .navbar-collapse {
+    flex: 1;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+}
+
+.top-navbar .navbar-nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+}
+
+.top-navbar .navbar-right {
+    margin-left: auto;
+}
+
+.top-navbar .navbar-nav > li > a {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 40px;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--text-secondary);
+    border-radius: var(--radius-sm);
+}
+
+.top-navbar .nav > li > a:hover, .top-navbar .nav > li > a:focus, .top-navbar .nav > .open > a {
+    background: var(--primary-soft);
+}
+
+.top-navbar .navbar-nav > li > a.color-danger {
+    color: var(--danger-color) !important;
+    /* Overrides the template's semantic utility. */
+}
+
+.top-navbar .navbar-nav > li > a .badge {
+    position: static;
+    margin: 0;
+}
+
+.top-navbar .srms-icon-button, .top-navbar .navbar-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    float: none;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    padding: 0;
+    margin: 0;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    background: transparent;
+    font-size: 17px;
+    cursor: pointer;
+}
+
+.top-navbar .srms-icon-button:hover, .top-navbar .navbar-toggle:hover {
+    color: var(--primary-color);
+    background: var(--primary-soft);
+}
+
+.top-navbar .small-nav-handle {
+    margin-left: var(--space-5);
+}
+
+.top-navbar .small-nav-handle .fa {
+    line-height: 1;
+}
+
+.top-navbar .navbar-toggle {
+    display: none;
+}
+
+.top-navbar .dropdown-menu {
+    margin-top: 10px;
+}
+
+.srms-nav-backdrop {
+    display: none;
+}
+
+.top-navbar-fixed .left-sidebar {
+    position: fixed;
+    inset: var(--navbar-height) auto 0 0;
+    width: var(--sidebar-width);
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    background: var(--sidebar-color);
+    box-shadow: none;
+    z-index: 1020;
+    scrollbar-width: thin;
+    scrollbar-color: #466079 var(--sidebar-color);
+}
+
+.left-sidebar .sidebar-content {
+    width: 100%;
+    padding: var(--space-4) var(--space-3);
+}
+
+.left-sidebar .side-nav {
+    margin: 0;
+    padding: 0;
+    color: var(--sidebar-text);
+}
+
+.left-sidebar .side-nav > li {
+    margin-bottom: 3px;
+}
+
+.left-sidebar .side-nav li a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.left-sidebar .side-nav li a span {
+    overflow-wrap: anywhere;
+}
+
+.left-sidebar .side-nav li .fa {
+    flex: 0 0 18px;
+    width: 18px;
+    font-size: 15px;
+    opacity: .8;
+}
+
+.left-sidebar .side-nav li.has-children .arrow {
+    padding: 0;
+    margin-left: auto;
+    font-size: 13px;
+    width: auto;
+    flex-basis: auto;
+}
+
+.left-sidebar .side-nav .has-children.open .arrow {
+    padding: 0;
+}
+
+.left-sidebar .side-nav .nav-header {
+    padding: 22px 12px 9px;
+    font-size: 10px;
+    letter-spacing: .1em;
+    color: #93a8c0;
+    opacity: 1;
+}
+
+.left-sidebar .side-nav li a:hover, .left-sidebar .side-nav li a:focus {
+    color: #fff;
+    background: #223b58;
+}
+
+.left-sidebar .side-nav li.active, .left-sidebar .side-nav .has-children.open {
+    background: transparent;
+}
+
+.left-sidebar .side-nav li.active > a {
+    background: var(--sidebar-active);
+    color: #fff;
+    box-shadow: inset 3px 0 #82b5ed;
+}
+
+.left-sidebar .side-nav .child-nav {
+    margin: 4px 0 10px;
+    padding: 0;
+}
+
+.left-sidebar .side-nav .child-nav a {
+    padding-left: 25px;
+    font-size: 12px;
+}
+
+.left-sidebar .user-info {
+    height: auto;
+    max-height: 170px;
+    padding: 16px 8px;
+    color: var(--sidebar-text);
+}
+
+.left-sidebar .user-info.closed {
+    height: 0;
+    max-height: 0;
+    padding: 0;
+    visibility: hidden;
+}
+
+.left-sidebar .user-info .srms-avatar {
+    width: 44px;
+    height: 44px;
+    margin-bottom: 8px;
+    background: var(--sidebar-active);
+    color: #fff;
+}
+
+.left-sidebar .user-info .info {
+    color: #a9bed5;
+}
+
+.left-sidebar.small-nav {
+    width: var(--sidebar-compact-width);
+}
+
+.left-sidebar.small-nav .sidebar-content, .left-sidebar.small-nav:hover .sidebar-content {
+    width: 100%;
+    padding-right: 8px;
+    padding-left: 8px;
+}
+
+.left-sidebar.small-nav ~ .main-page {
+    margin-left: var(--sidebar-compact-width);
+}
+
+.left-sidebar.small-nav .nav-header, .left-sidebar.small-nav .side-nav > li:hover > a > span {
+    display: none;
+}
+
+.left-sidebar.small-nav .side-nav > li > a {
+    justify-content: center;
+    min-height: 42px;
+    padding: 10px;
+}
+
+.left-sidebar.small-nav .has-children:hover .child-nav {
+    display: none !important;
+    /* Disable template flyouts clipped by the scrollable sidebar; clicking expands it. */
+}
+
+@media (max-width: 991px) {
+    .top-navbar .small-nav-handle {
+        display: none;
+    }
+
+    .top-navbar .navbar-toggle {
+        display: inline-flex;
+    }
+
+    .top-navbar .navbar-header {
+        flex: 1;
+        gap: var(--space-2);
+    }
+
+    .top-navbar .navbar-brand {
+        flex: 1;
+    }
+
+    .top-navbar .srms-navbar-inner {
+        flex-wrap: wrap;
+        gap: 0;
+    }
+
+    .top-navbar .navbar-collapse {
+        flex-basis: 100%;
+        width: 100%;
+    }
+
+    .top-navbar .navbar-collapse.collapse {
+        display: none !important;
+        /* Match Bootstrap collapse to the sidebar's 992px breakpoint. */
+    }
+
+    .top-navbar .navbar-collapse.in {
+        display: block !important;
+    }
+
+    .top-navbar .navbar-nav {
+        float: none;
+        flex-wrap: wrap;
+        padding: 8px 0;
+    }
+
+    .top-navbar .navbar-right {
+        justify-content: flex-end;
+    }
+
+    .top-navbar .navbar-nav > li {
+        float: none;
+    }
+
+    .top-navbar-fixed .left-sidebar {
+        display: block;
+        transform: translateX(-100%);
+        visibility: hidden;
+        transition: transform var(--transition), visibility var(--transition);
+        width: min(var(--sidebar-width), 85vw);
+    }
+
+    .top-navbar-fixed .main-page, .left-sidebar.small-nav ~ .main-page {
+        margin-left: 0;
+        padding: var(--space-4) 0 var(--space-5);
+    }
+
+    .srms-nav-open .left-sidebar {
+        transform: translateX(0);
+        visibility: visible;
+    }
+
+    .srms-nav-open .srms-nav-backdrop {
+        display: block;
+        position: fixed;
+        inset: var(--navbar-height) 0 0;
+        background: rgb(16 31 49 / 38%);
+        z-index: 1010;
+        border: 0;
+    }
+
+    body.srms-nav-open {
+        overflow: hidden;
+    }
+}
+
+@media (max-width: 575px) {
+    .top-navbar > .container-fluid {
+        padding: 0 var(--space-3);
+    }
+
+    .srms-brand-text small {
+        max-width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .top-navbar .navbar-nav > li > a {
+        padding: 8px;
+    }
+
+    .srms-profile-name {
+        max-width: 140px;
+    }
+
+    .main-page .page-title-div .title, .main-page > .container-fluid > h2 {
+        font-size: 23px;
+    }
+}

@@ -48,7 +48,7 @@ if(isset($_POST['save_period'])) {
     <link rel="stylesheet" href="css/font-awesome.min.css" media="screen">
     <link rel="stylesheet" type="text/css" href="js/DataTables/datatables.min.css">
     <link rel="stylesheet" href="css/main.css" media="screen">
-    <link rel="stylesheet" href="css/custom.css" media="screen">
+    <link rel="stylesheet" href="css/custom.css">
 </head>
 <body class="top-navbar-fixed">
 <div class="main-wrapper">

@@ -1,7 +1,7 @@
-<div class="left-sidebar bg-black-300 box-shadow">
+<div class="left-sidebar bg-black-300 box-shadow" id="srms-sidebar" role="navigation" aria-label="Teacher navigation">
     <div class="sidebar-content">
         <div class="user-info closed">
-            <img src="http://placehold.it/90/c2c2c2?text=CT" alt="Class Teacher" class="img-circle profile-img">
+            <span class="srms-avatar profile-img" aria-hidden="true"><i class="fa fa-user"></i></span>
             <h6 class="title"><?php echo htmlentities(teacher_name()); ?></h6>
             <small class="info"><?php echo htmlentities(function_exists('teacher_role_label') ? teacher_role_label() : 'Teacher'); ?></small>
         </div>
