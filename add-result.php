@@ -1,26 +1,21 @@
 <?php
 session_start();
-error_reporting(0);
 include('includes/config.php');
 include('includes/csrf.php');
 include('includes/sms.php');
-require_once 'includes/cbe-learning.php';
-if(strlen($_SESSION['alogin'])=="") {   
-    header("Location: index.php"); 
-} else {
+require_once 'includes/dean-auth.php';
+require_once 'includes/exam-results.php';
+require_dean();
+$msg=$error='';
+$formValue=static fn($key)=>is_scalar($_POST[$key]??null)?(string)$_POST[$key]:'';
     if(isset($_POST['submit'])) {
         csrf_require_valid($_POST['csrf_token'] ?? '');
         try {
         $dbh->beginTransaction();
-        $class = $_POST['class'];
-        $examid = $_POST['examid'];
-        $studentid = $_POST['studentid']; 
-        $mark = $_POST['marks'];
-        $examName = 'Selected Exam';
-        cbe_exam_writable($dbh,(int)$examid);
-        if(!is_array($mark)||!$mark)throw new DomainException('Enter marks for the selected subjects.');
-        foreach($mark as $value)cbe_number($value,0,100);
-        if(!academic_query($dbh,'SELECT StudentId FROM tblstudents WHERE StudentId=? AND ClassId=? AND Status=1',[(int)$studentid,(int)$class])->fetchColumn())throw new DomainException('Select an active student in this class.');
+        $exam = result_create($dbh,$_POST);
+        $class = result_id($_POST['class']);
+        $examid = result_id($_POST['examid']);
+        $studentid = result_id($_POST['studentid']);
 
         $examStmt = $dbh->prepare("SELECT e.ExamName, e.Status, e.ClassId, ay.AcademicYear, t.TermName
                                    FROM tblexams e
@@ -32,54 +27,7 @@ if(strlen($_SESSION['alogin'])=="") {
         $examStmt->execute();
         $exam = $examStmt->fetch(PDO::FETCH_ASSOC);
 
-        if(!$exam) {
-            $error = "Please select a valid exam.";
-        } elseif(!empty($exam['ClassId']) && (int)$exam['ClassId'] !== (int)$class) {
-            $error = "The selected exam does not belong to this class.";
-        } else {
             $examName = $exam['AcademicYear'] . " - " . $exam['TermName'] . " - " . $exam['ExamName'];
-
-        // Get active subject IDs for the class in the same order used by the form.
-        $stmt = $dbh->prepare("SELECT tblsubjects.SubjectName, tblsubjects.id 
-                               FROM tblsubjectcombination 
-                               JOIN tblsubjects ON tblsubjects.id = tblsubjectcombination.SubjectId 
-                               WHERE tblsubjectcombination.ClassId = :cid AND tblsubjectcombination.status = 1
-                               ORDER BY tblsubjects.SubjectName");
-        $stmt->execute(array(':cid' => $class));
-        $sid1 = array();
-        while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            array_push($sid1, $row['id']);
-        } 
-
-        $duplicateStmt = $dbh->prepare("SELECT id FROM tblresult WHERE StudentId = :studentid AND ClassId = :class AND ExamId = :examid LIMIT 1");
-        $duplicateStmt->bindParam(':studentid', $studentid, PDO::PARAM_STR);
-        $duplicateStmt->bindParam(':class', $class, PDO::PARAM_STR);
-        $duplicateStmt->bindParam(':examid', $examid, PDO::PARAM_STR);
-        $duplicateStmt->execute();
-
-        if($duplicateStmt->rowCount() > 0) {
-            $error = "Result already declared for this student and exam.";
-        } elseif(count($mark) !== count($sid1)) {
-            $error = "Subject and marks count did not match. Please try again.";
-        } else {
-        $lastInsertId = 0;
-        for($i = 0; $i < count($mark); $i++) {
-            $mar = $mark[$i];
-            $sid = $sid1[$i];
-            $sql = "INSERT INTO tblresult(StudentId, ClassId, ExamId, SubjectId, marks) 
-                    VALUES(:studentid, :class, :examid, :sid, :marks)";
-            $query = $dbh->prepare($sql);
-            $query->bindParam(':studentid', $studentid, PDO::PARAM_STR);
-            $query->bindParam(':class', $class, PDO::PARAM_STR);
-            $query->bindParam(':examid', $examid, PDO::PARAM_STR);
-            $query->bindParam(':sid', $sid, PDO::PARAM_STR);
-            $query->bindParam(':marks', $mar, PDO::PARAM_STR);
-            $query->execute();
-            $lastInsertId = $dbh->lastInsertId();
-        }
-
-        // ✅ RANK CALCULATION SECTION ADDED HERE
-        if($lastInsertId) {
             $dbh->commit();
             // Calculate total marks for each student in the same class
             $sql_rank = "SELECT StudentId, SUM(marks) AS totalMarks 
@@ -128,18 +76,20 @@ if(strlen($_SESSION['alogin'])=="") {
             } else {
                 $msg .= " SMS not sent because this student has no parent phone number.";
             }
-        } else {
-            $error = "Something went wrong. Please try again";
-        }
-        }
-        }
-        if($dbh->inTransaction())$dbh->rollBack();
         } catch(Throwable $e) {
             if($dbh->inTransaction())$dbh->rollBack();
             $error=$e instanceof DomainException?$e->getMessage():'Could not save the result. Please try again.';
             if(!($e instanceof DomainException))error_log($e->getMessage());
         }
     }
+$formSubjects=[];$subjectMessage='Select a class, exam and learner to load registered subjects.';
+if($formValue('class')!=='' && $formValue('examid')!=='' && $formValue('studentid')!=='') {
+    try {
+        $context=result_entry_context($dbh,$formValue('class'),$formValue('studentid'),$formValue('examid'));
+        $formSubjects=$context['subjects'];
+        $subjectMessage=$formSubjects?'':'No active subject registrations for this learner in the exam year. Register subjects before entering marks.';
+    } catch(DomainException $e) { $subjectMessage=$e->getMessage(); }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -158,46 +108,6 @@ if(strlen($_SESSION['alogin'])=="") {
     <link rel="stylesheet" href="css/main.css" media="screen">
     <link rel="stylesheet" href="css/custom.css" media="screen">
     <script src="js/modernizr/modernizr.min.js"></script>
-    <script>
-    function getStudent(val) {
-        $.ajax({
-            type: "POST",
-            url: "get_student.php",
-            data: 'classid=' + val,
-            success: function(data) {
-                $("#studentid").html(data);
-            }
-        });
-        $.ajax({
-            type: "POST",
-            url: "get_student.php",
-            data: 'classid1=' + val,
-            success: function(data) {
-                $("#subject").html(data);
-            }
-        });
-    }
-
-    function getresult(val, clid) {
-        var clid = $(".clid").val();
-        var val = $(".stid").val();
-        var examid = $(".examid").val();
-        if (!clid || !val || !examid) {
-            $("#reslt").html('');
-            $('#submit').prop('disabled', false);
-            return;
-        }
-        var abh = clid + '$' + val + '$' + examid;
-        $.ajax({
-            type: "POST",
-            url: "get_student.php",
-            data: 'studclass=' + abh,
-            success: function(data) {
-                $("#reslt").html(data);
-            }
-        });
-    }
-    </script>
 </head>
 
 <body class="top-navbar-fixed">
@@ -251,7 +161,7 @@ if(strlen($_SESSION['alogin'])=="") {
                                                             $results = $query->fetchAll(PDO::FETCH_OBJ);
                                                             if($query->rowCount() > 0) {
                                                                 foreach($results as $result) { ?>
-                                                        <option value="<?php echo htmlentities($result->id); ?>">
+                                                        <option value="<?php echo htmlentities($result->id); ?>" <?= $formValue('class')===(string)$result->id?'selected':'' ?>>
                                                             <?php echo htmlentities($result->ClassName); ?>&nbsp;
                                                             Section-<?php echo htmlentities($result->Section); ?>
                                                         </option>
@@ -279,12 +189,12 @@ if(strlen($_SESSION['alogin'])=="") {
                                                             foreach($exams as $examRow) {
                                                                 $classLabel = $examRow->ClassName ? " - " . $examRow->ClassName . " Section-" . $examRow->Section : " - All Classes";
                                                         ?>
-                                                        <option value="<?php echo htmlentities($examRow->id); ?>">
+                                                        <option value="<?php echo htmlentities($examRow->id); ?>" <?= $formValue('examid')===(string)$examRow->id?'selected':'' ?>>
                                                             <?php echo htmlentities($examRow->AcademicYear . " - " . $examRow->TermName . " - " . $examRow->ExamName . $classLabel); ?>
                                                         </option>
                                                         <?php } ?>
                                                     </select>
-                                                    <span class="help-block">Create exams from the Manage Exams page before declaring term results.</span>
+                                                    <span class="help-block">Marks use the learner's subjects registered for the exam's academic year. <a href="student-subjects.php">Manage student subjects</a>.</span>
                                                 </div>
                                             </div>
                                             <div class="form-group">
@@ -292,6 +202,10 @@ if(strlen($_SESSION['alogin'])=="") {
                                                 <div class="col-sm-10">
                                                     <select name="studentid" class="form-control stid" id="studentid"
                                                         required="required" onChange="getresult(this.value);">
+                                                        <option value="">Select Student</option>
+                                                        <?php foreach(academic_students($dbh,(int)$formValue('class'),0,0) as $learner) { ?>
+                                                        <option value="<?= (int)$learner['StudentId'] ?>" <?= $formValue('studentid')===(string)$learner['StudentId']?'selected':'' ?>><?= academic_h($learner['StudentName']) ?></option>
+                                                        <?php } ?>
                                                     </select>
                                                 </div>
                                             </div>
@@ -303,13 +217,13 @@ if(strlen($_SESSION['alogin'])=="") {
                                             <div class="form-group">
                                                 <label for="date" class="col-sm-2 control-label">Subjects</label>
                                                 <div class="col-sm-10">
-                                                    <div id="subject"></div>
+                                                    <div id="subject"><?php result_subject_fields($formSubjects,is_array($_POST['marks']??null)?$_POST['marks']:[]); ?><?php if($subjectMessage!=='') { ?><p class="help-block"><?= academic_h($subjectMessage) ?></p><?php } ?></div>
                                                 </div>
                                             </div>
                                             <div class="form-group">
                                                 <div class="col-sm-offset-2 col-sm-10">
                                                     <button type="submit" name="submit" id="submit"
-                                                        class="btn btn-primary">Declare Result</button>
+                                                        class="btn btn-primary" <?= !$formSubjects||$msg!==''?'disabled':'' ?>>Declare Result</button>
                                                 </div>
                                             </div>
                                         </form>
@@ -330,6 +244,7 @@ if(strlen($_SESSION['alogin'])=="") {
     <script src="js/prism/prism.js"></script>
     <script src="js/select2/select2.min.js"></script>
     <script src="js/main.js"></script>
+    <script src="js/result-entry.js"></script>
     <script>
     $(function($) {
         $(".js-states").select2();
@@ -344,4 +259,3 @@ if(strlen($_SESSION['alogin'])=="") {
 </body>
 
 </html>
-<?php } ?>

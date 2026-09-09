@@ -20,7 +20,7 @@ sid='academiccheck'+secrets.token_hex(12)
 code='session_id($argv[1]); session_start(); $_SESSION["alogin"]="local-validation"; session_write_close();'
 subprocess.run(['docker','compose','exec','-T','--user','www-data','web','php','-r',code,sid],check=True)
 try:
-    for page in ['dean-academics.php?area='+a for a in ['dashboard','structure','subjects','pathways','allocation','workload','assessments','coverage','interventions','analytics','reports','class','permissions','exams','timetable']] + ['dashboard.php','manage-teachers.php','dean-teacher-relationships.php','student-subjects.php','manage-subjects.php','manage-subjectcombination.php','view-teacher.php?id=1','edit-teacher.php?id=1','teacher-assignments.php']:
+    for page in ['dean-academics.php?area='+a for a in ['dashboard','structure','subjects','pathways','allocation','workload','assessments','coverage','interventions','analytics','reports','class','permissions','exams','timetable']] + ['dashboard.php','dean-academic-periods.php','manage-exams.php','manage-teachers.php','dean-teacher-relationships.php','student-subjects.php','manage-subjects.php','manage-subjectcombination.php','view-teacher.php?id=1','edit-teacher.php?id=1','teacher-assignments.php']:
         url,body=request(page,sid)
         assert 'admin-login.php' not in url,page
         assert '</html>' in body.lower(),page+' incomplete response'

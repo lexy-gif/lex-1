@@ -1,79 +1,26 @@
 <?php
-include('includes/config.php');
-if(!empty($_POST["classid"])) 
-{
- $cid=intval($_POST['classid']);
- if(!is_numeric($cid)){
- 
- 	echo htmlentities("invalid Class");exit;
- }
- else{
- $stmt = $dbh->prepare("SELECT StudentName,StudentId FROM tblstudents WHERE ClassId= :id order by StudentName");
- $stmt->execute(array(':id' => $cid));
- ?><option value="">Select Student </option><?php
- while($row=$stmt->fetch(PDO::FETCH_ASSOC))
- {
-  ?>
-  <option value="<?php echo htmlentities($row['StudentId']); ?>"><?php echo htmlentities($row['StudentName']); ?></option>
-  <?php
- }
+session_start();
+require_once 'includes/dean-auth.php';
+require_dean();
+require_once 'includes/config.php';
+require_once 'includes/exam-results.php';
+header('Content-Type: application/json; charset=utf-8');
+try {
+    if (isset($_POST['classid'])) {
+        $students=academic_students($dbh,result_id($_POST['classid']),0,0);
+        echo json_encode(['students'=>$students],JSON_THROW_ON_ERROR);
+    } else {
+        $class=result_id($_POST['class']??null);
+        $student=result_id($_POST['studentid']??null);
+        $exam=result_id($_POST['examid']??null);
+        $context=result_entry_context($dbh,$class,$student,$exam);
+        $duplicate=(bool)academic_query($dbh,'SELECT id FROM tblresult WHERE StudentId=? AND ExamId=? LIMIT 1',[$student,$exam])->fetchColumn();
+        $message=$duplicate?'Result already declared for this student and exam.':(!$context['subjects']?'No active subject registrations for this learner in the exam year. Register subjects before entering marks.':'');
+        ob_start();result_subject_fields($context['subjects']);$fields=ob_get_clean();
+        echo json_encode(['fields'=>$fields,'message'=>$message,'canSubmit'=>!$duplicate && (bool)$context['subjects']],JSON_THROW_ON_ERROR);
+    }
+} catch(Throwable $e) {
+    http_response_code($e instanceof DomainException?422:500);
+    if(!($e instanceof DomainException))error_log($e->getMessage());
+    echo json_encode(['message'=>$e instanceof DomainException?$e->getMessage():'Could not load result entry. Please try again.']);
 }
-
-}
-// Code for Subjects
-if(!empty($_POST["classid1"])) 
-{
- $cid1=intval($_POST['classid1']);
- if(!is_numeric($cid1)){
- 
-  echo htmlentities("invalid Class");exit;
- }
- else{
- $status=0;	
- $stmt = $dbh->prepare("SELECT tblsubjects.SubjectName,tblsubjects.id FROM tblsubjectcombination join  tblsubjects on  tblsubjects.id=tblsubjectcombination.SubjectId WHERE tblsubjectcombination.ClassId=:cid and tblsubjectcombination.status!=:stts order by tblsubjects.SubjectName");
- $stmt->execute(array(':cid' => $cid1,':stts' => $status));
- 
- while($row=$stmt->fetch(PDO::FETCH_ASSOC))
- {?>
-  <p> <?php echo htmlentities($row['SubjectName']); ?><input type="text"  name="marks[]" value="" class="form-control" required="" placeholder="Enter marks out of 100" autocomplete="off"></p>
-  
-<?php  }
-}
-}
-
-
-?>
-
-<?php
-
-if(!empty($_POST["studclass"])) 
-{
- $id= $_POST['studclass'];
- $dta=explode("$",$id);
-$id=$dta[0];
-$id1=$dta[1];
-$examid = isset($dta[2]) ? intval($dta[2]) : 0;
- $query = $dbh->prepare("SELECT StudentId,ClassId FROM tblresult WHERE StudentId=:id1 and ClassId=:id and ExamId=:examid ");
-//$query= $dbh -> prepare($sql);
-$query-> bindParam(':id1', $id1, PDO::PARAM_STR);
-$query-> bindParam(':id', $id, PDO::PARAM_STR);
-$query-> bindParam(':examid', $examid, PDO::PARAM_STR);
-$query-> execute();
-$results = $query -> fetchAll(PDO::FETCH_OBJ);
-$cnt=1;
-if($query -> rowCount() > 0)
-{ ?>
-<p>
-<?php
-echo "<span class='text-danger'> Result already declared for this student and exam.</span>";
- echo "<script>$('#submit').prop('disabled',true);</script>";
- ?></p>
-<?php }
-else {
- echo "<script>$('#submit').prop('disabled',false);</script>";
-}
-
-
-  }?>
-
-

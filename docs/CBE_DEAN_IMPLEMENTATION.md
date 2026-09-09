@@ -1,5 +1,9 @@
 # CBE Dean module: current-system analysis and implementation plan
 
+Result-entry continuation on 9 September 2026: legacy examination forms now use each learner's active subject registrations in the exam year. Subject IDs bind marks to subjects; creation and editing recheck membership transactionally, and inactive or historical results stay readable. Authenticated lookups and HTTP tests cover learner/year isolation, stale submissions, rejected batch rollback and competing declarations. No schema changes were required; see [CBE_WORKSPACE.md](CBE_WORKSPACE.md).
+
+Academic-period continuation on 8 September 2026: period creation, term-date updates and activation now use a shared transactional service. Ordinary saves preserve activation; explicit activation switches one year/term pair under a shared lock. Exam creation reuses the service without activating periods, and workspace defaults read the active pair together. Isolated HTTP tests cover rollback, context changes and competing writes. No schema changes were required; see [CBE_WORKSPACE.md](CBE_WORKSPACE.md).
+
 Timetable continuation on 8 September 2026: the older timetable routes now share scheduling validation with the workspace, support editing and multiple invigilators, and revalidate publication in a transaction. Teacher displays and Dean duty counts include secondary and legacy invigilators. Timetable HTTP checks cover conflicts, publication rollback, period isolation and concurrent saves. No schema changes were required; see [CBE_WORKSPACE.md](CBE_WORKSPACE.md).
 
 Continuation on 8 September 2026: legacy class creation/editing now use the configured grade catalogue and the same transactional save as the workspace. Grades above 9 are supported, duplicate sections are checked across mapped and unmapped classes, and legacy mapping preserves class names and student links. No schema changes were required. Usage and regression checks are documented in [CBE_WORKSPACE.md](CBE_WORKSPACE.md).

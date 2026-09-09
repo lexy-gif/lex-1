@@ -1,32 +1,21 @@
 <?php
 session_start();
-error_reporting(0);
 include('includes/config.php');
 include('includes/csrf.php');
-require_once 'includes/cbe-learning.php';
-if(strlen($_SESSION['alogin'])=="")
-    {   
-    header("Location: index.php"); 
-    }
-    else{
+require_once 'includes/dean-auth.php';
+require_once 'includes/exam-results.php';
+require_dean();
+$msg=$error='';
 
-$stid=intval($_GET['stid']);
-$examid=isset($_GET['examid']) ? intval($_GET['examid']) : 0;
+$stid=filter_var($_GET['stid']??0,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]])?:0;
+$examid=filter_var($_GET['examid']??0,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]])?:0;
 if(isset($_POST['submit']))
 {
 csrf_require_valid($_POST['csrf_token'] ?? '');
 
 try {
     $dbh->beginTransaction();
-    cbe_exam_writable($dbh,$examid);
-    $rowid=cbe_ids($_POST['id']??[]);$marks=$_POST['marks']??[];
-    if(!$rowid||!is_array($marks)||count($rowid)!==count($marks))throw new DomainException('Select valid result rows and marks.');
-    foreach($rowid as $count=>$id) {
-        $row=cbe_one($dbh,'SELECT id FROM tblresult WHERE id=? AND StudentId=? AND ExamId=? FOR UPDATE',[$id,$stid,$examid]);
-        if(!$row)throw new DomainException('A result row does not belong to this student and examination.');
-        $mark=cbe_number($marks[$count],0,100);
-        academic_query($dbh,'UPDATE tblresult SET marks=? WHERE id=? AND StudentId=? AND ExamId=?',[$mark,$id,$stid,$examid]);
-    }
+    result_update($dbh,$stid,$examid,$_POST['id']??[],$_POST['marks']??[]);
     $dbh->commit();$msg='Result info updated successfully';
 } catch(Throwable $e) {
     if($dbh->inTransaction())$dbh->rollBack();
@@ -122,7 +111,7 @@ $ret = "SELECT tblstudents.StudentName,tblclasses.ClassName,tblclasses.Section,t
 from tblresult
 join tblstudents on tblstudents.StudentId=tblresult.StudentId
 join tblsubjects on tblsubjects.id=tblresult.SubjectId
-join tblclasses on tblclasses.id=tblstudents.ClassId
+join tblclasses on tblclasses.id=tblresult.ClassId
 left join tblexams on tblexams.id=tblresult.ExamId
 left join tblacademicyears on tblacademicyears.id=tblexams.AcademicYearId
 left join tblterms on tblterms.id=tblexams.TermId
@@ -163,11 +152,11 @@ foreach($result as $row)
 
 
                                             <?php 
-$sql = "SELECT distinct tblstudents.StudentName,tblstudents.StudentId,tblclasses.ClassName,tblclasses.Section,tblsubjects.SubjectName,tblresult.marks,tblresult.id as resultid
+$sql = "SELECT distinct tblstudents.StudentName,tblstudents.StudentId,tblclasses.ClassName,tblclasses.Section,tblsubjects.SubjectName,tblresult.ClassId,tblresult.SubjectId,tblresult.marks,tblresult.id as resultid
 from tblresult
 join tblstudents on tblstudents.StudentId=tblresult.StudentId
 join tblsubjects on tblsubjects.id=tblresult.SubjectId
-join tblclasses on tblclasses.id=tblstudents.ClassId
+join tblclasses on tblclasses.id=tblresult.ClassId
 where tblstudents.StudentId=:stid $examCondition";
 $query = $dbh->prepare($sql);
 $query->bindParam(':stid',$stid,PDO::PARAM_STR);
@@ -176,11 +165,26 @@ if($examid > 0) {
 }
 $query->execute();
 $results=$query->fetchAll(PDO::FETCH_OBJ);
+$editable=0;$contexts=[];$contextErrors=[];
 $cnt=1;
 if($query->rowCount() > 0)
 {
 foreach($results as $result)
-{  ?>
+{
+    $resultClass=(int)$result->ClassId;
+    if(!array_key_exists($resultClass,$contexts)) {
+        $contexts[$resultClass]=[];
+        try { $contexts[$resultClass]=result_entry_context($dbh,$resultClass,$stid,$examid)['subjects']; }
+        catch(DomainException $e) { $contextErrors[$resultClass]=$examid?$e->getMessage():'Historical results without an exam are read-only.'; }
+    }
+    $canEdit=isset($contexts[$resultClass][(int)$result->SubjectId]);
+    $editable+=$canEdit?1:0;
+    $displayMark=$result->marks;
+    if($error && is_array($_POST['id']??null) && is_array($_POST['marks']??null)) {
+        $position=array_search((string)$result->resultid,$_POST['id'],true);
+        if($position!==false && is_scalar($_POST['marks'][$position]??null))$displayMark=$_POST['marks'][$position];
+    }
+?>
 
 
 
@@ -188,11 +192,12 @@ foreach($results as $result)
                                                 <label for="default"
                                                     class="col-sm-2 control-label"><?php echo htmlentities($result->SubjectName)?></label>
                                                 <div class="col-sm-10">
-                                                    <input type="hidden" name="id[]"
+                                                    <?php if($canEdit) { ?><input type="hidden" name="id[]"
                                                         value="<?php echo htmlentities($result->resultid)?>">
-                                                    <input type="text" name="marks[]" class="form-control" id="marks"
-                                                        value="<?php echo htmlentities($result->marks)?>" maxlength="5"
+                                                    <input type="number" name="marks[]" class="form-control" min="0" max="100" step="any"
+                                                        value="<?= academic_h($displayMark) ?>"
                                                         required="required" autocomplete="off">
+                                                    <?php } else { ?><p class="form-control-static"><?= academic_h($result->marks) ?></p><p class="help-block"><?= academic_h($contextErrors[$resultClass]??'Subject registration or offering is inactive for this exam year. Restore it before editing this mark.') ?></p><?php } ?>
                                                 </div>
                                             </div>
 
@@ -205,7 +210,7 @@ foreach($results as $result)
                                             <div class="form-group">
                                                 <div class="col-sm-offset-2 col-sm-10">
                                                     <button type="submit" name="submit"
-                                                        class="btn btn-primary">Update</button>
+                                                        class="btn btn-primary" <?= !$editable?'disabled':'' ?>>Update</button>
                                                 </div>
                                             </div>
                                         </form>
@@ -244,4 +249,3 @@ foreach($results as $result)
 </body>
 
 </html>
-<?PHP } ?>

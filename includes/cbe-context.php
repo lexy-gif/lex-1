@@ -2,10 +2,15 @@
 require_once __DIR__.'/academic-assignments.php';
 
 function cbe_period_context($db, $query) {
-    $year = (int)($query['year'] ?? academic_year($db));
-    $term = isset($query['term']) ? (int)$query['term'] : (int)academic_query(
-        $db, 'SELECT id FROM tblterms WHERE AcademicYearId=? AND IsActive=1 ORDER BY id DESC LIMIT 1', [$year]
-    )->fetchColumn();
+    if(isset($query['year'])) {
+        $year=(int)$query['year'];
+        $defaultTerm=(int)academic_query($db,'SELECT id FROM tblterms WHERE AcademicYearId=? AND IsActive=1 ORDER BY id DESC LIMIT 1',[$year])->fetchColumn();
+    } else {
+        // Read the default pair in one statement so a concurrent switch cannot mix periods.
+        $active=$db->query('SELECT y.id AcademicYearId,t.id TermId FROM tblacademicyears y LEFT JOIN tblterms t ON t.AcademicYearId=y.id AND t.IsActive=1 WHERE y.IsActive=1 ORDER BY y.id DESC,t.id DESC LIMIT 1')->fetch(PDO::FETCH_ASSOC);
+        $year=(int)($active['AcademicYearId']??0);$defaultTerm=(int)($active['TermId']??0);
+    }
+    $term = isset($query['term']) ? (int)$query['term'] : $defaultTerm;
     if ($year) academic_period($db, $year, $term);
     elseif ($term) throw new DomainException('Select an academic year before choosing a term.');
     return [$year, $term];

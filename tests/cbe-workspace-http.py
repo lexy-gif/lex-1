@@ -109,7 +109,7 @@ try:
     exam_page = 'dean-academics.php?' + urllib.parse.urlencode(dict(query, area='exams'))
     exam_lock = {'csrf_token': token, 'action': 'exam_lock', 'ExamId': f['exams'][0], 'EntryLocked': 1}
     request(exam_page, exam_lock, dean)
-    marks = {'csrf_token': token, 'submit': '', 'class': f['classes'][0], 'examid': f['exams'][0], 'studentid': f['students'][0], 'marks[]': [65]}
+    marks = {'csrf_token': token, 'submit': '', 'class': f['classes'][0], 'examid': f['exams'][0], 'studentid': f['students'][0], f"marks[{f['subjects'][0]}]": 65}
     _, body = request('add-result.php', marks, dean)
     assert 'Exam result entry is closed' in body and len(json.loads(fixture('state'))) == 1
     request(exam_page, dict(exam_lock, EntryLocked=0), dean)

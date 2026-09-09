@@ -1,82 +1,40 @@
 <?php
 session_start();
-error_reporting(0);
-include('includes/config.php');
-include('includes/csrf.php');
-include('includes/audit.php');
-
-if(strlen($_SESSION['alogin'])=="") {
-    header("Location: index.php");
-} else {
-    if(isset($_POST['submit'])) {
-        csrf_require_valid($_POST['csrf_token'] ?? '');
-        $academicYear = trim($_POST['academicyear']);
-        $termName = trim($_POST['termname']);
-        $examName = trim($_POST['examname']);
-        $classId = $_POST['class'] === '' ? null : $_POST['class'];
-        $status = $_POST['status'];
-        $startDate = $_POST['startdate'] ?: null;
-        $endDate = $_POST['enddate'] ?: null;
-        $marksOpenDate = $_POST['marksopendate'] ?: null;
-        $marksDeadline = $_POST['marksdeadline'] ?: null;
-
-        if($academicYear === '' || $termName === '' || $examName === '') {
-            $error = "Academic year, term, and exam name are required.";
-        } else {
-            try {
-                $dbh->beginTransaction();
-
-                $yearSql = "INSERT IGNORE INTO tblacademicyears(AcademicYear, IsActive) VALUES(:academicyear, 1)";
-                $yearQuery = $dbh->prepare($yearSql);
-                $yearQuery->bindParam(':academicyear', $academicYear, PDO::PARAM_STR);
-                $yearQuery->execute();
-
-                $yearSelect = $dbh->prepare("SELECT id FROM tblacademicyears WHERE AcademicYear = :academicyear LIMIT 1");
-                $yearSelect->bindParam(':academicyear', $academicYear, PDO::PARAM_STR);
-                $yearSelect->execute();
-                $year = $yearSelect->fetch(PDO::FETCH_OBJ);
-
-                $termSql = "INSERT IGNORE INTO tblterms(AcademicYearId, TermName, IsActive) VALUES(:yearid, :termname, 1)";
-                $termQuery = $dbh->prepare($termSql);
-                $termQuery->bindParam(':yearid', $year->id, PDO::PARAM_STR);
-                $termQuery->bindParam(':termname', $termName, PDO::PARAM_STR);
-                $termQuery->execute();
-
-                $termSelect = $dbh->prepare("SELECT id FROM tblterms WHERE AcademicYearId = :yearid AND TermName = :termname LIMIT 1");
-                $termSelect->bindParam(':yearid', $year->id, PDO::PARAM_STR);
-                $termSelect->bindParam(':termname', $termName, PDO::PARAM_STR);
-                $termSelect->execute();
-                $term = $termSelect->fetch(PDO::FETCH_OBJ);
-
-                $examSql = "INSERT INTO tblexams(AcademicYearId, TermId, ExamName, ClassId, StartDate, EndDate, MarksOpenDate, MarksDeadline, Status)
-                            VALUES(:yearid, :termid, :examname, :classid, :startdate, :enddate, :marksopendate, :marksdeadline, :status)";
-                $examQuery = $dbh->prepare($examSql);
-                $examQuery->bindParam(':yearid', $year->id, PDO::PARAM_STR);
-                $examQuery->bindParam(':termid', $term->id, PDO::PARAM_STR);
-                $examQuery->bindParam(':examname', $examName, PDO::PARAM_STR);
-                if($classId === null) {
-                    $examQuery->bindValue(':classid', null, PDO::PARAM_NULL);
-                } else {
-                    $examQuery->bindParam(':classid', $classId, PDO::PARAM_STR);
-                }
-                $examQuery->bindParam(':startdate', $startDate, PDO::PARAM_STR);
-                $examQuery->bindParam(':enddate', $endDate, PDO::PARAM_STR);
-                $examQuery->bindParam(':marksopendate', $marksOpenDate, PDO::PARAM_STR);
-                $examQuery->bindParam(':marksdeadline', $marksDeadline, PDO::PARAM_STR);
-                $examQuery->bindParam(':status', $status, PDO::PARAM_STR);
-                $examQuery->execute();
-                audit_log($dbh, 'exam_created', 'tblexams', $dbh->lastInsertId(), $academicYear . ' - ' . $termName . ' - ' . $examName);
-
-                $dbh->commit();
-                $msg = "Exam created successfully";
-            } catch(Exception $e) {
-                if($dbh->inTransaction()) {
-                    $dbh->rollBack();
-                }
-                $error = "Exam could not be created. Please check if it already exists.";
-            }
+require_once 'includes/config.php';
+require_once 'includes/csrf.php';
+require_once 'includes/dean-auth.php';
+require_once 'includes/academic-periods.php';
+require_dean();
+$msg=$error='';
+$formValue=static fn($key)=>is_scalar($_POST[$key]??null)?(string)$_POST[$key]:'';
+if(isset($_POST['submit'])) {
+    csrf_require_valid($_POST['csrf_token']??'');
+    try {
+        $examName=academic_period_name($_POST['examname']??null,'Exam name',100);
+        [$startDate,$endDate]=academic_period_dates($_POST['startdate']??null,$_POST['enddate']??null,'Exam');
+        [$marksOpenDate,$marksDeadline]=academic_period_dates($_POST['marksopendate']??null,$_POST['marksdeadline']??null,'Marks entry');
+        $classId=$_POST['class']??'';
+        if($classId==='')$classId=null;
+        else {
+            $classId=filter_var($classId,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]);
+            if(!$classId)throw new DomainException('Select a valid class.');
         }
+        $status=$_POST['status']??'draft';
+        if(!in_array($status,['draft','marks_entry','submitted','under_review','approved','published','archived'],true))throw new DomainException('Select a valid exam status.');
+        $dbh->beginTransaction();
+        $period=academic_period_ensure($dbh,$_POST['academicyear']??null,$_POST['termname']??null);
+        if($classId&&!academic_query($dbh,'SELECT id FROM tblclasses WHERE id=?',[$classId])->fetchColumn())throw new DomainException('Select a valid class.');
+        // NULL class scopes also need an explicit duplicate check.
+        if(academic_query($dbh,'SELECT id FROM tblexams WHERE AcademicYearId=? AND TermId=? AND ExamName=? AND ClassId <=> ?',[$period['AcademicYearId'],$period['TermId'],$examName,$classId])->fetchColumn())throw new DomainException('This exam already exists for the selected period and class.');
+        academic_query($dbh,'INSERT INTO tblexams(AcademicYearId,TermId,ExamName,ClassId,StartDate,EndDate,MarksOpenDate,MarksDeadline,Status) VALUES(?,?,?,?,?,?,?,?,?)',[$period['AcademicYearId'],$period['TermId'],$examName,$classId,$startDate,$endDate,$marksOpenDate,$marksDeadline,$status]);
+        audit_log($dbh,'exam_created','tblexams',$dbh->lastInsertId(),json_encode($period+['ExamName'=>$examName],JSON_THROW_ON_ERROR));
+        $dbh->commit();$msg='Exam created successfully';
+    } catch(Throwable $e) {
+        if($dbh->inTransaction())$dbh->rollBack();
+        $error=$e instanceof DomainException?$e->getMessage():'Exam could not be created. Please try again.';
+        error_log($e->getMessage());
     }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -141,17 +99,18 @@ if(strlen($_SESSION['alogin'])=="") {
                                             <?php } ?>
                                             <form method="post">
                                                 <?php csrf_field(); ?>
+                                                <p>New years and terms stay inactive. Set the active period in <a href="dean-academic-periods.php">Academic Years &amp; Terms</a>.</p>
                                                 <div class="form-group">
                                                     <label>Academic Year</label>
-                                                    <input type="text" name="academicyear" class="form-control" placeholder="2026" required>
+                                                    <input type="text" name="academicyear" class="form-control" placeholder="2026" maxlength="20" value="<?= academic_h($formValue('academicyear')) ?>" required>
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Term</label>
-                                                    <input type="text" name="termname" class="form-control" placeholder="Term 1" required>
+                                                    <input type="text" name="termname" class="form-control" placeholder="Term 1" maxlength="50" value="<?= academic_h($formValue('termname')) ?>" required>
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Exam Name</label>
-                                                    <input type="text" name="examname" class="form-control" placeholder="Mid Term Exam" required>
+                                                    <input type="text" name="examname" class="form-control" placeholder="Mid Term Exam" maxlength="100" value="<?= academic_h($formValue('examname')) ?>" required>
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Class</label>
@@ -163,7 +122,7 @@ if(strlen($_SESSION['alogin'])=="") {
                                                         $classQuery->execute();
                                                         $classes = $classQuery->fetchAll(PDO::FETCH_OBJ);
                                                         foreach($classes as $class) { ?>
-                                                        <option value="<?php echo htmlentities($class->id); ?>">
+                                                        <option value="<?php echo htmlentities($class->id); ?>" <?= $formValue('class')===(string)$class->id?'selected':'' ?>>
                                                             <?php echo htmlentities($class->ClassName); ?> Section-<?php echo htmlentities($class->Section); ?>
                                                         </option>
                                                         <?php } ?>
@@ -171,30 +130,30 @@ if(strlen($_SESSION['alogin'])=="") {
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Exam Start Date</label>
-                                                    <input type="date" name="startdate" class="form-control">
+                                                    <input type="date" name="startdate" class="form-control" value="<?= academic_h($formValue('startdate')) ?>">
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Exam End Date</label>
-                                                    <input type="date" name="enddate" class="form-control">
+                                                    <input type="date" name="enddate" class="form-control" value="<?= academic_h($formValue('enddate')) ?>">
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Marks Entry Opens</label>
-                                                    <input type="date" name="marksopendate" class="form-control">
+                                                    <input type="date" name="marksopendate" class="form-control" value="<?= academic_h($formValue('marksopendate')) ?>">
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Marks Entry Deadline</label>
-                                                    <input type="date" name="marksdeadline" class="form-control">
+                                                    <input type="date" name="marksdeadline" class="form-control" value="<?= academic_h($formValue('marksdeadline')) ?>">
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Status</label>
                                                     <select name="status" class="form-control" required>
-                                                        <option value="draft">Draft</option>
-                                                        <option value="marks_entry">Marks Entry</option>
-                                                        <option value="submitted">Submitted</option>
-                                                        <option value="under_review">Under Review</option>
-                                                        <option value="approved">Approved</option>
-                                                        <option value="published">Published</option>
-                                                        <option value="archived">Archived</option>
+                                                        <option value="draft" <?= ($formValue('status')?:'draft')==='draft'?'selected':'' ?>>Draft</option>
+                                                        <option value="marks_entry" <?= ($formValue('status')?:'draft')==='marks_entry'?'selected':'' ?>>Marks Entry</option>
+                                                        <option value="submitted" <?= ($formValue('status')?:'draft')==='submitted'?'selected':'' ?>>Submitted</option>
+                                                        <option value="under_review" <?= ($formValue('status')?:'draft')==='under_review'?'selected':'' ?>>Under Review</option>
+                                                        <option value="approved" <?= ($formValue('status')?:'draft')==='approved'?'selected':'' ?>>Approved</option>
+                                                        <option value="published" <?= ($formValue('status')?:'draft')==='published'?'selected':'' ?>>Published</option>
+                                                        <option value="archived" <?= ($formValue('status')?:'draft')==='archived'?'selected':'' ?>>Archived</option>
                                                     </select>
                                                 </div>
                                                 <button type="submit" name="submit" class="btn btn-primary">Create Exam</button>
@@ -274,4 +233,3 @@ if(strlen($_SESSION['alogin'])=="") {
     </script>
 </body>
 </html>
-<?php } ?>
