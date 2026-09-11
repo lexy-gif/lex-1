@@ -10,6 +10,7 @@
                 <li class="nav-header"><span>Main Category</span></li>
                 <li><a href="teacher-academic-assignments.php"><i class="fa fa-book"></i> <span>My Teaching Assignments</span></a></li>
                 <li><a href="teacher-academics.php"><i class="fa fa-graduation-cap"></i> <span>My Academic Workspace</span></a></li>
+                <li><a href="teacher-senior.php"><i class="fa fa-book"></i> <span>Senior School</span></a></li>
                 <?php if(teacher_class_id()) { ?>
                 <li><a href="teacher-dashboard.php"><i class="fa fa-dashboard"></i> <span>Dashboard</span></a></li>
                 <li><a href="teacher-students.php"><i class="fa fa-users"></i> <span>Students</span></a></li>

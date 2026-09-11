@@ -69,3 +69,12 @@ See [Relational teacher management](docs/RELATIONAL_TEACHER_MANAGEMENT.md) for D
 After signing in, choose **Open Academic Workspace** on the Dean dashboard or **Academic Workspace** in the sidebar. The workspace is at [http://localhost:5000/dean-academics.php](http://localhost:5000/dean-academics.php). Teachers have a **My Academic Workspace** sidebar link.
 
 See [CBE workspace usage and validation](docs/CBE_WORKSPACE.md) for the current flows, database prerequisite, checks and remaining integration work.
+
+# Senior School
+
+See [Senior School setup and usage](docs/SENIOR_SCHOOL.md) for Grades 10–12 pathways,
+subject combinations, learner allocations, promotion, and teacher/student access.
+
+# Application styling
+
+See the [stylesheet guide](docs/CSS_GUIDE.md) for CSS file responsibilities, shared variables, and responsive checks.

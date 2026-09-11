@@ -99,7 +99,7 @@
 .btn-default:hover, .btn-secondary:hover, .btn-outline-primary:hover {
     background: var(--primary-soft);
     color: var(--primary-hover);
-    border-color: #b5cce5;
+    border-color: var(--primary-border);
 }
 
 .btn-success {
@@ -175,6 +175,10 @@
     font-size: 15px;
 }
 
+.btn.btn-link-reset {
+    padding: 0;
+}
+
 .btn[disabled], .btn.disabled, fieldset[disabled] .btn {
     cursor: not-allowed;
     opacity: .55;
@@ -240,7 +244,7 @@
     min-height: 40px;
     height: 40px;
     padding: 9px 12px;
-    border: 1px solid #cbd5e2;
+    border: 1px solid var(--control-border);
     border-radius: var(--radius-sm);
     background: var(--surface-color);
     color: var(--text-primary);
@@ -257,10 +261,11 @@
 }
 
 .form-control:hover {
-    border-color: #a9b9cc;
+    border-color: var(--control-border-hover);
 }
 
-.form-control:focus {
+/* The template's .form-group input:focus rule otherwise removes the focus ring. */
+.form-control:focus, .form-group .form-control:focus {
     outline: 0;
     border-color: var(--primary-color);
     box-shadow: var(--focus-ring);
@@ -296,6 +301,16 @@ select[multiple].form-control option {
     font-size: 13px;
 }
 
+/* Keep control modifiers after the defaults, with enough specificity to retain their size. */
+.form-control.input-password-sm, .form-control.input-password-md {
+    display: inline-block;
+    width: 150px;
+}
+
+.form-control.input-date-md {
+    max-width: 240px;
+}
+
 .help-block {
     margin-top: 7px;
     margin-bottom: 0;
@@ -303,7 +318,8 @@ select[multiple].form-control option {
     line-height: 1.5;
 }
 
-.has-error .form-control, .form-control[aria-invalid="true"] {
+.has-error .form-control, .has-error .form-control:focus,
+.form-control[aria-invalid="true"], .form-control[aria-invalid="true"]:focus {
     border-color: var(--danger-color);
 }
 
@@ -311,11 +327,11 @@ select[multiple].form-control option {
     color: var(--danger-color);
 }
 
-.has-success .form-control {
+.has-success .form-control, .has-success .form-control:focus {
     border-color: var(--success-color);
 }
 
-.form-control:user-invalid {
+.form-control:user-invalid, .form-control:user-invalid:focus {
     border-color: var(--danger-color);
 }
 
@@ -334,7 +350,7 @@ input[type="checkbox"], input[type="radio"] {
 .input-group-addon {
     color: var(--text-secondary);
     background: var(--surface-muted);
-    border-color: #cbd5e2;
+    border-color: var(--control-border);
 }
 
 .select2-container {
@@ -344,7 +360,7 @@ input[type="checkbox"], input[type="radio"] {
 .select2-container--default .select2-selection--single {
     min-height: 40px;
     height: 40px;
-    border: 1px solid #cbd5e2;
+    border: 1px solid var(--control-border);
     border-radius: var(--radius-sm);
 }
 
@@ -360,7 +376,7 @@ input[type="checkbox"], input[type="radio"] {
 
 .select2-container--default .select2-selection--multiple {
     min-height: 40px;
-    border-color: #cbd5e2;
+    border-color: var(--control-border);
     border-radius: var(--radius-sm);
 }
 
@@ -520,9 +536,9 @@ table.dataTable.no-footer {
     min-height: 34px;
     padding: 6px 10px;
     margin: 0 6px;
-    border: 1px solid #cbd5e2;
+    border: 1px solid var(--control-border);
     border-radius: var(--radius-sm);
-    background: #fff;
+    background: var(--surface-color);
     color: var(--text-primary);
     max-width: 100%;
 }
@@ -548,14 +564,14 @@ table.dataTable.no-footer {
     padding: 5px 9px;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
-    background: #fff;
+    background: var(--surface-color);
     box-shadow: none;
     font-size: 12px;
 }
 
 .dataTables_wrapper .dataTables_paginate .paginate_button.current, .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover, .pagination > .active > a, .pagination > .active > a:hover, .pagination > .active > span {
     background: var(--primary-soft);
-    border-color: #b5cce5;
+    border-color: var(--primary-border);
     color: var(--primary-hover) !important;
     /* DataTables sets pagination text with !important. */
 }
@@ -859,14 +875,5 @@ table.dataTable.no-footer {
 
     .modal-header, .modal-body, .modal-footer {
         padding: 16px;
-    }
-
-    .top-navbar .navbar-nav .open .dropdown-menu {
-        position: absolute;
-        right: 0;
-        left: auto;
-        border: 1px solid var(--border-color);
-        background: #fff;
-        box-shadow: var(--shadow-menu);
     }
 }

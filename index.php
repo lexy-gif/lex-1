@@ -32,6 +32,7 @@ include('includes/config.php');
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                     <li class="nav-item"><a class="nav-link active" href="index.php">Home</a></li>
                     <li class="nav-item"><a class="nav-link" href="find-result.php">Students</a></li>
+                    <li class="nav-item"><a class="nav-link" href="student-senior.php">Senior School Subjects</a></li>
                     <li class="nav-item"><a class="nav-link" href="teacher-login.php">Class Teacher</a></li>
                     <li class="nav-item"><a class="nav-link" href="admin-login.php">Dean of Studies</a></li>
                 </ul>

@@ -48,7 +48,10 @@ $values=$edit?cbe_one($dbh,"SELECT * FROM $table WHERE id=?",[$edit]):['Academic
 if($edit&&!$values){http_response_code(404);exit('Timetable entry not found.');}
 if($examTimetable&&$edit)$values['Invigilators']=timetable_exam_invigilators($dbh,$edit);
 $fields=$examTimetable?['ExamId'=>'exams']:['AcademicYearId'=>'years','TermId'=>'terms'];
-$fields+=['ClassId'=>'classes','SubjectId'=>'subjects'];
+if(senior_ready($dbh))$fields['GradeId']='grades?';
+$fields['ClassId']='classes';
+if(senior_ready($dbh))$fields['PathwayId']='pathways?';
+$fields['SubjectId']='subjects';
 if(!$examTimetable)$fields['TeacherId']='teachers';
 $fields['RoomId']='rooms?';
 if($examTimetable)$fields+=['Invigilators'=>'teachers[]','ExamDate'=>'date'];
@@ -93,4 +96,5 @@ cbe_table($rows,$base.'?year='.$year.'&term='.$term.'&id=');
 </section></div></div></div></div></div>
 <script src="js/jquery/jquery-2.2.4.min.js"></script><script src="js/bootstrap/bootstrap.min.js"></script><script src="js/DataTables/datatables.min.js"></script><script src="js/main.js"></script>
 <script>$(function(){ $('.cbe-table').DataTable(); $('select[name="year"]').on('change',function(){this.form.elements.term.disabled=true;this.form.submit();}); });</script>
+<?php if(senior_ready($dbh)){ ?><script src="js/senior-school.js"></script><?php } ?>
 </body></html>

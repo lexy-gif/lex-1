@@ -2,6 +2,7 @@
     --primary-color: #2864a5;
     --primary-hover: #1d4e85;
     --primary-soft: #eaf2fc;
+    --primary-border: #b5cce5;
     --secondary-color: #526379;
     --background-color: #f3f6fa;
     --surface-color: #ffffff;
@@ -9,6 +10,8 @@
     --text-primary: #223247;
     --text-secondary: #607086;
     --border-color: #dce3ec;
+    --control-border: #cbd5e2;
+    --control-border-hover: #a9b9cc;
     --success-color: #226845;
     --success-soft: #eaf6ef;
     --danger-color: #af3542;

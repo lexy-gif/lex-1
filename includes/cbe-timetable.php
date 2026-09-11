@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__.'/cbe-academics.php';
 require_once __DIR__.'/timetable.php';
+require_once __DIR__.'/senior-school.php';
 function cbe_time($value) {if(!is_string($value)||!preg_match('/^(?:[01][0-9]|2[0-3]):[0-5][0-9](?::[0-5][0-9])?$/D',$value))throw new DomainException('Enter a valid time in HH:MM format.');return strlen($value)===5?$value.':00':$value;}
 function cbe_schedule_lock($db) {
     if(!$db->inTransaction())throw new LogicException('Timetable changes require a transaction.');
@@ -17,14 +18,17 @@ function cbe_schedule_save($db,$p,$exam=false,$sendNotifications=true) {
     cbe_schedule_lock($db);
     $id=filter_var($p['id']??0,FILTER_VALIDATE_INT,['options'=>['min_range'=>0]]);if($id===false)throw new DomainException('Timetable entry not found.');
     $table=$exam?'tblexamtimetableentries':'tblclasstimetableentries';$old=$id?cbe_one($db,"SELECT * FROM $table WHERE id=? FOR UPDATE",[$id]):null;if($id&&!$old)throw new DomainException('Timetable entry not found.');
+    $senior=senior_ready($db);$pathway=$senior?senior_id($p['PathwayId']??($old['PathwayId']??null),'pathway',true):null;
     if($exam&&$old)$old['Invigilators']=timetable_exam_invigilators($db,$id);
     $class=cbe_schedule_id($p,'ClassId');$subject=cbe_schedule_id($p,'SubjectId');$room=cbe_schedule_id($p,'RoomId',true);$start=cbe_time($p['StartTime']??'');$end=cbe_time($p['EndTime']??'');if($end<=$start)throw new DomainException('End time must be after start time.');
     academic_class_lock($db,$class);academic_offering($db,$class,$subject);if($room&&!in_array($room,array_column(cbe_options($db,'rooms'),'id')))throw new DomainException('Select an active room.');
+    if(!empty($p['GradeId']) && (int)(senior_class($db,$class)['GradeId']??0)!==senior_id($p['GradeId'],'grade'))throw new DomainException('The class must belong to the selected grade.');
     $status=$p['Status']??'draft';if(!in_array($status,['draft','ready_for_review','approved','published','updated','cancelled','archived'],true))throw new DomainException('Invalid timetable status.');
     $reason=cbe_text($p,'ChangeReason',255,false);$notify=[];
     if($exam) {
         $examId=cbe_schedule_id($p,'ExamId');$e=cbe_one($db,'SELECT * FROM tblexams WHERE id=? FOR UPDATE',[$examId]);if(!$e||($e['ClassId']&&(int)$e['ClassId']!==$class))throw new DomainException('Select an examination offered to this class.');
         academic_period($db,$e['AcademicYearId'],$e['TermId']);
+        if($senior && !in_array($status,['cancelled','archived'],true))senior_timetable_validate($db,$class,$subject,$e['AcademicYearId'],$pathway);
         $date=cbe_date(cbe_text($p,'ExamDate',10));if(($e['StartDate']&&$date<$e['StartDate'])||($e['EndDate']&&$date>$e['EndDate']))throw new DomainException('The session date must fall within the examination dates.');
         $teachers=$p['Invigilators']??[];if(!is_array($teachers))throw new DomainException('Select valid invigilators.');$teachers=array_values($teachers);
         foreach($teachers as &$t) {$t=filter_var($t,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]);if(!$t)throw new DomainException('Select valid invigilators.');}unset($t);
@@ -38,6 +42,7 @@ function cbe_schedule_save($db,$p,$exam=false,$sendNotifications=true) {
         $cols='ExamId,ClassId,SubjectId,RoomId,InvigilatorId,ExamDate,StartTime,EndTime,Status,ChangeReason,CreatedBy';$notify=$teachers;
     } else {
         $year=cbe_schedule_id($p,'AcademicYearId');$term=cbe_schedule_id($p,'TermId');$teacher=cbe_schedule_id($p,'TeacherId');cbe_assignment($db,$teacher,$class,$subject,$year,$term);
+        if($senior && !in_array($status,['cancelled','archived'],true))senior_timetable_validate($db,$class,$subject,$year,$pathway);
         $day=$p['DayOfWeek']??'';if(!in_array($day,['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],true))throw new DomainException('Select a valid school day.');
         if(!in_array($status,['cancelled','archived'],true)) {
             $conflicts=timetable_lesson_conflicts($db,$year,$term,$class,$teacher,$room,$day,$start,$end,$id);if($conflicts)throw new DomainException(implode(' ',$conflicts));
@@ -47,6 +52,7 @@ function cbe_schedule_save($db,$p,$exam=false,$sendNotifications=true) {
     }
     // Editing or publishing an existing entry preserves its original author.
     if($old)$v[count($v)-1]=$old['CreatedBy'];
+    if($senior){$cols.=',PathwayId';$v[]=$pathway;}
     if($id)academic_query($db,"UPDATE $table SET ".implode(',',array_map(fn($c)=>$c.'=?',explode(',',$cols))).' WHERE id=?',[...$v,$id]);
     else{academic_query($db,"INSERT INTO $table($cols) VALUES(".implode(',',array_fill(0,count($v),'?')).')',$v);$id=(int)$db->lastInsertId();}
     if($exam){academic_query($db,'DELETE FROM tblexaminvigilators WHERE SessionId=?',[$id]);foreach($teachers as $t)academic_query($db,'INSERT INTO tblexaminvigilators VALUES(?,?)',[$id,$t]);}

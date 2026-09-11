@@ -7,6 +7,10 @@
         display: none !important;
     }
 
+    .senior-filters, .senior-form, .senior-toolbar, .senior-row-actions {
+        display: none !important;
+    }
+
     html, body {
         background: #fff !important;
         color: #000;

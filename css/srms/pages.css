@@ -1,3 +1,24 @@
+/* Senior School pages share the existing controls, cards and table styles. */
+.senior-nav, .senior-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-bottom: var(--space-5);
+}
+
+.senior-row-actions {
+    min-width: 200px;
+}
+
+.senior-row-actions .btn {
+    margin-bottom: var(--space-1);
+}
+
+.senior-page .modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
 /* Dashboard and teaching summaries share the same quiet surface treatment. */
 
 .dashboard-page {
@@ -147,14 +168,14 @@
     flex-direction: column;
 }
 
-.auth-page .main-wrapper > .container {
+.auth-page > .container, .auth-page .main-wrapper > .container {
     flex: 1;
     width: 100%;
     max-width: 960px;
     padding: 48px 20px 32px;
 }
 
-.auth-page .main-wrapper > .container > h1 {
+.auth-page > .container > h1, .auth-page .main-wrapper > .container > h1 {
     max-width: 650px;
     margin: 0 auto 32px;
     text-align: center;
@@ -164,13 +185,13 @@
     text-shadow: none;
 }
 
-.auth-page .main-wrapper > .container > .row {
+.auth-page > .container > .row, .auth-page .main-wrapper > .container > .row {
     display: flex;
     justify-content: center;
     margin: 0;
 }
 
-.auth-page .main-wrapper > .container > .row > [class*="col-"] {
+.auth-page > .container > .row > [class*="col-"], .auth-page .main-wrapper > .container > .row > [class*="col-"] {
     float: none;
     width: 100%;
     max-width: 480px;
@@ -432,6 +453,12 @@ body.public-page {
     display: block;
 }
 
+@media screen and (min-width: 992px) {
+    .dashboard-page:has(.left-sidebar.small-nav) footer {
+        margin-left: var(--sidebar-compact-width);
+    }
+}
+
 @media (max-width: 991px) {
     .dashboard-page footer {
         margin-left: 0;
@@ -460,11 +487,11 @@ body.public-page {
         font-size: 27px;
     }
 
-    .auth-page .main-wrapper > .container {
+    .auth-page > .container, .auth-page .main-wrapper > .container {
         padding: 28px 16px;
     }
 
-    .auth-page .main-wrapper > .container > h1 {
+    .auth-page > .container > h1, .auth-page .main-wrapper > .container > h1 {
         font-size: 23px;
         margin-bottom: 24px;
     }

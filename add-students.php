@@ -3,6 +3,7 @@ session_start();
 error_reporting(0);
 include('includes/config.php');
 include('includes/csrf.php');
+require_once 'includes/senior-school.php';
 
 if(strlen($_SESSION['alogin'])=="") {   
     header("Location: index.php"); 
@@ -25,6 +26,8 @@ if(isset($_POST['submit']))
         $dob = $_POST['dob']; 
         $status = 1;
 
+        try {
+        $dbh->beginTransaction();
         $sql = "INSERT INTO tblstudents(StudentName, RollId, StudentEmail, ParentPhone, Gender, ClassId, DOB, Status)
                 VALUES(:studentname, :roolid, :studentemail, :parentphone, :gender, :classid, :dob, :status)";
         $query = $dbh->prepare($sql);
@@ -38,11 +41,18 @@ if(isset($_POST['submit']))
         $query->bindParam(':status',$status,PDO::PARAM_STR);
         $query->execute();
         $lastInsertId = $dbh->lastInsertId();
+        senior_sync_core($dbh,(int)$lastInsertId);
+        $dbh->commit();
 
         if($lastInsertId){
             $msg = "Student info added successfully";
         } else {
             $error = "Something went wrong. Please try again";
+        }
+        } catch(Throwable $e) {
+            if($dbh->inTransaction())$dbh->rollBack();
+            $error=$e instanceof DomainException?$e->getMessage():'Unable to register the learner. Check the student and class details.';
+            error_log($e->getMessage());
         }
     }
 }

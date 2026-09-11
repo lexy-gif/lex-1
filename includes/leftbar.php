@@ -36,6 +36,18 @@
                                         <a href="dean-academic-periods.php"><i class="fa fa-calendar"></i> <span>Academic Years & Terms</span></a>
                                     </li>
                                     <li class="has-children">
+                                        <a href="#"><i class="fa fa-graduation-cap" aria-hidden="true"></i> <span>Senior School</span> <i class="fa fa-angle-right arrow" aria-hidden="true"></i></a>
+                                        <ul class="child-nav">
+                                            <li><a href="dean-senior-pathways.php">Pathways &amp; Tracks</a></li>
+                                            <li><a href="dean-senior-subjects.php">Senior School Subjects</a></li>
+                                            <li><a href="dean-senior-combinations.php">Subject Combinations</a></li>
+                                            <li><a href="dean-senior-assignments.php">Assign Learners</a></li>
+                                            <li><a href="dean-senior-teachers.php">Teacher Assignments</a></li>
+                                            <li><a href="dean-senior-promotions.php">Promote Learners</a></li>
+                                            <li><a href="dean-senior-reports.php">Senior School Reports</a></li>
+                                        </ul>
+                                    </li>
+                                    <li class="has-children">
                                         <a href="#"><i class="fa fa-file-text"></i> <span>Classes & Streams</span> <i class="fa fa-angle-right arrow"></i></a>
                                         <ul class="child-nav">
                                             <li><a href="create-class.php"><i class="fa fa-bars"></i> <span>Create Grade/Stream</span></a></li>

@@ -101,6 +101,8 @@ The result-entry HTTP test creates unique temporary years, classes, subjects and
 
 ## Remaining integration work from the original plan
 
-- Add workflow tests for pathway allocation/replacement and curriculum coverage.
+- Add workflow tests for curriculum coverage. Pathway allocation, replacement and
+  promotion are covered by `tests/senior-school-http.py`; see
+  [Senior School setup and validation](SENIOR_SCHOOL.md).
 
 The original analysis and curriculum configuration policy are preserved in [CBE_DEAN_IMPLEMENTATION.md](CBE_DEAN_IMPLEMENTATION.md).

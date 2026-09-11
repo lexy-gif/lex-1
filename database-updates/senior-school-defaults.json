@@ -1,0 +1,21 @@
+{
+  "core": [
+    {"name": "English", "code": "SR-ENG", "role": "common"},
+    {"name": "Kiswahili", "code": "SR-KIS", "role": "language"},
+    {"name": "Kenya Sign Language", "code": "SR-KSL", "role": "language"},
+    {"name": "Core Mathematics", "code": "SR-CMAT", "role": "mathematics"},
+    {"name": "Essential Mathematics", "code": "SR-EMAT", "role": "mathematics"},
+    {"name": "Community Service Learning", "code": "SR-CSL", "role": "common"}
+  ],
+  "electives": {
+    "STEM": ["Biology", "Chemistry", "Physics", "General Science", "Agriculture", "Computer Studies", "Home Science", "Aviation", "Building Construction", "Electricity", "Metalwork", "Power Mechanics", "Wood Technology", "Media Technology", "Marine and Fisheries Technology"],
+    "Social Sciences": ["Geography", "History and Citizenship", "Business Studies", "Christian Religious Education", "Islamic Religious Education", "Hindu Religious Education", "Literature in English", "Indigenous Languages", "Fasihi ya Kiswahili", "Sign Language", "Arabic", "French", "German", "Mandarin Chinese"],
+    "Arts and Sports Science": ["Fine Arts", "Music and Dance", "Theatre and Film", "Sports and Recreation"]
+  },
+  "aliases": {"Computer Studies": "Computer", "Business Studies": "Business", "History and Citizenship": "History", "Music and Dance": "Music"},
+  "tracks": {
+    "STEM": ["Pure Sciences", "Applied Sciences", "Technical Studies"],
+    "Social Sciences": ["Languages & Literature", "Humanities & Business Studies"],
+    "Arts and Sports Science": ["Arts", "Sports"]
+  }
+}

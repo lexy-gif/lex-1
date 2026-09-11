@@ -58,6 +58,11 @@ function cbe_options($db,$kind) {
     if(!isset($queries[$kind]))throw new LogicException('Unknown option list');return cbe_rows($db,$queries[$kind]);
 }
 function cbe_save_config($db,$entity,$p) {
+    require_once __DIR__.'/senior-school.php';
+    if(senior_ready($db)) {
+        if($entity==='pathways')return senior_save_pathway($db,$p);
+        if($entity==='tracks')return senior_save_track($db,$p);
+    }
     $spec=cbe_configs()[$entity]??null;if(!$spec)throw new DomainException('Invalid configuration.');[$table,,$fields]=$spec;$values=[];
     foreach($fields as $key=>$type) {
         if($type==='bool') {$v=(string)($p[$key]??'');if(!in_array($v,['0','1'],true))throw new DomainException('Select active/inactive.');$values[$key]=(int)$v;}
@@ -97,6 +102,8 @@ function cbe_save_class($db,$p) {
     return $id;
 }
 function cbe_save_combination($db,$p) {
+    require_once __DIR__.'/senior-school.php';
+    if(senior_ready($db))return senior_save_combination($db,$p);
     $year=(int)($p['AcademicYearId']??0);academic_period($db,$year);$track=(int)($p['TrackId']??0);
     if(!in_array($track,array_column(cbe_options($db,'tracks'),'id')))throw new DomainException('Select an active track and pathway.');
     $subjects=cbe_ids($p['Subjects']??[]);if(!$subjects)throw new DomainException('Select subjects offered by this school.');
@@ -111,6 +118,8 @@ function cbe_save_combination($db,$p) {
     cbe_audit($db,'school_combination_saved','tblschoolcombinations',$id,$old,['values'=>$v,'subjects'=>$subjects]);return $id;
 }
 function cbe_allocate_pathway($db,$p) {
+    require_once __DIR__.'/senior-school.php';
+    if(senior_ready($db))return senior_assign_learner($db,senior_id($p['StudentId']??null,'learner'),$p);
     $student=(int)($p['StudentId']??0);$year=(int)($p['AcademicYearId']??0);$combination=(int)($p['CombinationId']??0);academic_period($db,$year);
     $s=cbe_one($db,'SELECT s.*,l.SeniorSchool FROM tblstudents s JOIN tblclasses c ON c.id=s.ClassId JOIN tblgrades g ON g.id=c.GradeId JOIN tblschoollevels l ON l.id=g.SchoolLevelId WHERE s.StudentId=? AND s.Status=1 FOR UPDATE',[$student]);
     if(!$s||!$s['SeniorSchool'])throw new DomainException('Pathway allocation requires an active Senior School learner.');

@@ -114,22 +114,8 @@ hr {
     margin-bottom: var(--space-4);
 }
 
-.input-password-sm, .input-password-md {
-    display: inline-block;
-    width: 150px;
-    max-width: 100%;
-}
-
-.input-date-md {
-    max-width: 240px;
-}
-
 .link-strong {
     font-weight: 600;
-}
-
-.btn-link-reset {
-    padding: 0;
 }
 
 .table-center, .table-center th, .table-center td {

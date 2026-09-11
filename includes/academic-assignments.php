@@ -31,6 +31,7 @@ function academic_offering($db,$class,$subject) {
 }
 // Caller owns the transaction; lock the class to serialize assignments, including all-year/term overlaps.
 function academic_assign($db,$kind,$teacher,$class,$subject,$year,$term=null,$confirmed=[]) {
+    require_once __DIR__.'/senior-school.php';
     if (!$db->inTransaction()) throw new LogicException('Assignment changes require a transaction.');
     academic_period($db,$year,$term); academic_class_lock($db,$class); academic_teacher($db,$teacher);
     $isSubject=$kind==='subject';
@@ -38,6 +39,7 @@ function academic_assign($db,$kind,$teacher,$class,$subject,$year,$term=null,$co
     $table=$isSubject?'tblsubjectteacherassignments':'tblclassteacherassignments';
     if ($isSubject) {
         academic_offering($db,$class,$subject);
+        if(senior_is_class($db,$class))senior_timetable_validate($db,$class,$subject,$year);
         $rows=academic_query($db,"SELECT a.*,u.FullName FROM $table a JOIN tblusers u ON u.id=a.TeacherId WHERE a.ClassId=? AND a.SubjectId=? AND a.AcademicYearId=? AND a.Status=1 AND (a.TermId IS NULL OR ? IS NULL OR a.TermId=?) FOR UPDATE",[$class,$subject,$year,$term,$term])->fetchAll(PDO::FETCH_ASSOC);
     } else {
         $rows=academic_query($db,"SELECT a.*,u.FullName FROM $table a JOIN tblusers u ON u.id=a.TeacherId WHERE a.AcademicYearId=? AND a.Status=1 AND (a.ClassId=? OR a.TeacherId=?) FOR UPDATE",[$year,$class,$teacher])->fetchAll(PDO::FETCH_ASSOC);
@@ -53,6 +55,9 @@ function academic_assign($db,$kind,$teacher,$class,$subject,$year,$term=null,$co
     foreach ($rows as $r) academic_query($db,"UPDATE $table SET Status=0,EndedAt=CURRENT_TIMESTAMP WHERE id=?",[$r['id']]);
     if ($isSubject) academic_query($db,"INSERT INTO $table (TeacherId,ClassId,SubjectId,AcademicYearId,TermId,AssignedBy) VALUES(?,?,?,?,?,?)",[$teacher,$class,$subject,$year,$term,'dean:'.($_SESSION['alogin']??'')]);
     else academic_query($db,"INSERT INTO $table (TeacherId,ClassId,AcademicYearId) VALUES(?,?,?)",[$teacher,$class,$year]);
+    $assignmentId=(int)$db->lastInsertId();
+    if($isSubject && senior_is_class($db,$class))senior_notify_teacher_assignment($db,$assignmentId);
+    return $assignmentId;
 }
 class AcademicConflict extends DomainException {
     public $assignmentKey;
@@ -73,11 +78,14 @@ function academic_students($db,$class,$subject,$year) {
 }
 function academic_register_student($db,$student,$year,$subjects) {
     if (!$db->inTransaction()) throw new LogicException('Student subject changes require a transaction.');
+    require_once __DIR__.'/senior-school.php';
+    if(senior_ready($db))senior_lock($db);
     academic_period($db,$year);
     $s=academic_query($db,'SELECT * FROM tblstudents WHERE StudentId=? AND Status=1 FOR UPDATE',[$student])->fetch(PDO::FETCH_ASSOC);
     if (!$s) throw new DomainException('Select an active student.');
     $subjects=array_map('intval',$subjects);
     if (count($subjects)!==count(array_unique($subjects))) throw new DomainException('Duplicate student subject.');
+    senior_guard_registration($db,$student,$year,$subjects);
     foreach ($subjects as $subject) academic_offering($db,$s['ClassId'],$subject);
     academic_query($db,'UPDATE tblstudentsubjects SET Status=0 WHERE StudentId=? AND AcademicYearId=?',[$student,$year]);
     foreach ($subjects as $subject) academic_query($db,'INSERT INTO tblstudentsubjects(StudentId,SubjectId,ClassId,AcademicYearId) VALUES(?,?,?,?) ON DUPLICATE KEY UPDATE Status=1',[$student,$subject,$s['ClassId'],$year]);
