@@ -154,14 +154,9 @@ FROM `tblacademicyears`
 WHERE `AcademicYear` = '2026';
 
 INSERT IGNORE INTO `tblexams` (`AcademicYearId`, `TermId`, `ExamName`, `ClassId`, `Status`)
-SELECT ay.`id`, t.`id`, 'Term 1 Exam', NULL, 'published'
+SELECT ay.`id`, t.`id`, 'Term 1 Exam', NULL, 'draft'
 FROM `tblacademicyears` ay
 JOIN `tblterms` t ON t.`AcademicYearId` = ay.`id`
 WHERE ay.`AcademicYear` = '2026' AND t.`TermName` = 'Term 1';
 
-INSERT IGNORE INTO `tblgradingscales` (`Grade`, `MinMark`, `MaxMark`, `Remark`) VALUES
-('A', 80.00, 100.00, 'Excellent'),
-('B', 70.00, 79.99, 'Very Good'),
-('C', 60.00, 69.99, 'Good'),
-('D', 50.00, 59.99, 'Fair'),
-('E', 0.00, 49.99, 'Needs Improvement');
+-- Configure examination performance bands through dean-grading.php.

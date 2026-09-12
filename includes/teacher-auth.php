@@ -25,16 +25,17 @@ function teacher_require_active_account()
     if(!isset($dbh) || empty($_SESSION['teacher_user_id'])) {
         return;
     }
-    $query = $dbh->prepare("SELECT Status,Role FROM tblusers WHERE id = :teacherid LIMIT 1");
+    $query = $dbh->prepare("SELECT Status,Role,SessionVersion,MustChangePassword FROM tblusers WHERE id = :teacherid LIMIT 1");
     $query->execute(array(':teacherid' => (int)$_SESSION['teacher_user_id']));
     $account = $query->fetch(PDO::FETCH_ASSOC);
-    if(!$account || (int)$account['Status'] !== 1 || !in_array($account['Role'], ['class_teacher','subject_teacher','head_of_department','exams_officer','deputy_dean'],true)) {
+    if(!$account || ((int)($_SESSION['teacher_session_version']??0)!==(int)$account['SessionVersion'] && PHP_SAPI!=='cli') || (int)$account['Status'] !== 1 || !in_array($account['Role'], ['class_teacher','subject_teacher','head_of_department','exams_officer','deputy_dean'],true)) {
         session_unset();
         session_destroy();
         header("Location: teacher-login.php?deactivated=1");
         exit;
     }
     $_SESSION['teacher_role'] = $account['Role'];
+    if(!empty($account['MustChangePassword']) && isset($_SESSION['teacher_session_version']) && basename($_SERVER['SCRIPT_NAME']??'')!=='teacher-change-password.php') { header('Location: teacher-change-password.php'); exit; }
 }
 
 function teacher_id()

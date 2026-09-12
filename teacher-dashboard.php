@@ -1,8 +1,8 @@
 <?php
-session_start();
-error_reporting(0);
-include('includes/config.php');
-include('includes/teacher-auth.php');
+require_once 'includes/bootstrap.php';
+
+require_once 'includes/config.php';
+require_once 'includes/teacher-auth.php';
 require_class_teacher();
 
 $classId = teacher_class_id();
@@ -110,7 +110,7 @@ $nextLesson = $nextLessonQuery->fetch(PDO::FETCH_OBJ);
                             <div class="panel-heading"><h5>Recent Notifications</h5></div>
                             <div class="panel-body">
                                 <?php
-                                $noticeSql = "SELECT Title, Message, CreationDate FROM tblteachernotifications WHERE (TeacherId = :teacherid OR ClassId = :classid) ORDER BY CreationDate DESC LIMIT 5";
+                                $noticeSql = "SELECT Title, Message, CreationDate FROM tblteachernotifications WHERE (TeacherId = :teacherid OR (TeacherId IS NULL AND ClassId = :classid)) ORDER BY CreationDate DESC LIMIT 5";
                                 $noticeQuery = $dbh->prepare($noticeSql);
                                 $noticeQuery->execute(array(':teacherid' => teacher_id(), ':classid' => $classId));
                                 $notes = $noticeQuery->fetchAll(PDO::FETCH_OBJ);
@@ -130,7 +130,7 @@ $nextLesson = $nextLessonQuery->fetch(PDO::FETCH_OBJ);
         </div>
     </div>
 </div>
-<script src="js/jquery/jquery-2.2.4.min.js"></script>
+<script src="js/jquery/jquery-3.7.1.min.js"></script>
 <script src="js/bootstrap/bootstrap.min.js"></script>
 <script src="js/main.js"></script>
 </body>

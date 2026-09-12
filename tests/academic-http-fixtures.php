@@ -7,7 +7,7 @@ $mode=$argv[1]??'';
 if($mode==='setup') {
     $dbh->beginTransaction();
     academic_query($dbh,'INSERT INTO tblacademicyears(AcademicYear) VALUES(?)',[substr($tag,-16)]); $year=(int)$dbh->lastInsertId();
-    academic_query($dbh,'INSERT INTO tblclasses(ClassName,Section) VALUES(?,?)',[$tag,'TEST']); $class=(int)$dbh->lastInsertId();
+    academic_query($dbh,'INSERT INTO tblclasses(ClassName,Section,ClassNameNumeric) VALUES(?,?,10)',[$tag,'TEST']); $class=(int)$dbh->lastInsertId();
     academic_query($dbh,'INSERT INTO tblsubjects(SubjectName) VALUES(?)',[$tag]);$subject=(int)$dbh->lastInsertId();
     academic_query($dbh,'INSERT INTO tblsubjectcombination(ClassId,SubjectId,status) VALUES(?,?,1)',[$class,$subject]);
     academic_query($dbh,"INSERT INTO tblusers(FullName,Username,PasswordHash,Role,Status) VALUES(?,?,?,'subject_teacher',1)",[$tag,$tag,password_hash('fixture-only',PASSWORD_DEFAULT)]);$teacher=(int)$dbh->lastInsertId();

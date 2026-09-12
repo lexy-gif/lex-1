@@ -113,9 +113,9 @@ try:
     assert query(f"SELECT SubjectId FROM tblpathwayallocationsubjects WHERE AllocationId={legacy['legacyAllocation']}") == [{'SubjectId':legacy['legacySubject']}]
     f = fixture('setup')
     for sid in [dean, second_dean]:
-        php('session_id($argv[1]);session_start();$_SESSION=["alogin"=>"senior-validation","csrf_token"=>$argv[2]];session_write_close();', sid, token)
+        php('ini_set("session.use_strict_mode","0");session_id($argv[1]);session_start();$_SESSION=["alogin"=>"senior-validation","csrf_token"=>$argv[2]];require "tests/session-fixture.php";test_dean_session();session_write_close();', sid, token)
     for sid, teacher in zip([class_teacher, subject_teacher, outsider], f['teachers']):
-        php('session_id($argv[1]);session_start();$_SESSION=["teacher_user_id"=>(int)$argv[2],"teacher_role"=>"subject_teacher","csrf_token"=>$argv[3]];session_write_close();', sid, str(teacher), token)
+        php('ini_set("session.use_strict_mode","0");session_id($argv[1]);session_start();$_SESSION=["teacher_user_id"=>(int)$argv[2],"teacher_session_version"=>1,"teacher_role"=>"subject_teacher","csrf_token"=>$argv[3]];require "includes/config.php";$dbh->prepare("UPDATE tblusers SET MustChangePassword=0 WHERE id=?")->execute([(int)$argv[2]]);session_write_close();', sid, str(teacher), token)
     pages = ['dean-senior-' + area + '.php' for area in ['pathways','subjects','combinations','assignments','teachers','promotions','reports']]
     for page in pages:
         assert '</html>' in request(page)[1].lower()
@@ -200,8 +200,8 @@ try:
     assert len(history)==2 and {r['ClassId'] for r in history}=={f['classes'][0],f['classes'][2]}
     assert query(f"SELECT ClassId FROM tblusers WHERE id={f['account']}")[0]['ClassId']==f['classes'][2]
     assert 'Senior learner 0' in request('teacher-senior.php?year='+str(year)+'&student='+str(student), session=class_teacher)[1]
-    assert 'saved=1' in post('dean-senior-promotions.php', dict(promotion, ClassId=f['classes'][0], **{'Students[]':[junior]}))[0]
-    print('PASS: competing allocations, Grade 9 entry and promotion with historical enrollments/subjects/results retained', flush=True)
+    assert 'Promote Senior School learners' in post('dean-senior-promotions.php', dict(promotion, ClassId=f['classes'][0], **{'Students[]':[junior]}))[1]
+    print('PASS: competing allocations, Grade 9 rejection and Senior School promotion with historical enrollments/subjects/results retained', flush=True)
 finally:
     try:
         if created_container:

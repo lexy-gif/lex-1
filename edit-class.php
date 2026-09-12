@@ -1,5 +1,6 @@
 <?php
-session_start();
+require_once 'includes/bootstrap.php';
+$error=$msg='';
 require_once 'includes/config.php';
 require_once 'includes/csrf.php';
 require_once 'includes/dean-auth.php';
@@ -11,7 +12,7 @@ $classValues=$cid?cbe_one($dbh,'SELECT * FROM tblclasses WHERE id=?',[$cid]):nul
 if(!$classValues) {http_response_code(404);exit('Class not found.');}
 // Preselect an unambiguous legacy grade; the link is saved only on submission.
 if(empty($classValues['GradeId']))$classValues['GradeId']=academic_query($dbh,'SELECT id FROM tblgrades WHERE GradeNumber=?',[$classValues['ClassNameNumeric']])->fetchColumn();
-$grades=cbe_rows($dbh,'SELECT id,Name,Status FROM tblgrades WHERE Status=1 OR id=? ORDER BY GradeNumber',[$classValues['GradeId']?:0]);
+$grades=cbe_rows($dbh,'SELECT id,Name,IF(GradeNumber IN (10,11,12),Status,0) Status FROM tblgrades WHERE (Status=1 AND GradeNumber IN (10,11,12)) OR id=? ORDER BY GradeNumber',[$classValues['GradeId']?:0]);
 if(isset($_POST['update']))
 {
 csrf_require_valid($_POST['csrf_token'] ?? '');
@@ -150,7 +151,7 @@ else if($error){?>
         <!-- /.main-wrapper -->
 
         <!-- ========== COMMON JS FILES ========== -->
-        <script src="js/jquery/jquery-2.2.4.min.js"></script>
+        <script src="js/jquery/jquery-3.7.1.min.js"></script>
         <script src="js/jquery-ui/jquery-ui.min.js"></script>
         <script src="js/bootstrap/bootstrap.min.js"></script>
         <script src="js/pace/pace.min.js"></script>

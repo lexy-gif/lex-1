@@ -78,7 +78,7 @@
                                             <li><a href="manage-exams.php"><i class="fa fa-calendar"></i> <span>Manage Exams</span></a></li>
                                             <li><a href="add-result.php"><i class="fa fa-bars"></i> <span>Add Result</span></a></li>
                                             <li><a href="manage-results.php"><i class="fa fa fa-server"></i> <span>Manage Result</span></a></li>
-                                            <li><a href="dean-result-approvals.php"><i class="fa fa-check-square-o"></i> <span>Approve / Publish Results</span></a></li>
+                                            <li><a href="manage-parents.php"><i class="fa fa-users"></i> <span>Parents / Guardians</span></a></li><li><a href="dean-sms-deliveries.php"><i class="fa fa-envelope"></i> <span>Parent SMS Deliveries</span></a></li><li><a href="dean-grading.php"><i class="fa fa-list"></i> <span>Performance Scale</span></a></li><li><a href="dean-result-approvals.php"><i class="fa fa-check-square-o"></i> <span>Approve / Publish Results</span></a></li>
                                            
                                         </ul>        </li>
 

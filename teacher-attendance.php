@@ -1,10 +1,11 @@
 <?php
-session_start();
-error_reporting(0);
-include('includes/config.php');
-include('includes/csrf.php');
-include('includes/audit.php');
-include('includes/teacher-auth.php');
+require_once 'includes/bootstrap.php';
+$error=$msg='';
+
+require_once 'includes/config.php';
+require_once 'includes/csrf.php';
+require_once 'includes/audit.php';
+require_once 'includes/teacher-auth.php';
 require_class_teacher();
 
 $classId = teacher_class_id();
@@ -92,7 +93,7 @@ if(isset($_POST['save_attendance'])) {
 </div></div>
 </section>
 </div></div></div></div></div>
-<script src="js/jquery/jquery-2.2.4.min.js"></script>
+<script src="js/jquery/jquery-3.7.1.min.js"></script>
 <script src="js/bootstrap/bootstrap.min.js"></script>
 <script src="js/main.js"></script>
 </body>

@@ -1,13 +1,23 @@
 <?php
-session_start();
-error_reporting(0);
-include('includes/config.php');
-if(strlen($_SESSION['alogin'])=="")
-    {   
-    header("Location: index.php"); 
+require_once 'includes/bootstrap.php';
+$error=$msg='';
+
+require_once 'includes/config.php';
+require_once 'includes/management-list.php';
+if(empty($_SESSION['alogin']))
+    {
+    header("Location: index.php");
     }
     else{
 
+$sql="SELECT tblstudents.StudentName,tblstudents.RollId,tblstudents.ParentPhone,tblstudents.RegDate,tblstudents.StudentId,tblstudents.Status,tblclasses.ClassName,tblclasses.Section,
+(SELECT r.ExamId FROM tblresult r WHERE r.StudentId=tblstudents.StudentId ORDER BY (r.ExamId IS NULL) ASC, r.ExamId DESC LIMIT 1) as LatestExamId
+from tblstudents join tblclasses on tblclasses.id=tblstudents.ClassId";
+$query=management_list_query($dbh,$sql,['StudentName','RollId','ClassName','Section','ParentPhone'],'StudentName');
+$query->execute();
+$allListRows=$query->fetchAll(PDO::FETCH_OBJ);
+$GLOBALS['management_list_has_next']=count($allListRows)>25;
+$results=array_slice($allListRows,0,25);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -80,7 +90,7 @@ if(strlen($_SESSION['alogin'])=="")
                                         <?php if($msg){?>
                                         <div class="alert alert-success left-icon-alert" role="alert">
                                             <strong>Well done!</strong><?php echo htmlentities($msg); ?>
-                                        </div><?php } 
+                                        </div><?php }
 else if($error){?>
                                         <div class="alert alert-danger left-icon-alert" role="alert">
                                             <strong>Oh snap!</strong> <?php echo htmlentities($error); ?>
@@ -88,7 +98,7 @@ else if($error){?>
                                         <?php } ?>
                                         <div class="panel-body p-20">
 
-                                            <table id="example" class="display table table-striped table-bordered"
+                                            <?php management_list_controls(); ?><table id="example" class="display table table-striped table-bordered"
                                                 cellspacing="0" width="100%">
                                                 <thead>
                                                     <tr>
@@ -115,12 +125,7 @@ else if($error){?>
                                                     </tr>
                                                 </tfoot>
                                                 <tbody>
-                                                    <?php $sql = "SELECT tblstudents.StudentName,tblstudents.RollId,tblstudents.ParentPhone,tblstudents.RegDate,tblstudents.StudentId,tblstudents.Status,tblclasses.ClassName,tblclasses.Section,
-(SELECT r.ExamId FROM tblresult r WHERE r.StudentId=tblstudents.StudentId ORDER BY (r.ExamId IS NULL) ASC, r.ExamId DESC LIMIT 1) as LatestExamId
-from tblstudents join tblclasses on tblclasses.id=tblstudents.ClassId";
-$query = $dbh->prepare($sql);
-$query->execute();
-$results=$query->fetchAll(PDO::FETCH_OBJ);
+                                                    <?php
 $cnt=1;
 if($query->rowCount() > 0)
 {
@@ -138,7 +143,7 @@ foreach($results as $result)
 echo htmlentities('Active');
 }
 else{
-   echo htmlentities('Blocked'); 
+   echo htmlentities('Blocked');
 }
                                                                 ?></td>
                                                         <td>
@@ -195,7 +200,7 @@ else{
     <!-- /.main-wrapper -->
 
     <!-- ========== COMMON JS FILES ========== -->
-    <script src="js/jquery/jquery-2.2.4.min.js"></script>
+    <script src="js/jquery/jquery-3.7.1.min.js"></script>
     <script src="js/bootstrap/bootstrap.min.js"></script>
     <script src="js/pace/pace.min.js"></script>
     <script src="js/lobipanel/lobipanel.min.js"></script>
@@ -209,7 +214,7 @@ else{
     <script src="js/main.js"></script>
     <script>
     $(function($) {
-        $('#example').DataTable();
+        $('#example').DataTable({paging:false,searching:false,info:false});
 
         $('#example2').DataTable({
             "scrollY": "300px",

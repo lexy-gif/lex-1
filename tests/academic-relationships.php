@@ -9,8 +9,8 @@ try {
     $tag='test_'.bin2hex(random_bytes(5));
     academic_query($dbh,'INSERT INTO tblacademicyears(AcademicYear) VALUES(?)',[$tag]);$year=(int)$dbh->lastInsertId();
     academic_query($dbh,'INSERT INTO tblterms(AcademicYearId,TermName) VALUES(?,?)',[$year,'Term 1']);$term=(int)$dbh->lastInsertId();
-    academic_query($dbh,'INSERT INTO tblclasses(ClassName,Section) VALUES(?,?)',[$tag,'T']);$class=(int)$dbh->lastInsertId();
-    academic_query($dbh,'INSERT INTO tblclasses(ClassName,Section) VALUES(?,?)',[$tag.'2','T']);$class2=(int)$dbh->lastInsertId();
+    academic_query($dbh,'INSERT INTO tblclasses(ClassName,Section,ClassNameNumeric) VALUES(?,?,10)',[$tag,'T']);$class=(int)$dbh->lastInsertId();
+    academic_query($dbh,'INSERT INTO tblclasses(ClassName,Section,ClassNameNumeric) VALUES(?,?,10)',[$tag.'2','T']);$class2=(int)$dbh->lastInsertId();
     academic_query($dbh,'INSERT INTO tblsubjects(SubjectName) VALUES(?)',[$tag]);$subject=(int)$dbh->lastInsertId();
     foreach([$class,$class2] as $c) academic_query($dbh,'INSERT INTO tblsubjectcombination(ClassId,SubjectId,status) VALUES(?,?,1)',[$c,$subject]);
     $teachers=[];

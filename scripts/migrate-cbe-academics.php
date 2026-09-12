@@ -15,8 +15,8 @@ cbe_add_column($dbh,'tblsubjects','DepartmentId','INT NULL REFERENCES tbldepartm
 cbe_add_column($dbh,'tblexams','EntryLocked','TINYINT NOT NULL DEFAULT 0');
 $dbh->beginTransaction();
 try {
-    for($n=1;$n<=12;$n++) {
-        $level=$n<=6?'Primary School':($n<=9?'Junior School':'Senior School');
+    for($n=10;$n<=12;$n++) {
+        $level='Senior School';
         $q=$dbh->prepare('INSERT IGNORE INTO tblgrades(SchoolLevelId,Name,GradeNumber,PathwayEntry,GuidanceEligible) SELECT id,?,?,?,? FROM tblschoollevels WHERE Name=?');
         $q->execute(['Grade '.$n,$n,$n===10?1:0,$n>=9?1:0,$level]);
     }

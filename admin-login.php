@@ -1,35 +1,39 @@
 <?php
-session_start();
-error_reporting(0);
-include('includes/config.php');
-include('includes/csrf.php');
-include('includes/audit.php');
-include('includes/dean-account.php');
+require_once 'includes/bootstrap.php';
+
+require_once 'includes/config.php';
+require_once 'includes/csrf.php';
+require_once 'includes/audit.php';
+require_once 'includes/dean-account.php';
+require_once 'includes/security.php';
 if(!empty($_SESSION['alogin'])){
 $_SESSION['alogin']='';
 }
 if(isset($_POST['login']))
 {
 csrf_require_valid($_POST['csrf_token'] ?? '');
-$uname=$_POST['username'];
-$password=$_POST['password'];
+$uname=is_string($_POST['username']??null)?trim($_POST['username']):'';
+$password=is_string($_POST['password']??null)?$_POST['password']:'';
+$loginKey=security_login_key('dean',$uname);
+$loginAllowed=security_login_allowed($dbh,$loginKey);
 $result=dean_find_by_username($dbh, $uname);
 $passwordMatches = false;
 
-if($result) {
+if($result && $loginAllowed) {
     $passwordMatches = password_verify($password, $result->Password);
 
     if(!$passwordMatches && hash_equals($result->Password, md5($password))) {
         $passwordMatches = true;
         $newHash = password_hash($password, PASSWORD_DEFAULT);
         dean_update_password($dbh, $uname, $newHash);
+        $result->Password = $newHash;
     }
 }
 
+if($loginAllowed)security_login_result($dbh,$loginKey,$passwordMatches);
 if($passwordMatches)
 {
-session_regenerate_id(true);
-$_SESSION['alogin']=$result->UserName;
+security_login_session(['alogin'=>$result->UserName,'dean_password_version'=>hash('sha256',$result->Password)]);
 audit_log($dbh, 'dean_login', 'dean', $result->UserName, 'Dean of Studies logged in');
 header("Location: dashboard.php");
 exit;
@@ -118,7 +122,7 @@ exit;
     </div>
 
     <!-- ========== JS FILES ========== -->
-    <script src="js/jquery/jquery-2.2.4.min.js"></script>
+    <script src="js/jquery/jquery-3.7.1.min.js"></script>
     <script src="js/bootstrap/bootstrap.min.js"></script>
     <script src="js/pace/pace.min.js"></script>
     <script src="js/lobipanel/lobipanel.min.js"></script>

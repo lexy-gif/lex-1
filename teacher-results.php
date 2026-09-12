@@ -1,30 +1,28 @@
 <?php
-session_start();
-error_reporting(0);
-include('includes/config.php');
-include('includes/csrf.php');
-include('includes/audit.php');
-include('includes/teacher-auth.php');
+require_once 'includes/bootstrap.php';
+$error=$msg='';
+
+require_once 'includes/config.php';
+require_once 'includes/csrf.php';
+require_once 'includes/audit.php';
+require_once 'includes/teacher-auth.php';
 require_class_teacher();
 
 $classId = teacher_class_id();
 
+require_once 'includes/result-workflow.php';
+$error=$msg='';
 if(isset($_POST['review_action'])) {
     csrf_require_valid($_POST['csrf_token'] ?? '');
-    $examId = $_POST['examid'];
-    $action = $_POST['action'];
-    $reason = trim($_POST['correction_reason']);
-    $status = $action === 'approve' ? 'approved' : 'correction_requested';
-
-    $sql = "INSERT INTO tblresultreviews(ClassId, ExamId, ReviewedBy, Status, CorrectionReason)
-            VALUES(:classid, :examid, :teacherid, :status, :reason)
-            ON DUPLICATE KEY UPDATE ReviewedBy = VALUES(ReviewedBy), Status = VALUES(Status), CorrectionReason = VALUES(CorrectionReason)";
-    $query = $dbh->prepare($sql);
-    $query->execute(array(':classid' => $classId, ':examid' => $examId, ':teacherid' => teacher_id(), ':status' => $status, ':reason' => $reason));
-    audit_log($dbh, 'class_result_review_' . $status, 'tblexams', $examId, $reason);
-    $msg = $status === 'approved' ? 'Class results approved for publication.' : 'Correction request recorded.';
+    try {
+        $dbh->beginTransaction();
+        workflow_review($dbh,teacher_id(),$classId,result_id($_POST['examid']??null),$_POST['action']??'',cbe_text($_POST,'correction_reason',5000,false));
+        $dbh->commit();$msg='Class review saved.';
+    } catch(Throwable $e) {
+        if($dbh->inTransaction())$dbh->rollBack();error_log($e->getMessage());
+        $error=$e instanceof DomainException?$e->getMessage():'Could not save the review.';
+    }
 }
-
 $examQuery = $dbh->prepare("SELECT id, ExamName FROM tblexams WHERE ClassId = :classid OR ClassId IS NULL ORDER BY id DESC");
 $examQuery->execute(array(':classid' => $classId));
 $exams = $examQuery->fetchAll(PDO::FETCH_OBJ);
@@ -49,7 +47,7 @@ $selectedExamId = isset($_GET['examid']) ? intval($_GET['examid']) : ($exams[0]-
 <?php include('includes/teacher-leftbar.php');?>
 <div class="main-page"><div class="container-fluid">
 <div class="row page-title-div"><div class="col-md-6"><h2 class="title">Results Review</h2></div></div>
-<section class="section">
+<section class="section"><?php if($error){?><div class="alert alert-danger"><?= academic_h($error) ?></div><?php } ?>
 <?php if($msg){?><div class="alert alert-success"><?php echo htmlentities($msg); ?></div><?php } ?>
 <div class="panel"><div class="panel-heading"><h5>Select Exam</h5></div><div class="panel-body">
     <form method="get" class="form-inline">
@@ -67,9 +65,10 @@ $selectedExamId = isset($_GET['examid']) ? intval($_GET['examid']) : ($exams[0]-
             <thead><tr><th>#</th><th>Student</th><th>Admission No.</th><th>Total</th><th>Average</th><th>Subjects Submitted</th></tr></thead>
             <tbody>
             <?php
-            $sql = "SELECT s.StudentName, s.RollId, SUM(r.marks) AS totalMarks, ROUND(AVG(r.marks), 2) AS averageMarks, COUNT(r.SubjectId) AS submittedSubjects
+            $sql = "SELECT s.StudentName, s.RollId, SUM(r.marks) AS totalMarks, ROUND(AVG(r.marks), 2) AS averageMarks, COUNT(CASE WHEN rs.Status='submitted' THEN r.SubjectId END) AS submittedSubjects
                     FROM tblstudents s
-                    LEFT JOIN tblresult r ON r.StudentId = s.StudentId AND r.ExamId = :examid
+                    LEFT JOIN tblresult r ON r.StudentId = s.StudentId AND r.ExamId = :examid AND r.ClassId=s.ClassId
+                    LEFT JOIN tblresultsubmissions rs ON rs.ClassId=r.ClassId AND rs.SubjectId=r.SubjectId AND rs.ExamId=r.ExamId
                     WHERE s.ClassId = :classid
                     GROUP BY s.StudentId, s.StudentName, s.RollId
                     ORDER BY totalMarks DESC";
@@ -84,18 +83,17 @@ $selectedExamId = isset($_GET['examid']) ? intval($_GET['examid']) : ($exams[0]-
     </div></div></div>
     <div class="col-md-4"><div class="panel"><div class="panel-heading"><h5>Subject Submission Status</h5></div><div class="panel-body">
         <?php
-        $subjectSql = "SELECT sub.SubjectName, COUNT(r.id) AS marksCount
+        $subjectSql = "SELECT sub.SubjectName, COALESCE(rs.Status,'draft') AS SubmissionStatus
                        FROM tblsubjectcombination sc
                        JOIN tblsubjects sub ON sub.id = sc.SubjectId
-                       LEFT JOIN tblresult r ON r.SubjectId = sub.id AND r.ClassId = sc.ClassId AND r.ExamId = :examid
-                       WHERE sc.ClassId = :classid AND sc.status = 1
-                       GROUP BY sub.id, sub.SubjectName
+                       LEFT JOIN tblresultsubmissions rs ON rs.SubjectId=sub.id AND rs.ClassId=sc.ClassId AND rs.ExamId=:examid
+                       WHERE sc.ClassId=:classid AND sc.status=1
                        ORDER BY sub.SubjectName";
         $subjectQuery = $dbh->prepare($subjectSql);
         $subjectQuery->execute(array(':examid' => $selectedExamId, ':classid' => $classId));
         foreach($subjectQuery->fetchAll(PDO::FETCH_OBJ) as $subject) {
-            $label = $subject->marksCount > 0 ? 'Submitted' : 'Pending';
-            $class = $subject->marksCount > 0 ? 'label-success' : 'label-warning';
+            $label = $subject->SubmissionStatus === 'submitted' ? 'Submitted' : 'Pending';
+            $class = $subject->SubmissionStatus === 'submitted' ? 'label-success' : 'label-warning';
             echo '<p>' . htmlentities($subject->SubjectName) . ' <span class="label ' . $class . '">' . $label . '</span></p>';
         }
         ?>
@@ -115,7 +113,7 @@ $selectedExamId = isset($_GET['examid']) ? intval($_GET['examid']) : ($exams[0]-
 </div>
 </section>
 </div></div></div></div></div>
-<script src="js/jquery/jquery-2.2.4.min.js"></script>
+<script src="js/jquery/jquery-3.7.1.min.js"></script>
 <script src="js/bootstrap/bootstrap.min.js"></script>
 <script src="js/DataTables/datatables.min.js"></script>
 <script src="js/main.js"></script>

@@ -8,26 +8,11 @@ function sms_env($key, $default = '')
 
 function normalize_phone_number($phone)
 {
-    $phone = trim($phone);
-    $phone = preg_replace('/[\s\-\(\)]/', '', $phone);
-
-    if ($phone === '') {
-        return '';
-    }
-
-    if (strpos($phone, '+') === 0) {
-        return $phone;
-    }
-
-    if (strpos($phone, '0') === 0 && strlen($phone) === 10) {
-        return '+254' . substr($phone, 1);
-    }
-
-    if (strpos($phone, '254') === 0) {
-        return '+' . $phone;
-    }
-
-    return $phone;
+    if (!is_string($phone)) return '';
+    $phone = preg_replace('/[\s\-\(\)]/', '', trim($phone));
+    if (preg_match('/^0([17][0-9]{8})$/D',$phone,$match)) return '+254'.$match[1];
+    if (preg_match('/^\+?254([17][0-9]{8})$/D',$phone,$match)) return '+254'.$match[1];
+    return '';
 }
 
 function send_africastalking_sms($phone, $message)
@@ -85,12 +70,12 @@ function send_africastalking_sms($phone, $message)
 
     $response = @file_get_contents($endpoint, false, stream_context_create($options));
     if ($response === false) {
-        return array('success' => false, 'message' => 'Unable to reach Africa\'s Talking SMS API.');
+        return array('success' => false, 'uncertain' => true, 'message' => 'No confirmed response from Africa\'s Talking. Check provider logs before retrying.');
     }
 
     $decoded = json_decode($response, true);
     if (!is_array($decoded)) {
-        return array('success' => false, 'message' => 'Unexpected SMS API response.', 'raw' => $response);
+        return array('success' => false, 'uncertain' => true, 'message' => 'Unexpected SMS API response. Check provider logs before retrying.');
     }
 
     $recipientStatus = isset($decoded['SMSMessageData']['Recipients'][0])
@@ -98,10 +83,12 @@ function send_africastalking_sms($phone, $message)
         : array();
 
     $status = isset($recipientStatus['status']) ? strtolower($recipientStatus['status']) : '';
-    $success = in_array($status, array('success', 'sent', 'submitted'), true);
+    $success = (int)($recipientStatus['statusCode']??0)===101 && in_array($status, array('success', 'sent', 'submitted'), true);
 
     return array(
         'success' => $success,
+        'uncertain' => !$recipientStatus,
+        'reference' => $recipientStatus['messageId']??null,
         'message' => isset($decoded['SMSMessageData']['Message']) ? $decoded['SMSMessageData']['Message'] : 'SMS request completed.',
         'response' => $decoded
     );

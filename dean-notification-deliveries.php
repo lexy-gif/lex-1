@@ -1,8 +1,8 @@
 <?php
-session_start();
-error_reporting(0);
-include('includes/config.php');
-include('includes/dean-auth.php');
+require_once 'includes/bootstrap.php';
+
+require_once 'includes/config.php';
+require_once 'includes/dean-auth.php';
 require_dean();
 
 $status = $_GET['status'] ?? 'all';
@@ -79,7 +79,7 @@ $deliveries = $query->fetchAll(PDO::FETCH_OBJ);
 </div></div>
 </section>
 </div></div></div></div></div>
-<script src="js/jquery/jquery-2.2.4.min.js"></script>
+<script src="js/jquery/jquery-3.7.1.min.js"></script>
 <script src="js/bootstrap/bootstrap.min.js"></script>
 <script src="js/DataTables/datatables.min.js"></script>
 <script src="js/main.js"></script>

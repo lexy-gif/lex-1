@@ -1,18 +1,17 @@
-
 <?php
-session_start();
-error_reporting(0);
-include('includes/config.php');
-include('includes/csrf.php');
-if(strlen($_SESSION['alogin'])==""){   
-header("Location: index.php"); 
+require_once 'includes/bootstrap.php';
+
+require_once 'includes/config.php';
+require_once 'includes/csrf.php';
+if(empty($_SESSION['alogin'])){
+header("Location: index.php");
 }else{
 //For Deleting the notice
 
-if(isset($_GET['id']))
+if(isset($_POST['id']))
 {
-csrf_require_valid($_GET['csrf_token'] ?? '');
-$id=$_GET['id'];
+csrf_require_valid($_POST['csrf_token'] ?? '');
+$id=$_POST['id'];
 $sql="delete from tblnotice where id=:id";
 $query = $dbh->prepare($sql);
 $query->bindParam(':id',$id,PDO::PARAM_STR);
@@ -44,20 +43,20 @@ echo "<script>window.location.href ='manage-notices.php'</script>";
         <div class="main-wrapper">
 
             <!-- ========== TOP NAVBAR ========== -->
-   <?php include('includes/topbar.php');?> 
+   <?php include('includes/topbar.php');?>
             <!-- ========== WRAPPER FOR BOTH SIDEBARS & MAIN CONTENT ========== -->
             <div class="content-wrapper">
                 <div class="content-container">
-<?php include('includes/leftbar.php');?>  
+<?php include('includes/leftbar.php');?>
 
                     <div class="main-page">
                         <div class="container-fluid">
                             <div class="row page-title-div">
                                 <div class="col-md-6">
                                     <h2 class="title">Manage Notices</h2>
-                                
+
                                 </div>
-                                
+
                                 <!-- /.col-md-6 text-right -->
                             </div>
                             <!-- /.row -->
@@ -69,7 +68,7 @@ echo "<script>window.location.href ='manage-notices.php'</script>";
             							<li class="active">Manage Notices</li>
             						</ul>
                                 </div>
-                             
+
                             </div>
                             <!-- /.row -->
                         </div>
@@ -78,7 +77,7 @@ echo "<script>window.location.href ='manage-notices.php'</script>";
                         <section class="section">
                             <div class="container-fluid">
 
-                             
+
 
                                 <div class="row">
                                     <div class="col-md-12">
@@ -127,24 +126,24 @@ foreach($results as $result)
                                                             <td><?php echo htmlentities($result->noticeDetails);?></td>
                                                             <td><?php echo htmlentities($result->postingDate);?></td>
 <td>
-<a href="manage-notices.php?id=<?php echo htmlentities($result->id);?>&<?php echo csrf_url_param();?>" onclick="return confirm('Do you really want to delete the notice?');" title="Delete this Record" class="btn btn-danger btn-xs" >Delete </a> 
+<form method="post" class="form-inline-block"><?php csrf_field(); ?><input type="hidden" name="id" value="<?php echo htmlentities($result->id); ?>"><input type="hidden" name="del" value="delete"><button class="btn btn-warning btn-xs" onclick="return confirm('Confirm delete?')">Delete</button></form>
 
 </td>
 </tr>
 <?php $cnt=$cnt+1;}} ?>
-                                                       
-                                                    
+
+
                                                     </tbody>
                                                 </table>
 
-                                         
+
                                                 <!-- /.col-md-12 -->
                                             </div>
                                         </div>
                                     </div>
                                     <!-- /.col-md-6 -->
 
-                                                               
+
                                                 </div>
                                                 <!-- /.col-md-12 -->
                                             </div>
@@ -164,7 +163,7 @@ foreach($results as $result)
                     </div>
                     <!-- /.main-page -->
 
-                    
+
 
                 </div>
                 <!-- /.content-container -->
@@ -175,7 +174,7 @@ foreach($results as $result)
         <!-- /.main-wrapper -->
 
         <!-- ========== COMMON JS FILES ========== -->
-        <script src="js/jquery/jquery-2.2.4.min.js"></script>
+        <script src="js/jquery/jquery-3.7.1.min.js"></script>
         <script src="js/bootstrap/bootstrap.min.js"></script>
         <script src="js/pace/pace.min.js"></script>
         <script src="js/lobipanel/lobipanel.min.js"></script>

@@ -1,8 +1,9 @@
 <?php
-session_start();
-include('includes/config.php');
-include('includes/csrf.php');
-include('includes/sms.php');
+require_once 'includes/bootstrap.php';
+$error=$msg='';
+require_once 'includes/config.php';
+require_once 'includes/csrf.php';
+
 require_once 'includes/dean-auth.php';
 require_once 'includes/exam-results.php';
 require_dean();
@@ -29,64 +30,19 @@ $formValue=static fn($key)=>is_scalar($_POST[$key]??null)?(string)$_POST[$key]:'
 
             $examName = $exam['AcademicYear'] . " - " . $exam['TermName'] . " - " . $exam['ExamName'];
             $dbh->commit();
-            // Calculate total marks for each student in the same class
-            $sql_rank = "SELECT StudentId, SUM(marks) AS totalMarks 
-                         FROM tblresult 
-                         WHERE ClassId = :class AND ExamId = :examid
-                         GROUP BY StudentId 
-                         ORDER BY totalMarks DESC";
-            $query_rank = $dbh->prepare($sql_rank);
-            $query_rank->bindParam(':class', $class, PDO::PARAM_STR);
-            $query_rank->bindParam(':examid', $examid, PDO::PARAM_STR);
-            $query_rank->execute();
-            $results_rank = $query_rank->fetchAll(PDO::FETCH_ASSOC);
-
-            $rank = 0;
-            $studentRank = 0;
-            $totalStudents = count($results_rank);
-
-            foreach($results_rank as $r) {
-                $rank++;
-                if($r['StudentId'] == $studentid) {
-                    $studentRank = $rank;
-                    $studentTotal = $r['totalMarks'];
-                    break;
-                }
-            }
-
-            $msg = "Result info added successfully for <strong>" . htmlentities($examName) . "</strong>. Student scored <strong>$studentTotal</strong> marks and is ranked <strong>$studentRank</strong> out of <strong>$totalStudents</strong> students in the class.";
-
-            $studentSql = "SELECT StudentName, ParentPhone FROM tblstudents WHERE StudentId = :studentid LIMIT 1";
-            $studentQuery = $dbh->prepare($studentSql);
-            $studentQuery->bindParam(':studentid', $studentid, PDO::PARAM_STR);
-            $studentQuery->execute();
-            $student = $studentQuery->fetch(PDO::FETCH_ASSOC);
-
-            if($student && !empty($student['ParentPhone'])) {
-                $smsText = "Hello Parent, " . $student['StudentName'] . "'s " . $examName . " results are ready. Total: " . $studentTotal . " marks. Rank: " . $studentRank . " out of " . $totalStudents . ". Please login to SRMS for full details.";
-                $smsResult = send_africastalking_sms($student['ParentPhone'], $smsText);
-
-                if(!empty($smsResult['success'])) {
-                    $msg .= " SMS sent to parent.";
-                } elseif(!empty($smsResult['skipped'])) {
-                    $msg .= " SMS not sent: " . htmlentities($smsResult['message']);
-                } else {
-                    $msg .= " Result saved, but SMS failed: " . htmlentities($smsResult['message']);
-                }
-            } else {
-                $msg .= " SMS not sent because this student has no parent phone number.";
-            }
+            $msg = 'Draft results saved. Parents are notified only after official publication.';
         } catch(Throwable $e) {
             if($dbh->inTransaction())$dbh->rollBack();
             $error=$e instanceof DomainException?$e->getMessage():'Could not save the result. Please try again.';
             if(!($e instanceof DomainException))error_log($e->getMessage());
         }
     }
-$formSubjects=[];$subjectMessage='Select a class, exam and learner to load registered subjects.';
+$formSubjects=[];$maximumMarks=100;$subjectMessage='Select a class, exam and learner to load registered subjects.';
 if($formValue('class')!=='' && $formValue('examid')!=='' && $formValue('studentid')!=='') {
     try {
         $context=result_entry_context($dbh,$formValue('class'),$formValue('studentid'),$formValue('examid'));
         $formSubjects=$context['subjects'];
+        $maximumMarks=$context['exam']['MaximumMarks'];
         $subjectMessage=$formSubjects?'':'No active subject registrations for this learner in the exam year. Register subjects before entering marks.';
     } catch(DomainException $e) { $subjectMessage=$e->getMessage(); }
 }
@@ -155,7 +111,7 @@ if($formValue('class')!=='' && $formValue('examid')!=='' && $formValue('studenti
                                                         onChange="getStudent(this.value);" required="required">
                                                         <option value="">Select Class</option>
                                                         <?php 
-                                                            $sql = "SELECT * from tblclasses";
+                                                            $sql = "SELECT * from tblclasses WHERE ClassNameNumeric IN (10,11,12)";
                                                             $query = $dbh->prepare($sql);
                                                             $query->execute();
                                                             $results = $query->fetchAll(PDO::FETCH_OBJ);
@@ -217,7 +173,7 @@ if($formValue('class')!=='' && $formValue('examid')!=='' && $formValue('studenti
                                             <div class="form-group">
                                                 <label for="date" class="col-sm-2 control-label">Subjects</label>
                                                 <div class="col-sm-10">
-                                                    <div id="subject"><?php result_subject_fields($formSubjects,is_array($_POST['marks']??null)?$_POST['marks']:[]); ?><?php if($subjectMessage!=='') { ?><p class="help-block"><?= academic_h($subjectMessage) ?></p><?php } ?></div>
+                                                    <div id="subject"><?php result_subject_fields($formSubjects,is_array($_POST['marks']??null)?$_POST['marks']:[],$maximumMarks); ?><?php if($subjectMessage!=='') { ?><p class="help-block"><?= academic_h($subjectMessage) ?></p><?php } ?></div>
                                                 </div>
                                             </div>
                                             <div class="form-group">
@@ -236,7 +192,7 @@ if($formValue('class')!=='' && $formValue('examid')!=='' && $formValue('studenti
             </div>
         </div>
     </div>
-    <script src="js/jquery/jquery-2.2.4.min.js"></script>
+    <script src="js/jquery/jquery-3.7.1.min.js"></script>
     <script src="js/bootstrap/bootstrap.min.js"></script>
     <script src="js/pace/pace.min.js"></script>
     <script src="js/lobipanel/lobipanel.min.js"></script>

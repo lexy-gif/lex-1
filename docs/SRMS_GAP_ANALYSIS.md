@@ -1,5 +1,7 @@
 # SRMS Gap Analysis and Upgrade Roadmap
 
+> Historical design notes. The current Senior School scope, guardian portal and deployment status are documented in [SENIOR_SYSTEM_AUDIT.md](SENIOR_SYSTEM_AUDIT.md) and the [README](../README.md). Earlier plans below are not current installation instructions.
+
 ## Current System Snapshot
 
 This project is a focused Student Result Management System. It already supports:

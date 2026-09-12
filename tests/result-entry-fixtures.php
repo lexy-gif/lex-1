@@ -13,7 +13,7 @@ try {
         for($i=0;$i<2;$i++) {
             academic_query($dbh,'INSERT INTO tblacademicyears(AcademicYear) VALUES(?)',[substr($tag,-16).'_'.$i]);$years[]=(int)$dbh->lastInsertId();
             academic_query($dbh,'INSERT INTO tblterms(AcademicYearId,TermName) VALUES(?,?)',[$years[$i],'Fixture term']);$terms[]=(int)$dbh->lastInsertId();
-            academic_query($dbh,'INSERT INTO tblclasses(ClassName,Section) VALUES(?,?)',[$tag.'_'.$i,'TEST']);$classes[]=(int)$dbh->lastInsertId();
+            academic_query($dbh,'INSERT INTO tblclasses(ClassName,Section,ClassNameNumeric) VALUES(?,?,10)',[$tag.'_'.$i,'TEST']);$classes[]=(int)$dbh->lastInsertId();
         }
         for($i=0;$i<4;$i++) {
             academic_query($dbh,'INSERT INTO tblsubjects(SubjectName,Status) VALUES(?,1)',[$tag.' subject '.$i]);$subjects[]=(int)$dbh->lastInsertId();
@@ -32,6 +32,7 @@ try {
         $dbh->commit();echo json_encode(compact('years','terms','classes','subjects','students','exams'));
     } elseif($mode==='state') {
         $rows=cbe_rows($dbh,'SELECT r.id,r.StudentId,r.ClassId,r.ExamId,r.SubjectId,r.marks FROM tblresult r JOIN tblstudents s ON s.StudentId=r.StudentId WHERE s.RollId IN (?,?,?,?) ORDER BY r.id',[$tag.'_0',$tag.'_1',$tag.'_2',$tag.'_3']);
+        foreach($rows as &$row)$row['marks']=(float)$row['marks'];unset($row);
         $dbh->rollBack();echo json_encode($rows);
     } elseif(in_array($mode,['disable_subject','disable_offering','restore_offering','move_student'],true)) {
         $subject=(int)academic_query($dbh,'SELECT id FROM tblsubjects WHERE SubjectName=?',[$tag.' subject 1'])->fetchColumn();

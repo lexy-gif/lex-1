@@ -2,7 +2,7 @@
 require_once __DIR__.'/academic-assignments.php';
 if (academic_ready($dbh)) {
     $ayRows=$dbh->query('SELECT * FROM tblacademicyears ORDER BY AcademicYear DESC')->fetchAll(PDO::FETCH_ASSOC);
-    $acRows=$dbh->query('SELECT id,CONCAT(ClassName," ",Section) Label FROM tblclasses ORDER BY ClassNameNumeric,Section')->fetchAll(PDO::FETCH_ASSOC);
+    $acRows=$dbh->query('SELECT id,CONCAT(ClassName," ",Section) Label FROM tblclasses WHERE ClassNameNumeric IN (10,11,12) ORDER BY ClassNameNumeric,Section')->fetchAll(PDO::FETCH_ASSOC);
     $asRows=$dbh->query('SELECT id,SubjectName Label FROM tblsubjects ORDER BY SubjectName')->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <fieldset class="academic-form"><legend>Academic roles and responsibilities</legend>

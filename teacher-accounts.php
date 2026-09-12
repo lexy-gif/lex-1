@@ -1,15 +1,35 @@
 <?php
-session_start();
-error_reporting(0);
-include('includes/config.php');
-include('includes/csrf.php');
-include('includes/audit.php');
-include('includes/teacher-auth.php');
+require_once 'includes/bootstrap.php';
+$error=$msg='';
+
+require_once 'includes/config.php';
+require_once 'includes/csrf.php';
+require_once 'includes/audit.php';
+require_once 'includes/teacher-auth.php';
 require_class_teacher();
 
 $classId = teacher_class_id();
+require_once 'includes/security.php';
+require_once 'includes/cbe-academics.php';
+$accountFormValid=true;$error=$msg='';
+try {
+    if($_SERVER['REQUEST_METHOD']==='POST') {
+        csrf_require_valid($_POST['csrf_token']??'');
+        if(isset($_POST['create_account'])||isset($_POST['update_status'])) {
+            if(!in_array((string)($_POST['status']??''),['0','1'],true))throw new DomainException('Select an account status.');
+        }
+        if($accountFormValid&&isset($_POST['create_account'])) {
+            $accountUsername=cbe_text($_POST,'username',100);
+            if(!preg_match('/^[a-zA-Z0-9_.@-]{3,100}$/D',$accountUsername))throw new DomainException('Enter a valid username.');
+            $accountEmail=cbe_text($_POST,'email',150,false);
+            if($accountEmail&&!filter_var($accountEmail,FILTER_VALIDATE_EMAIL))throw new DomainException('Enter a valid email address.');
+            $studentAccountPassword=security_password($_POST['password']??null);
+        }
+        if(isset($_POST['reset_password']))$studentAccountPassword=security_password($_POST['newpassword']??null);
+    }
+}catch(DomainException $e){$accountFormValid=false;$error=$e->getMessage();}
 
-if(isset($_POST['create_account'])) {
+if($accountFormValid&&isset($_POST['create_account'])) {
     csrf_require_valid($_POST['csrf_token'] ?? '');
     $studentId = $_POST['studentid'];
     $username = trim($_POST['username']);
@@ -26,7 +46,7 @@ if(isset($_POST['create_account'])) {
         $error = "Selected student is not in your assigned class.";
     } else {
         try {
-            $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+            $passwordHash = $studentAccountPassword;
             $role = 'student';
             $createdBy = 'class_teacher:' . teacher_id();
             $sql = "INSERT INTO tblusers(FullName, Username, Email, PasswordHash, Role, ClassId, StudentId, ParentPhone, Status, CreatedBy)
@@ -55,22 +75,22 @@ if(isset($_POST['create_account'])) {
     }
 }
 
-if(isset($_POST['update_status'])) {
+if($accountFormValid&&isset($_POST['update_status'])) {
     csrf_require_valid($_POST['csrf_token'] ?? '');
     $accountId = $_POST['accountid'];
     $status = $_POST['status'];
-    $sql = "UPDATE tblusers SET Status = :status WHERE id = :accountid AND Role = 'student' AND ClassId = :classid";
+    $sql = "UPDATE tblusers SET Status = :status, SessionVersion=SessionVersion+1 WHERE id = :accountid AND Role = 'student' AND ClassId = :classid";
     $query = $dbh->prepare($sql);
     $query->execute(array(':status' => $status, ':accountid' => $accountId, ':classid' => $classId));
     audit_log($dbh, 'student_account_status_changed', 'tblusers', $accountId, 'Status changed to ' . $status);
     $msg = "Account status updated.";
 }
 
-if(isset($_POST['reset_password'])) {
+if($accountFormValid&&isset($_POST['reset_password'])) {
     csrf_require_valid($_POST['csrf_token'] ?? '');
     $accountId = $_POST['accountid'];
-    $passwordHash = password_hash($_POST['newpassword'], PASSWORD_DEFAULT);
-    $sql = "UPDATE tblusers SET PasswordHash = :passwordhash WHERE id = :accountid AND Role = 'student' AND ClassId = :classid";
+    $passwordHash = $studentAccountPassword;
+    $sql = "UPDATE tblusers SET PasswordHash = :passwordhash, SessionVersion=SessionVersion+1 WHERE id = :accountid AND Role = 'student' AND ClassId = :classid";
     $query = $dbh->prepare($sql);
     $query->execute(array(':passwordhash' => $passwordHash, ':accountid' => $accountId, ':classid' => $classId));
     audit_log($dbh, 'student_password_reset', 'tblusers', $accountId, 'Password reset by class teacher');
@@ -116,7 +136,7 @@ if(isset($_POST['reset_password'])) {
             </div>
             <div class="form-group"><label>Username</label><input type="text" name="username" class="form-control" required></div>
             <div class="form-group"><label>Email</label><input type="email" name="email" class="form-control"></div>
-            <div class="form-group"><label>Password</label><input type="password" name="password" class="form-control" required></div>
+            <div class="form-group"><label>Password</label><input type="password" name="password" minlength="12" maxlength="72" class="form-control" required></div>
             <div class="form-group"><label>Status</label><select name="status" class="form-control"><option value="1">Active</option><option value="0">Inactive</option></select></div>
             <button type="submit" name="create_account" class="btn btn-primary">Create Account</button>
         </form>
@@ -151,7 +171,7 @@ if(isset($_POST['reset_password'])) {
                         <form method="post" class="form-inline-block action-top-sm">
                             <?php csrf_field(); ?>
                             <input type="hidden" name="accountid" value="<?php echo htmlentities($account->id); ?>">
-                            <input type="password" name="newpassword" class="form-control input-sm input-password-md" placeholder="New password" required>
+                            <input type="password" name="newpassword" minlength="12" maxlength="72" class="form-control input-sm input-password-md" placeholder="New password" required>
                             <button type="submit" name="reset_password" class="btn btn-xs btn-info">Reset</button>
                         </form>
                     </td>
@@ -162,7 +182,7 @@ if(isset($_POST['reset_password'])) {
     </div></div></div>
 </div></section>
 </div></div></div></div></div>
-<script src="js/jquery/jquery-2.2.4.min.js"></script>
+<script src="js/jquery/jquery-3.7.1.min.js"></script>
 <script src="js/bootstrap/bootstrap.min.js"></script>
 <script src="js/DataTables/datatables.min.js"></script>
 <script src="js/main.js"></script>

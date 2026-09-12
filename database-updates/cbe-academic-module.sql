@@ -104,7 +104,7 @@ CREATE TABLE IF NOT EXISTS tblexaminvigilators (
  SessionId INT NOT NULL, TeacherId INT NOT NULL, PRIMARY KEY(SessionId,TeacherId),
  FOREIGN KEY(SessionId) REFERENCES tblexamtimetableentries(id), FOREIGN KEY(TeacherId) REFERENCES tblusers(id)
 ) ENGINE=InnoDB;
-INSERT IGNORE INTO tblschoollevels(Name,SeniorSchool) VALUES('Primary School',0),('Junior School',0),('Senior School',1);
+INSERT IGNORE INTO tblschoollevels(Name,SeniorSchool) VALUES('Senior School',1);
 INSERT IGNORE INTO tblpathways(Name) VALUES('STEM'),('Social Sciences'),('Arts & Sports');
 INSERT IGNORE INTO tblpathwaytracks(PathwayId,Name) SELECT id,'Pure Sciences' FROM tblpathways WHERE Name='STEM';
 INSERT IGNORE INTO tblpathwaytracks(PathwayId,Name) SELECT id,'Applied Sciences' FROM tblpathways WHERE Name='STEM';

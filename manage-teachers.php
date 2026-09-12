@@ -1,11 +1,12 @@
 <?php
-session_start();
-error_reporting(0);
-include('includes/config.php');
-include('includes/csrf.php');
-include('includes/audit.php');
-include('includes/dean-auth.php');
-include('includes/notification-service.php');
+require_once 'includes/bootstrap.php';
+$error=$msg='';
+
+require_once 'includes/config.php';
+require_once 'includes/csrf.php';
+require_once 'includes/audit.php';
+require_once 'includes/dean-auth.php';
+require_once 'includes/notification-service.php';
 require_dean();
 require_once 'includes/academic-assignments.php';
 require_once 'includes/academic-teacher-summary.php';
@@ -59,8 +60,8 @@ if(isset($_POST['submit'])) {
         $error = "Please enter a valid email address.";
     } elseif(!isset($teacherRoles[$role])) {
         $error = "Please select a valid teacher role.";
-    } elseif(strlen($password) < 8) {
-        $error = "Password must be at least 8 characters.";
+    } elseif(strlen($password) < 12 || strlen($password)>72) {
+        $error = "Password must be 12 to 72 characters.";
     } elseif($password !== $confirmPassword) {
         $error = "Password and confirm password do not match.";
     } else {
@@ -112,7 +113,7 @@ if(isset($_POST['bulk_status'])) {
     $newStatus = $_POST['bulk_status'] === 'activate' ? 1 : 0;
     foreach($selectedTeachers as $teacherId) {
         $teacherId = (int)$teacherId;
-        $query = $dbh->prepare("UPDATE tblusers SET Status = :status WHERE id = :teacherid AND Role IN ($roleSql)");
+        $query = $dbh->prepare("UPDATE tblusers SET Status = :status, SessionVersion=SessionVersion+1 WHERE id = :teacherid AND Role IN ($roleSql)");
         $query->execute(array(':status' => $newStatus, ':teacherid' => $teacherId));
         audit_log($dbh, $newStatus ? 'teacher_account_activated' : 'teacher_account_deactivated', 'tblusers', $teacherId, 'Bulk status update by Dean of Studies');
     }
@@ -123,7 +124,7 @@ if(isset($_POST['update_status'])) {
     csrf_require_valid($_POST['csrf_token'] ?? '');
     $teacherId = (int)$_POST['teacherid'];
     $status = (int)$_POST['status'];
-    $sql = "UPDATE tblusers SET Status = :status WHERE id = :teacherid AND Role IN ($roleSql)";
+    $sql = "UPDATE tblusers SET Status = :status, SessionVersion=SessionVersion+1 WHERE id = :teacherid AND Role IN ($roleSql)";
     $query = $dbh->prepare($sql);
     $query->execute(array(':status' => $status, ':teacherid' => $teacherId));
     notification_create($dbh, $teacherId, 'Account Status Updated', 'Your SRMS teacher account is now ' . ($status ? 'active' : 'inactive') . '.', array(
@@ -141,11 +142,11 @@ if(isset($_POST['reset_password'])) {
     csrf_require_valid($_POST['csrf_token'] ?? '');
     $teacherId = (int)$_POST['teacherid'];
     $newPassword = $_POST['newpassword'];
-    if(strlen($newPassword) < 8) {
-        $error = "New password must be at least 8 characters.";
+    if(strlen($newPassword) < 12 || strlen($newPassword)>72) {
+        $error = "New password must be 12 to 72 characters.";
     } else {
         $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
-        $sql = "UPDATE tblusers SET PasswordHash = :passwordhash, MustChangePassword = 1 WHERE id = :teacherid AND Role IN ($roleSql)";
+        $sql = "UPDATE tblusers SET PasswordHash = :passwordhash, MustChangePassword = 1, SessionVersion=SessionVersion+1 WHERE id = :teacherid AND Role IN ($roleSql)";
         $query = $dbh->prepare($sql);
         $query->execute(array(':passwordhash' => $passwordHash, ':teacherid' => $teacherId));
         notification_create($dbh, $teacherId, 'Password Reset', 'Your SRMS password was reset by the Dean of Studies. Please contact the school office if you did not request this change.', array(
@@ -292,12 +293,12 @@ $departments = $dbh->query("SELECT DISTINCT Department FROM tblusers WHERE Role 
                     <?php csrf_field(); ?>
                     <input type="hidden" name="teacherid" value="<?php echo htmlentities($teacher->id); ?>">
                     <input type="hidden" name="status" value="<?php echo $teacher->Status ? '0' : '1'; ?>">
-                    <button type="submit" name="update_status" class="btn btn-xs btn-warning" onclick="return confirm('<?php echo $teacher->Status ? 'Deactivate ' . addslashes($teacher->FullName) . '? This teacher will no longer be able to log in. Existing records stay available. Current responsibilities: ' . addslashes($warning) : 'Activate ' . addslashes($teacher->FullName) . '?'; ?>');"><?php echo $teacher->Status ? 'Deactivate' : 'Activate'; ?></button>
+                    <button type="submit" name="update_status" class="btn btn-xs btn-warning" onclick="return confirm('Change the teacher account status?')"><?php echo $teacher->Status ? 'Deactivate' : 'Activate'; ?></button>
                 </form>
                 <form method="post" class="form-inline-block action-top-sm">
                     <?php csrf_field(); ?>
                     <input type="hidden" name="teacherid" value="<?php echo htmlentities($teacher->id); ?>">
-                    <input type="password" name="newpassword" class="form-control input-sm input-password-sm" placeholder="Min 8 chars" required>
+                    <input type="password" name="newpassword" class="form-control input-sm input-password-sm" placeholder="12?72 chars" required>
                     <button type="submit" name="reset_password" class="btn btn-xs btn-danger">Reset</button>
                 </form>
             </td>
@@ -322,7 +323,7 @@ $departments = $dbh->query("SELECT DISTINCT Department FROM tblusers WHERE Role 
 <div class="row">
     <div class="col-sm-6">
         <button type="submit" name="bulk_status" value="activate" class="btn btn-sm btn-success" form="bulk-teacher-form">Activate Selected</button>
-        <button type="submit" name="bulk_status" value="deactivate" class="btn btn-sm btn-warning" form="bulk-teacher-form" onclick="return confirm('Deactivate selected teachers? They will no longer be able to log in, but historical records will remain.');">Deactivate Selected</button>
+        <button type="submit" name="bulk_status" value="deactivate" class="btn btn-sm btn-warning" form="bulk-teacher-form" onclick="return confirm('Change the teacher account status?')">Deactivate Selected</button>
     </div>
     <div class="col-sm-6 text-right">
         Showing <?php echo $totalRows ? htmlentities($offset + 1) : 0; ?> - <?php echo htmlentities(min($offset + $perPage, $totalRows)); ?> of <?php echo htmlentities($totalRows); ?> teachers
@@ -361,7 +362,7 @@ $departments = $dbh->query("SELECT DISTINCT Department FROM tblusers WHERE Role 
 </div></div>
 </section>
 </div></div></div></div></div>
-<script src="js/jquery/jquery-2.2.4.min.js"></script>
+<script src="js/jquery/jquery-3.7.1.min.js"></script>
 <script src="js/bootstrap/bootstrap.min.js"></script>
 <script src="js/main.js"></script>
 <script>

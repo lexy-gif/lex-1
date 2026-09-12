@@ -13,7 +13,7 @@ def request(page,data=None,session=sid):
         body=response.read().decode();assert '</html>' in body.lower(),page+' incomplete response';return response.url,body
 try:
     f=json.loads(fixture('setup'))
-    php('session_id($argv[1]);session_start();$_SESSION=["alogin"=>$argv[2],"csrf_token"=>$argv[3]];session_write_close();',sid,tag,token)
+    php('ini_set("session.use_strict_mode","0");session_id($argv[1]);session_start();$_SESSION=["alogin"=>$argv[2],"csrf_token"=>$argv[3]];require "tests/session-fixture.php";test_dean_session();session_write_close();',sid,tag,token)
     assignment={'csrf_token':token,'action':'subject','year':f['year'],'teacher':f['teacher'],'class':f['class'],'subject':f['subject'],'term':''}
     url,body=request('dean-teacher-relationships.php',assignment)
     assert 'saved=1' in url,'Subject assignment did not save'
@@ -46,13 +46,13 @@ try:
     print('PASS: Invalid CSRF rejected')
     teacher_sid=secrets.token_hex(16)
     try:
-        php('session_id($argv[1]);session_start();$_SESSION=["teacher_user_id"=>(int)$argv[2],"teacher_role"=>"subject_teacher"];session_write_close();',teacher_sid,str(f['teacher']))
+        php('ini_set("session.use_strict_mode","0");session_id($argv[1]);session_start();$_SESSION=["teacher_user_id"=>(int)$argv[2],"teacher_session_version"=>1,"teacher_role"=>"subject_teacher"];require "includes/config.php";$dbh->prepare("UPDATE tblusers SET MustChangePassword=0 WHERE id=?")->execute([(int)$argv[2]]);session_write_close();',teacher_sid,str(f['teacher']))
         for page in ['dean-teacher-relationships.php','student-subjects.php']:
             url,body=request(page,session=teacher_sid);assert 'admin-login.php' in url,'Teacher reached Dean page'
         url,body=request('teacher-academic-assignments.php?teacher='+str(state['createdTeacher']),session=teacher_sid)
         assert 'My Teaching Assignments' in body and 'Fixture '+tag not in body,'Teacher ID override exposed another profile'
         print('PASS: Teacher cannot access Dean mutations or override assignment owner')
-    finally: php('session_id($argv[1]);session_start();session_destroy();',teacher_sid)
+    finally: php('ini_set("session.use_strict_mode","0");session_id($argv[1]);session_start();require "tests/session-fixture.php";test_session_cleanup();session_destroy();',teacher_sid)
 finally:
     print(fixture('cleanup'))
-    php('session_id($argv[1]);session_start();session_destroy();',sid)
+    php('ini_set("session.use_strict_mode","0");session_id($argv[1]);session_start();require "tests/session-fixture.php";test_session_cleanup();session_destroy();',sid)

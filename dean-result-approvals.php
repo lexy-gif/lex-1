@@ -1,37 +1,25 @@
 <?php
-session_start();
-error_reporting(0);
-include('includes/config.php');
-include('includes/csrf.php');
-include('includes/audit.php');
-include('includes/dean-auth.php');
+require_once 'includes/bootstrap.php';
+$error=$msg='';
+
+require_once 'includes/config.php';
+require_once 'includes/csrf.php';
+require_once 'includes/audit.php';
+require_once 'includes/dean-auth.php';
 require_dean();
 
+require_once 'includes/result-workflow.php';
+$error=$msg='';
 if(isset($_POST['decision'])) {
     csrf_require_valid($_POST['csrf_token'] ?? '');
-    $classId = $_POST['classid'];
-    $examId = $_POST['examid'];
-    $decision = $_POST['decision'];
-    $reason = trim($_POST['reason']);
-    $status = $decision === 'publish' ? 'published' : ($decision === 'approve' ? 'approved' : 'rejected');
-
-    $sql = "INSERT INTO tbldeanapprovals(ClassId, ExamId, ApprovedBy, Status, DecisionReason)
-            VALUES(:classid, :examid, :approvedby, :status, :reason)
-            ON DUPLICATE KEY UPDATE ApprovedBy = VALUES(ApprovedBy), Status = VALUES(Status), DecisionReason = VALUES(DecisionReason)";
-    $query = $dbh->prepare($sql);
-    $query->execute(array(':classid' => $classId, ':examid' => $examId, ':approvedby' => dean_name(), ':status' => $status, ':reason' => $reason));
-
-    if($decision === 'publish') {
-        $examUpdate = $dbh->prepare("UPDATE tblexams SET Status = 'published' WHERE id = :examid");
-    } elseif($decision === 'approve') {
-        $examUpdate = $dbh->prepare("UPDATE tblexams SET Status = 'approved' WHERE id = :examid");
-    } else {
-        $examUpdate = $dbh->prepare("UPDATE tblexams SET Status = 'under_review' WHERE id = :examid");
+    try {
+        $dbh->beginTransaction();
+        workflow_decide($dbh,result_id($_POST['classid']??null),result_id($_POST['examid']??null),$_POST['decision']??'',cbe_text($_POST,'reason',5000,false));
+        $dbh->commit(); $msg='Result decision saved.';
+    } catch(Throwable $e) {
+        if($dbh->inTransaction())$dbh->rollBack();error_log($e->getMessage());
+        $error=$e instanceof DomainException?$e->getMessage():'Could not save the decision.';
     }
-    $examUpdate->execute(array(':examid' => $examId));
-
-    audit_log($dbh, 'dean_result_' . $status, 'tblexams', $examId, 'Class ID ' . $classId . '. ' . $reason);
-    $msg = "Dean result decision saved.";
 }
 ?>
 <!DOCTYPE html>
@@ -53,7 +41,7 @@ if(isset($_POST['decision'])) {
 <?php include('includes/leftbar.php');?>
 <div class="main-page"><div class="container-fluid">
 <div class="row page-title-div"><div class="col-md-8"><h2 class="title">Approve / Publish Results</h2></div></div>
-<section class="section">
+<section class="section"><?php if($error){?><div class="alert alert-danger"><?= academic_h($error) ?></div><?php } ?>
 <?php if($msg){?><div class="alert alert-success"><?php echo htmlentities($msg); ?></div><?php } ?>
 <div class="panel"><div class="panel-heading"><h5>Class Result Approval Queue</h5></div><div class="panel-body">
 <table id="example" class="display table table-striped table-bordered">
@@ -62,13 +50,13 @@ if(isset($_POST['decision'])) {
 <?php
 $sql = "SELECT e.id AS ExamId, e.ExamName, e.Status AS ExamStatus, ay.AcademicYear, t.TermName,
                c.id AS ClassId, c.ClassName, c.Section,
-               COUNT(DISTINCT r.StudentId) AS SubmittedStudents,
+               COUNT(DISTINCT CASE WHEN EXISTS(SELECT 1 FROM tblresultsubmissions rs WHERE rs.ClassId=r.ClassId AND rs.SubjectId=r.SubjectId AND rs.ExamId=r.ExamId AND rs.Status='submitted') THEN r.StudentId END) AS SubmittedStudents,
                rr.Status AS ReviewStatus,
                da.Status AS DeanStatus
         FROM tblexams e
         JOIN tblacademicyears ay ON ay.id = e.AcademicYearId
         JOIN tblterms t ON t.id = e.TermId
-        JOIN tblclasses c ON e.ClassId = c.id OR e.ClassId IS NULL
+        JOIN tblclasses c ON (e.ClassId = c.id OR e.ClassId IS NULL) AND c.ClassNameNumeric IN (10,11,12)
         LEFT JOIN tblresult r ON r.ExamId = e.id AND r.ClassId = c.id
         LEFT JOIN tblresultreviews rr ON rr.ExamId = e.id AND rr.ClassId = c.id
         LEFT JOIN tbldeanapprovals da ON da.ExamId = e.id AND da.ClassId = c.id
@@ -102,7 +90,7 @@ foreach($query->fetchAll(PDO::FETCH_OBJ) as $row) { ?>
 </div></div>
 </section>
 </div></div></div></div></div>
-<script src="js/jquery/jquery-2.2.4.min.js"></script>
+<script src="js/jquery/jquery-3.7.1.min.js"></script>
 <script src="js/bootstrap/bootstrap.min.js"></script>
 <script src="js/DataTables/datatables.min.js"></script>
 <script src="js/main.js"></script>

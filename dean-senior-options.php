@@ -1,5 +1,5 @@
 <?php
-session_start();require __DIR__.'/includes/config.php';require __DIR__.'/includes/dean-auth.php';require_dean();
+require_once 'includes/bootstrap.php';require __DIR__.'/includes/config.php';require __DIR__.'/includes/dean-auth.php';require_dean();
 require __DIR__.'/includes/senior-school.php';
 header('Content-Type: application/json; charset=utf-8');header('Cache-Control: no-store');
 try {

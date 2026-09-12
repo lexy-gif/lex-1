@@ -36,11 +36,13 @@ function result_create($db, $post) {
     if (!$db->inTransaction()) throw new LogicException('Result changes require a transaction.');
     $class = result_id($post['class']??null); $student = result_id($post['studentid']??null); $exam = result_id($post['examid']??null);
     $context = result_entry_context($db, $class, $student, $exam);
+    require_once __DIR__.'/result-workflow.php';
+    workflow_editable($db,$class,$exam);
     if (!$context['subjects']) throw new DomainException('No active subject registrations for this learner in the exam year. Register subjects before entering marks.');
     $marks = $post['marks']??null;
     if (!is_array($marks) || !$marks) throw new DomainException('Enter marks for the registered subjects.');
     $values = [];
-    foreach ($marks as $subject=>$mark) $values[result_id($subject)] = cbe_number($mark,0,100);
+    foreach ($marks as $subject=>$mark) $values[result_id($subject)] = cbe_number($mark,0,(float)$context['exam']['MaximumMarks']);
     $expected = array_keys($context['subjects']); $submitted = array_keys($values);
     sort($expected); sort($submitted);
     if ($expected !== $submitted) throw new DomainException('Subject registrations changed or invalid subjects were submitted. Reload the registered subjects and check the marks.');
@@ -72,17 +74,19 @@ function result_update($db, $student, $exam, $ids, $marks) {
         if (!isset($contexts[$class]['subjects'][(int)$row['SubjectId']])) {
             throw new DomainException('This result subject is not actively registered for the learner in the exam year. Restore its registration before editing.');
         }
-        $mark = cbe_number($marks[$index],0,100);
+        require_once __DIR__.'/result-workflow.php';
+        workflow_editable($db,$class,$exam,(int)$row['SubjectId']);
+        $mark = cbe_number($marks[$index],0,(float)$contexts[$class]['exam']['MaximumMarks']);
         academic_query($db,'UPDATE tblresult SET marks=? WHERE id=?',[$mark,$id]);
         cbe_audit($db,'exam_result_updated','tblresult',$id,['marks'=>$row['marks']],['marks'=>$mark]);
     }
 }
 
-function result_subject_fields($subjects, $marks=[]) {
+function result_subject_fields($subjects, $marks=[], $maximum=100) {
     foreach ($subjects as $subject) {
         $id = (int)$subject['id'];
         $value = is_scalar($marks[$id]??null) ? (string)$marks[$id] : '';
         echo '<p><label for="subject-mark-'.$id.'">'.academic_h($subject['SubjectName']).'</label>';
-        echo '<input type="number" id="subject-mark-'.$id.'" name="marks['.$id.']" value="'.academic_h($value).'" min="0" max="100" step="any" class="form-control" required placeholder="Enter marks out of 100" autocomplete="off"></p>';
+        echo '<input type="number" id="subject-mark-'.$id.'" name="marks['.$id.']" value="'.academic_h($value).'" min="0" max="'.academic_h($maximum).'" step="any" class="form-control" required placeholder="Enter marks" autocomplete="off"></p>';
     }
 }

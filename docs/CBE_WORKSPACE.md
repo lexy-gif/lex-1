@@ -32,7 +32,7 @@ Teachers can access their own assessments, subject to their teaching assignment.
 
 ## Classes and configured grades
 
-The existing **Create Class** and **Edit Class** pages now select from the active grade catalogue in **Academic Structure**, including configured Grades 10–12 and any additional school grades. Saving records both the grade link and its numeric grade; there is no separate numeric field to keep in sync. The CBE workspace and these pages share the same transactional save and duplicate grade/section checks. Sections follow the existing database limit of five characters.
+The existing **Create Class** and **Edit Class** pages now select from the active grade catalogue in **Academic Structure**, limited to configured Grades 10–12. Saving records both the grade link and its numeric grade; there is no separate numeric field to keep in sync. The CBE workspace and these pages share the same transactional save and duplicate grade/section checks. Sections follow the existing database limit of five characters.
 
 Existing class names, IDs and student links are preserved when mapping a legacy class to a grade. The edit form preselects a matching numeric grade for an unmapped class but writes the link only when saved. Inactive grades are labelled on existing classes and require an active selection to save. Validation errors retain the submitted class name, grade and section.
 
@@ -91,7 +91,7 @@ The workspace HTTP test creates unique temporary academic records and sessions, 
 
 These checks validate rendering and the listed workflows. They do not establish correctness of every pathway, timetable or curriculum configuration.
 
-The class HTTP test covers Grades 10–12, an additional configured grade, invalid/inactive selections, duplicate sections across both routes, retained form input, authentication/CSRF and legacy mapping without changing student links. It creates temporary classes, grades, a learner with no parent contacts and sessions, then removes them in a `finally` block. It requires active Grades 10–12 in the local catalogue.
+The class HTTP test covers Grades 10–12, rejection of other configured grades, invalid/inactive selections, duplicate sections across both routes, retained form input, authentication/CSRF and legacy mapping without changing student links. It creates temporary classes, grades, a learner with no parent contacts and sessions, then removes them in a `finally` block. It requires active Grades 10–12 in the local catalogue.
 
 The timetable HTTP test covers conflict checks through both scheduling routes, invigilator changes, legacy records, publication rollback, notification recipients, period isolation, closed states, teacher visibility and simultaneous saves. Its unique fixture teachers have no external addresses and email delivery is disabled. Fixtures and sessions are removed in a `finally` block; an active school year and term are required, and their activation is not changed by the test.
 

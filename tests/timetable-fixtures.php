@@ -5,6 +5,8 @@ require __DIR__.'/../includes/cbe-timetable.php';
 $tag=$argv[2]??'';$mode=$argv[1]??'';
 if(!preg_match('/^timetable_[a-f0-9]{16}$/D',$tag))throw new RuntimeException('Invalid fixture identifier.');
 $_SESSION=['alogin'=>$tag];
+$actors=[$tag];foreach(array_slice($argv,3,2) as $sid){if(!preg_match('/^[a-f0-9]{32}$/D',$sid))throw new RuntimeException('Invalid test actor.');$actors[]='fixture_'.$sid;}
+$actorPlaceholders=implode(',',array_fill(0,count($actors),'?'));
 $dbh->beginTransaction();
 try {
     if($mode==='setup') {
@@ -15,7 +17,7 @@ try {
         academic_query($dbh,'INSERT INTO tblsubjects(SubjectName,Status) VALUES(?,1)',[$tag]);$subject=(int)$dbh->lastInsertId();
         academic_query($dbh,'INSERT INTO tblsubjects(SubjectName,Status) VALUES(?,1)',[$tag.'_other']);$otherSubject=(int)$dbh->lastInsertId();
         for($i=0;$i<3;$i++) {
-            academic_query($dbh,'INSERT INTO tblclasses(ClassName,Section) VALUES(?,?)',[$tag.'_'.$i,'TEST']);$classes[]=(int)$dbh->lastInsertId();
+            academic_query($dbh,'INSERT INTO tblclasses(ClassName,Section,ClassNameNumeric) VALUES(?,?,10)',[$tag.'_'.$i,'TEST']);$classes[]=(int)$dbh->lastInsertId();
             academic_query($dbh,'INSERT INTO tblsubjectcombination(ClassId,SubjectId,status) VALUES(?,?,1)',[$classes[$i],$subject]);
             academic_query($dbh,'INSERT INTO tblsubjectcombination(ClassId,SubjectId,status) VALUES(?,?,1)',[$classes[$i],$otherSubject]);
             academic_query($dbh,'INSERT INTO tblrooms(RoomName) VALUES(?)',[$tag.'_'.$i]);$rooms[]=(int)$dbh->lastInsertId();
@@ -36,7 +38,7 @@ try {
         }
         $result=compact('year','terms','classes','rooms','teachers','subject','otherSubject','date','exams');
     } elseif($mode==='state') {
-        $result=['lessons'=>cbe_rows($dbh,'SELECT e.* FROM tblclasstimetableentries e JOIN tblclasses c ON c.id=e.ClassId WHERE LEFT(c.ClassName,CHAR_LENGTH(?))=? ORDER BY e.id',[$tag,$tag]),'exams'=>cbe_rows($dbh,'SELECT e.* FROM tblexamtimetableentries e JOIN tblclasses c ON c.id=e.ClassId WHERE LEFT(c.ClassName,CHAR_LENGTH(?))=? ORDER BY e.id',[$tag,$tag]),'members'=>cbe_rows($dbh,'SELECT i.* FROM tblexaminvigilators i JOIN tblexamtimetableentries e ON e.id=i.SessionId JOIN tblclasses c ON c.id=e.ClassId WHERE LEFT(c.ClassName,CHAR_LENGTH(?))=? ORDER BY i.SessionId,i.TeacherId',[$tag,$tag]),'versions'=>cbe_rows($dbh,'SELECT * FROM tbltimetableversions WHERE CreatedBy=? ORDER BY id',[$tag]),'notifications'=>cbe_rows($dbh,'SELECT n.TeacherId,n.Category,n.ActionUrl FROM tblteachernotifications n JOIN tblusers u ON u.id=n.TeacherId WHERE LEFT(u.Username,CHAR_LENGTH(?))=? ORDER BY n.id',[$tag,$tag])];
+        $result=['lessons'=>cbe_rows($dbh,'SELECT e.* FROM tblclasstimetableentries e JOIN tblclasses c ON c.id=e.ClassId WHERE LEFT(c.ClassName,CHAR_LENGTH(?))=? ORDER BY e.id',[$tag,$tag]),'exams'=>cbe_rows($dbh,'SELECT e.* FROM tblexamtimetableentries e JOIN tblclasses c ON c.id=e.ClassId WHERE LEFT(c.ClassName,CHAR_LENGTH(?))=? ORDER BY e.id',[$tag,$tag]),'members'=>cbe_rows($dbh,'SELECT i.* FROM tblexaminvigilators i JOIN tblexamtimetableentries e ON e.id=i.SessionId JOIN tblclasses c ON c.id=e.ClassId WHERE LEFT(c.ClassName,CHAR_LENGTH(?))=? ORDER BY i.SessionId,i.TeacherId',[$tag,$tag]),'versions'=>cbe_rows($dbh,'SELECT * FROM tbltimetableversions WHERE CreatedBy IN ('.$actorPlaceholders.') ORDER BY id',$actors),'notifications'=>cbe_rows($dbh,'SELECT n.TeacherId,n.Category,n.ActionUrl FROM tblteachernotifications n JOIN tblusers u ON u.id=n.TeacherId WHERE LEFT(u.Username,CHAR_LENGTH(?))=? ORDER BY n.id',[$tag,$tag])];
     } elseif($mode==='block_exam_publication') {
         $teacher=academic_query($dbh,'SELECT id FROM tblusers WHERE Username=?',[$tag.'_2'])->fetchColumn();
         academic_query($dbh,"INSERT INTO tblteacheravailability(TeacherId,DayOfWeek,StartTime,EndTime,Reason) VALUES(?,'Monday','11:30','11:45',?)",[$teacher,$tag.'_publish']);$result=true;
@@ -76,7 +78,7 @@ try {
         academic_query($dbh,'DELETE FROM tblsubjects WHERE SubjectName IN (?,?)',[$tag,$tag.'_other']);
         $year=academic_query($dbh,'SELECT id FROM tblacademicyears WHERE AcademicYear=?',[substr($tag,-16)])->fetchColumn();
         academic_query($dbh,'DELETE FROM tblterms WHERE AcademicYearId=?',[$year]);academic_query($dbh,'DELETE FROM tblacademicyears WHERE id=?',[$year]);
-        academic_query($dbh,'DELETE FROM tbltimetableversions WHERE CreatedBy=?',[$tag]);academic_query($dbh,'DELETE FROM tblauditlog WHERE Actor=?',[$tag]);$result='Timetable fixtures removed';
+        academic_query($dbh,'DELETE FROM tbltimetableversions WHERE CreatedBy IN ('.$actorPlaceholders.')',$actors);academic_query($dbh,'DELETE FROM tblauditlog WHERE Actor=?',[$tag]);$result='Timetable fixtures removed';
     } else throw new RuntimeException('Unknown fixture mode.');
     $dbh->commit();echo json_encode($result);
 }catch(Throwable $e){if($dbh->inTransaction())$dbh->rollBack();throw $e;}

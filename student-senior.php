@@ -1,23 +1,27 @@
 <?php
-session_start();
+require_once 'includes/bootstrap.php';
 require 'includes/config.php';
 require_once 'includes/csrf.php';
+require_once 'includes/security.php';
 require_once 'includes/senior-ui.php';
 header('Cache-Control: no-store');
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_require_valid($_POST['csrf_token'] ?? '');
     if (isset($_POST['logout'])) {
-        unset($_SESSION['student_user_id']);
+        $_SESSION=[];
         session_regenerate_id(true);
         header('Location: student-senior.php'); exit;
     }
     $username = is_string($_POST['username'] ?? null) ? trim($_POST['username']) : '';
     $password = is_string($_POST['password'] ?? null) ? $_POST['password'] : '';
-    $account = cbe_one($dbh, "SELECT u.id,u.PasswordHash FROM tblusers u JOIN tblstudents s ON s.StudentId=u.StudentId WHERE u.Username=? AND u.Role='student' AND u.Status=1 AND s.Status=1", [$username]);
-    if ($account && password_verify($password, $account['PasswordHash'])) {
-        session_regenerate_id(true);
-        $_SESSION['student_user_id'] = (int)$account['id'];
+    $account = cbe_one($dbh, "SELECT u.id,u.PasswordHash,u.SessionVersion FROM tblusers u JOIN tblstudents s ON s.StudentId=u.StudentId WHERE u.Username=? AND u.Role='student' AND u.Status=1 AND s.Status=1", [$username]);
+    $loginKey=security_login_key('student',$username);
+    $allowed=security_login_allowed($dbh,$loginKey);
+    $valid=$allowed&&$account&&password_verify($password,$account['PasswordHash']);
+    if($allowed)security_login_result($dbh,$loginKey,$valid);
+    if ($valid) {
+        security_login_session(['student_user_id'=>(int)$account['id'],'student_session_version'=>(int)$account['SessionVersion']]);
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
         academic_query($dbh, 'UPDATE tblusers SET LastLoginAt=NOW() WHERE id=?', [$account['id']]);
         header('Location: student-senior.php'); exit;
@@ -25,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $error = 'Invalid student login details.';
 }
 // Resolve learner identity from the active account on every request, never from the URL.
-$student = empty($_SESSION['student_user_id']) ? null : cbe_one($dbh, "SELECT s.StudentId,s.StudentName,s.RollId FROM tblusers u JOIN tblstudents s ON s.StudentId=u.StudentId WHERE u.id=? AND u.Role='student' AND u.Status=1 AND s.Status=1", [(int)$_SESSION['student_user_id']]);
+$student = empty($_SESSION['student_user_id']) ? null : cbe_one($dbh, "SELECT s.StudentId,s.StudentName,s.RollId FROM tblusers u JOIN tblstudents s ON s.StudentId=u.StudentId WHERE u.id=? AND u.SessionVersion=? AND u.Role='student' AND u.Status=1 AND s.Status=1", [(int)$_SESSION['student_user_id'],(int)($_SESSION['student_session_version']??0)]);
 if (!$student) unset($_SESSION['student_user_id']);
 $ready = senior_ready($dbh);
 $learner = null;

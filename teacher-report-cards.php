@@ -1,45 +1,31 @@
 <?php
-session_start();
-error_reporting(0);
-include('includes/config.php');
-include('includes/csrf.php');
-include('includes/audit.php');
-include('includes/teacher-auth.php');
+require_once 'includes/bootstrap.php';
+$error=$msg='';
+
+require_once 'includes/config.php';
+require_once 'includes/csrf.php';
+require_once 'includes/audit.php';
+require_once 'includes/teacher-auth.php';
 require_class_teacher();
 
 $classId = teacher_class_id();
 $teacherId = teacher_id();
 
+require_once 'includes/result-workflow.php';
+$msg=$error='';
 if(isset($_POST['save_comment'])) {
-    csrf_require_valid($_POST['csrf_token'] ?? '');
-    $studentId = $_POST['studentid'];
-    $examId = $_POST['examid'] ?: null;
-    $comment = trim($_POST['comment']);
-    $status = $_POST['status'];
-
-    $studentCheck = $dbh->prepare("SELECT StudentId FROM tblstudents WHERE StudentId = :studentid AND ClassId = :classid");
-    $studentCheck->execute(array(':studentid' => $studentId, ':classid' => $classId));
-    if($studentCheck->rowCount() > 0 && $comment !== '') {
-        $sql = "INSERT INTO tblteachercomments(StudentId, ClassId, ExamId, TeacherId, CommentText, Status)
-                VALUES(:studentid, :classid, :examid, :teacherid, :comment, :status)
-                ON DUPLICATE KEY UPDATE CommentText = VALUES(CommentText), Status = VALUES(Status)";
-        $query = $dbh->prepare($sql);
-        $query->bindParam(':studentid', $studentId, PDO::PARAM_STR);
-        $query->bindParam(':classid', $classId, PDO::PARAM_STR);
-        if($examId === null) {
-            $query->bindValue(':examid', null, PDO::PARAM_NULL);
-        } else {
-            $query->bindParam(':examid', $examId, PDO::PARAM_STR);
-        }
-        $query->bindParam(':teacherid', $teacherId, PDO::PARAM_STR);
-        $query->bindParam(':comment', $comment, PDO::PARAM_STR);
-        $query->bindParam(':status', $status, PDO::PARAM_STR);
-        $query->execute();
-        audit_log($dbh, 'teacher_comment_saved', 'tblstudents', $studentId, 'Exam ID ' . ($examId ?: 'legacy'));
-        $msg = "Teacher comment saved.";
-    } else {
-        $error = "Please select a valid student and enter a comment.";
-    }
+    csrf_require_valid($_POST['csrf_token']??'');
+    try {
+        $dbh->beginTransaction();$studentId=result_id($_POST['studentid']??null);$examId=result_id($_POST['examid']??null);
+        $e=workflow_exam($dbh,$classId,$examId);
+        if(academic_query($dbh,'SELECT id FROM tblresultpublications WHERE ClassId=? AND ExamId=?',[$classId,$examId])->fetchColumn())throw new DomainException('Published report comments are locked.');
+        if(!academic_query($dbh,'SELECT StudentId FROM tblstudents WHERE StudentId=? AND ClassId=? AND Status=1',[$studentId,$classId])->fetchColumn())throw new DomainException('Select an active learner in your class.');
+        if(!academic_query($dbh,'SELECT id FROM tblclassteacherassignments WHERE TeacherId=? AND ClassId=? AND AcademicYearId=? AND Status=1',[$teacherId,$classId,$e['AcademicYearId']])->fetchColumn())throw new DomainException('A class assignment in the examination year is required.');
+        $status=$_POST['status']??'';if(!in_array($status,['draft','submitted'],true))throw new DomainException('Save a draft or submit the comment for publication.');
+        $comment=cbe_text($_POST,'comment',5000);
+        academic_query($dbh,'INSERT INTO tblteachercomments(StudentId,ClassId,ExamId,TeacherId,CommentText,Status) VALUES(?,?,?,?,?,?) ON DUPLICATE KEY UPDATE TeacherId=VALUES(TeacherId),CommentText=VALUES(CommentText),Status=VALUES(Status)',[$studentId,$classId,$examId,$teacherId,$comment,$status]);
+        audit_log($dbh,'teacher_comment_saved','tblstudents',$studentId,'Exam '.$examId);$dbh->commit();$msg='Teacher comment saved.';
+    }catch(Throwable $e){if($dbh->inTransaction())$dbh->rollBack();error_log($e->getMessage());$error=$e instanceof DomainException?$e->getMessage():'Could not save the comment.';}
 }
 
 $examQuery = $dbh->prepare("SELECT id, ExamName FROM tblexams WHERE ClassId = :classid OR ClassId IS NULL ORDER BY id DESC");
@@ -125,7 +111,7 @@ $selectedExamId = isset($_GET['examid']) ? intval($_GET['examid']) : ($exams[0]-
 </div></div>
 </section>
 </div></div></div></div></div>
-<script src="js/jquery/jquery-2.2.4.min.js"></script>
+<script src="js/jquery/jquery-3.7.1.min.js"></script>
 <script src="js/bootstrap/bootstrap.min.js"></script>
 <script src="js/DataTables/datatables.min.js"></script>
 <script src="js/main.js"></script>

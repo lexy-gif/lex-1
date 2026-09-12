@@ -1,9 +1,11 @@
 <?php
-session_start();
+require_once 'includes/bootstrap.php';
+$error=$msg='';
 require_once 'includes/config.php';
 require_once 'includes/csrf.php';
 require_once 'includes/dean-auth.php';
 require_once 'includes/academic-periods.php';
+require_once 'includes/cbe-academics.php';
 require_dean();
 $msg=$error='';
 $formValue=static fn($key)=>is_scalar($_POST[$key]??null)?(string)$_POST[$key]:'';
@@ -20,13 +22,14 @@ if(isset($_POST['submit'])) {
             if(!$classId)throw new DomainException('Select a valid class.');
         }
         $status=$_POST['status']??'draft';
-        if(!in_array($status,['draft','marks_entry','submitted','under_review','approved','published','archived'],true))throw new DomainException('Select a valid exam status.');
+        if(!in_array($status,['draft','marks_entry'],true))throw new DomainException('Select a valid exam status.');
+        $maximum=cbe_number($_POST['maximummarks']??100,0.01,999999);
         $dbh->beginTransaction();
         $period=academic_period_ensure($dbh,$_POST['academicyear']??null,$_POST['termname']??null);
         if($classId&&!academic_query($dbh,'SELECT id FROM tblclasses WHERE id=?',[$classId])->fetchColumn())throw new DomainException('Select a valid class.');
         // NULL class scopes also need an explicit duplicate check.
         if(academic_query($dbh,'SELECT id FROM tblexams WHERE AcademicYearId=? AND TermId=? AND ExamName=? AND ClassId <=> ?',[$period['AcademicYearId'],$period['TermId'],$examName,$classId])->fetchColumn())throw new DomainException('This exam already exists for the selected period and class.');
-        academic_query($dbh,'INSERT INTO tblexams(AcademicYearId,TermId,ExamName,ClassId,StartDate,EndDate,MarksOpenDate,MarksDeadline,Status) VALUES(?,?,?,?,?,?,?,?,?)',[$period['AcademicYearId'],$period['TermId'],$examName,$classId,$startDate,$endDate,$marksOpenDate,$marksDeadline,$status]);
+        academic_query($dbh,'INSERT INTO tblexams(AcademicYearId,TermId,ExamName,ClassId,StartDate,EndDate,MarksOpenDate,MarksDeadline,Status,MaximumMarks) VALUES(?,?,?,?,?,?,?,?,?,?)',[$period['AcademicYearId'],$period['TermId'],$examName,$classId,$startDate,$endDate,$marksOpenDate,$marksDeadline,$status,$maximum]);
         audit_log($dbh,'exam_created','tblexams',$dbh->lastInsertId(),json_encode($period+['ExamName'=>$examName],JSON_THROW_ON_ERROR));
         $dbh->commit();$msg='Exam created successfully';
     } catch(Throwable $e) {
@@ -117,7 +120,7 @@ if(isset($_POST['submit'])) {
                                                     <select name="class" class="form-control">
                                                         <option value="">All Classes</option>
                                                         <?php
-                                                        $classSql = "SELECT id, ClassName, Section FROM tblclasses ORDER BY ClassNameNumeric, Section";
+                                                        $classSql = "SELECT id, ClassName, Section FROM tblclasses WHERE ClassNameNumeric IN (10,11,12) ORDER BY ClassNameNumeric, Section";
                                                         $classQuery = $dbh->prepare($classSql);
                                                         $classQuery->execute();
                                                         $classes = $classQuery->fetchAll(PDO::FETCH_OBJ);
@@ -145,15 +148,10 @@ if(isset($_POST['submit'])) {
                                                     <input type="date" name="marksdeadline" class="form-control" value="<?= academic_h($formValue('marksdeadline')) ?>">
                                                 </div>
                                                 <div class="form-group">
-                                                    <label>Status</label>
+                                                    <label for="maximummarks">Maximum marks</label><input type="number" id="maximummarks" name="maximummarks" min="0.01" max="999999" step="0.01" value="100" class="form-control" required><label>Status</label>
                                                     <select name="status" class="form-control" required>
                                                         <option value="draft" <?= ($formValue('status')?:'draft')==='draft'?'selected':'' ?>>Draft</option>
                                                         <option value="marks_entry" <?= ($formValue('status')?:'draft')==='marks_entry'?'selected':'' ?>>Marks Entry</option>
-                                                        <option value="submitted" <?= ($formValue('status')?:'draft')==='submitted'?'selected':'' ?>>Submitted</option>
-                                                        <option value="under_review" <?= ($formValue('status')?:'draft')==='under_review'?'selected':'' ?>>Under Review</option>
-                                                        <option value="approved" <?= ($formValue('status')?:'draft')==='approved'?'selected':'' ?>>Approved</option>
-                                                        <option value="published" <?= ($formValue('status')?:'draft')==='published'?'selected':'' ?>>Published</option>
-                                                        <option value="archived" <?= ($formValue('status')?:'draft')==='archived'?'selected':'' ?>>Archived</option>
                                                     </select>
                                                 </div>
                                                 <button type="submit" name="submit" class="btn btn-primary">Create Exam</button>
@@ -218,7 +216,7 @@ if(isset($_POST['submit'])) {
         </div>
     </div>
 
-    <script src="js/jquery/jquery-2.2.4.min.js"></script>
+    <script src="js/jquery/jquery-3.7.1.min.js"></script>
     <script src="js/bootstrap/bootstrap.min.js"></script>
     <script src="js/pace/pace.min.js"></script>
     <script src="js/lobipanel/lobipanel.min.js"></script>

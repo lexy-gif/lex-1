@@ -8,9 +8,7 @@ This extension adds richer teacher account details, centralized in-system notifi
 
 Run this migration on a fresh or existing database:
 
-```bash
-Get-Content database-updates\teacher-notification-system.sql | docker compose exec -T db mysql -usrms_user -psrms_password srms
-```
+Use the repeatable setup/migration procedure in the [README](../README.md); it reads database credentials from the private environment.
 
 The migration extends `tblusers` with teacher profile and email fields, extends `tblteachernotifications` with category, read status, related records, and action links, and adds:
 

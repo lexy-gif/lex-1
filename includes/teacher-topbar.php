@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__.'/csrf.php';
 include_once(__DIR__ . '/notification-service.php');
 include_once(__DIR__ . '/csrf.php');
 $teacherNotificationCount = function_exists('teacher_id') ? notification_unread_count($dbh, teacher_id()) : 0;
@@ -58,7 +59,7 @@ $teacherRecentNotifications = function_exists('teacher_id') ? notification_recen
                         <ul class="dropdown-menu">
                             <li><a href="teacher-profile.php"><i class="fa fa-user" aria-hidden="true"></i> My Profile</a></li>
                             <li role="separator" class="divider"></li>
-                            <li><a href="teacher-logout.php" class="color-danger"><i class="fa fa-sign-out" aria-hidden="true"></i> Logout</a></li>
+                            <li><form method="post" action="teacher-logout.php" class="srms-logout-form"><?php csrf_field(); ?><button type="submit" class="srms-logout-button color-danger"><i class="fa fa-sign-out" aria-hidden="true"></i> Logout</button></form></li>
                         </ul>
                     </li>
                 </ul>

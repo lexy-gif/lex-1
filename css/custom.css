@@ -14,3 +14,7 @@
 @import url("./srms/pages.css");
 
 @import url("./srms/print.css");
+
+.srms-logout-form { margin: 0; }
+.srms-logout-button { display: block; width: 100%; padding: 8px 20px; border: 0; background: transparent; text-align: left; }
+.srms-logout-button:hover, .srms-logout-button:focus { background: #f5f5f5; }

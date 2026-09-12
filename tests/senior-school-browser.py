@@ -16,7 +16,7 @@ def check_browser(base, dean, fixture):
         context.add_cookies([{'name':'PHPSESSID','value':dean,'url':base}])
         page = context.new_page()
         errors = []
-        page.on('pageerror', lambda error: errors.append(str(error)))
+        page.on('pageerror', lambda error: errors.append(page.url + ': ' + str(error)))
         page.goto(base+'dean-senior-assignments.php')
         navigation = page.locator('#srms-sidebar')
         expect(navigation.get_by_role('link', name='Assign Learners', exact=True)).to_be_visible()

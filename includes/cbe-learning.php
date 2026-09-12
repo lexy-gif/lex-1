@@ -10,8 +10,16 @@ function cbe_save_assessment($db,$p,$teacher=0) {
     $tid=$teacher?:(int)($p['TeacherId']??0);$class=(int)($p['ClassId']??0);$subject=(int)($p['SubjectId']??0);$year=(int)($p['AcademicYearId']??0);$term=(int)($p['TermId']??0);
     if(!$term)throw new DomainException('Select a term.');cbe_assignment($db,$tid,$class,$subject,$year,$term);
     $type=(int)($p['AssessmentTypeId']??0);if(!in_array($type,array_column(cbe_options($db,'types'),'id')))throw new DomainException('Select an active assessment type.');
-    $status=$p['Status']??'draft';$allowed=$teacher?['draft','open','submitted']:['draft','open','submitted','locked','published','archived'];if(!in_array($status,$allowed,true))throw new DomainException('Invalid assessment status.');
-    if($teacher&&$old&&in_array($old['Status'],['locked','published','archived'],true))throw new DomainException('This assessment is locked. Ask the Dean to reopen it.');
+    $status=$p['Status']??'draft';$allowed=$teacher?['draft','open','submitted']:['draft','open','submitted','locked','approved','published','archived'];if(!in_array($status,$allowed,true))throw new DomainException('Invalid assessment status.');
+    if($teacher&&$old&&in_array($old['Status'],['submitted','locked','approved','published','archived'],true))throw new DomainException('This assessment is locked. Ask the Dean to reopen it.');
+    if($old&&$old['Status']==='published')throw new DomainException('Published assessments are locked.');
+    if($status==='approved' && (!$old||!in_array($old['Status'],['submitted','locked','approved'],true)))throw new DomainException('Submit and review the assessment before approval.');
+    if($status==='published' && (!$old||$old['Status']!=='approved'))throw new DomainException('Approve the assessment before publishing.');
+    if(in_array($status,['submitted','approved','published'],true)) {
+        $learners=academic_students($db,$class,$subject,$year);
+        if(!$old||!$learners)throw new DomainException('Record results for registered learners before submission.');
+        foreach($learners as $learner)if(!academic_query($db,'SELECT id FROM tblassessmentresults WHERE AssessmentId=? AND StudentId=?',[$id,$learner['StudentId']])->fetchColumn())throw new DomainException('Record results for every registered learner before submission.');
+    }
     $max=($p['MaximumScore']??'')===''?null:cbe_number($p['MaximumScore'],0.01,999999);
     $outcomes=cbe_ids($p['Outcomes']??[]);
     foreach($outcomes as $o)if(!academic_query($db,'SELECT o.id FROM tbllearningoutcomes o JOIN tblcompetencies c ON c.id=o.CompetencyId WHERE o.id=? AND c.SubjectId=? AND o.Status=1 AND c.Status=1',[$o,$subject])->fetchColumn())throw new DomainException('Outcomes must belong to the selected subject.');
@@ -23,6 +31,10 @@ function cbe_save_assessment($db,$p,$teacher=0) {
     if($id)academic_query($db,'UPDATE tblassessments SET Title=?,AssessmentTypeId=?,SubjectId=?,ClassId=?,AcademicYearId=?,TermId=?,TeacherId=?,MaximumScore=?,AssessmentDate=?,Status=? WHERE id=?',[...$v,$id]);
     else {academic_query($db,'INSERT INTO tblassessments(Title,AssessmentTypeId,SubjectId,ClassId,AcademicYearId,TermId,TeacherId,MaximumScore,AssessmentDate,Status) VALUES(?,?,?,?,?,?,?,?,?,?)',$v);$id=(int)$db->lastInsertId();}
     if(!$old||!academic_query($db,'SELECT id FROM tblassessmentresults WHERE AssessmentId=? LIMIT 1',[$id])->fetchColumn()) {academic_query($db,'DELETE FROM tblassessmentoutcomes WHERE AssessmentId=?',[$id]);foreach($outcomes as $o)academic_query($db,'INSERT INTO tblassessmentoutcomes VALUES(?,?)',[$id,$o]);}
+    if($status==='published') {
+        require_once __DIR__.'/result-workflow.php';
+        foreach($learners as $learner)parent_publication_notify($db,$learner['StudentId'],'assessment:'.$id,$v[0],'parent-assessments.php?student='.$learner['StudentId'].'&assessment='.$id);
+    }
     cbe_audit($db,'assessment_saved','tblassessments',$id,$old,$v);cbe_notify($db,$tid,'Assessment updated',$v[0].' is '.$status.'.','teacher-academics.php?area=assessments');return $id;
 }
 function cbe_score($db,$p,$teacher=0) {

@@ -95,8 +95,8 @@ try:
     base = 'http://' + address + '/'
     f = fixture('setup')
     for sid in [dean, other_dean]:
-        php('session_id($argv[1]);session_start();$_SESSION=["alogin"=>"period-validation","csrf_token"=>$argv[2]];session_write_close();', sid, token)
-    php('session_id($argv[1]);session_start();$_SESSION=["teacher_user_id"=>(int)$argv[2],"teacher_role"=>"class_teacher","csrf_token"=>$argv[3]];session_write_close();', teacher, str(f['teacher']), token)
+        php('ini_set("session.use_strict_mode","0");session_id($argv[1]);session_start();$_SESSION=["alogin"=>"period-validation","csrf_token"=>$argv[2]];require "tests/session-fixture.php";test_dean_session();session_write_close();', sid, token)
+    php('ini_set("session.use_strict_mode","0");session_id($argv[1]);session_start();$_SESSION=["teacher_user_id"=>(int)$argv[2],"teacher_session_version"=>1,"teacher_role"=>"class_teacher","csrf_token"=>$argv[3]];require "includes/config.php";$dbh->prepare("UPDATE tblusers SET MustChangePassword=0 WHERE id=?")->execute([(int)$argv[2]]);session_write_close();', teacher, str(f['teacher']), token)
     page = 'dean-academic-periods.php'
     a, a2 = f['periods'][0]
     b, b2 = f['periods'][1]

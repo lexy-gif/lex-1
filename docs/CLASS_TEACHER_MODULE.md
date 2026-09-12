@@ -34,4 +34,4 @@ Each class teacher has one assigned `ClassId`. Teacher pages use that `ClassId` 
 
 This is the first integrated version of the module. It supports class teacher workflows while keeping the existing admin module unchanged.
 
-Subject teacher entry, parent portal, and full PDF export can be added later on top of this structure.
+Subject teachers now submit examination marks through Examination Marks. Guardians use authenticated published reports with print/save-as-PDF support; see the [current audit](SENIOR_SYSTEM_AUDIT.md).

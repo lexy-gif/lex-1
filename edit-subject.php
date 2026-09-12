@@ -1,9 +1,10 @@
 <?php
-session_start();
-error_reporting(0);
-include('includes/config.php');
-include('includes/csrf.php');
-if(strlen($_SESSION['alogin'])=="")
+require_once 'includes/bootstrap.php';
+$error=$msg='';
+
+require_once 'includes/config.php';
+require_once 'includes/csrf.php';
+if(empty($_SESSION['alogin']))
     {   
     header("Location: index.php"); 
     }
@@ -146,7 +147,7 @@ foreach($results as $result)
             <!-- /.content-wrapper -->
         </div>
         <!-- /.main-wrapper -->
-        <script src="js/jquery/jquery-2.2.4.min.js"></script>
+        <script src="js/jquery/jquery-3.7.1.min.js"></script>
         <script src="js/bootstrap/bootstrap.min.js"></script>
         <script src="js/pace/pace.min.js"></script>
         <script src="js/lobipanel/lobipanel.min.js"></script>

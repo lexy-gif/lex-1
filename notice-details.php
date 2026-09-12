@@ -1,6 +1,6 @@
 <?php
-error_reporting(0);
-include('includes/config.php'); 
+
+require_once 'includes/config.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -53,7 +53,7 @@ include('includes/config.php');
             <div class="row justify-content-center">
                 <div class="col-lg-10 bg-white p-5 rounded shadow-sm notice-content">
 
-                    <?php 
+                    <?php
           $noticeid = $_GET['nid'];
           $sql = "SELECT * FROM tblnotice WHERE id = :nid";
           $query = $dbh->prepare($sql);
@@ -61,7 +61,7 @@ include('includes/config.php');
           $query->execute();
           $results = $query->fetchAll(PDO::FETCH_OBJ);
           if ($query->rowCount() > 0) {
-            foreach ($results as $result) { 
+            foreach ($results as $result) {
           ?>
 
                     <h2 class="fw-bold mb-3 text-center"><?php echo htmlentities($result->noticeTitle); ?></h2>

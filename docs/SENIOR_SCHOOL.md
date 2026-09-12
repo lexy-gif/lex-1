@@ -76,7 +76,7 @@ subjects for the selected year.
 
 ## Promotion and reports
 
-Promote one grade at a time into a later academic year: Grade 9 to 10, 10 to 11,
+Promote one grade at a time into a later academic year: Grade 10 to 11,
 or 11 to 12. Senior School learners need a pathway in the source year. Promotion
 retains their pathway, track and recorded electives, validates destination grade
 availability, and updates the student account's class. Previous enrollment,

@@ -17,7 +17,7 @@ if($mode==='setup') {
         foreach(['2027-test','2028-test'] as $i=>$name) {
             foreach(['Term 1','Term 2'] as $term)$periods[$i][]=academic_period_save($dbh,['academicyear'=>$name,'termname'=>$term,'startdate'=>($i+2027).'-01-10','enddate'=>($i+2027).'-04-10']);
             academic_query($dbh,'UPDATE tblacademicyears SET StartDate=?,EndDate=? WHERE id=?',[($i+2027).'-01-01',($i+2027).'-12-31',$periods[$i][0]['AcademicYearId']]);
-            academic_query($dbh,'INSERT INTO tblclasses(ClassName,Section) VALUES(?,?)',[$name,'TEST']);$classes[]=(int)$dbh->lastInsertId();
+            academic_query($dbh,'INSERT INTO tblclasses(ClassName,Section,ClassNameNumeric) VALUES(?,?,10)',[$name,'TEST']);$classes[]=(int)$dbh->lastInsertId();
         }
         academic_query($dbh,"INSERT INTO tblusers(FullName,Username,PasswordHash,Role,Status) VALUES('Period teacher','period_teacher',?,'class_teacher',1)",[password_hash(bin2hex(random_bytes(16)),PASSWORD_DEFAULT)]);$teacher=(int)$dbh->lastInsertId();
         foreach($classes as $i=>$class)academic_assign($dbh,'class',$teacher,$class,null,$periods[$i][0]['AcademicYearId']);

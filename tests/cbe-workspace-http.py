@@ -46,8 +46,8 @@ def denied(page, data=None, session=None, status=403):
 try:
     f = json.loads(fixture('setup'))
     dean, teacher = sessions
-    php('session_id($argv[1]);session_start();$_SESSION=["alogin"=>$argv[2],"csrf_token"=>$argv[3]];session_write_close();', dean, tag, token)
-    php('session_id($argv[1]);session_start();$_SESSION=["teacher_user_id"=>(int)$argv[2],"teacher_username"=>$argv[3],"teacher_role"=>"subject_teacher","csrf_token"=>$argv[4]];session_write_close();', teacher, str(f['teachers'][0]), tag + '_0', token)
+    php('ini_set("session.use_strict_mode","0");session_id($argv[1]);session_start();$_SESSION=["alogin"=>$argv[2],"csrf_token"=>$argv[3]];require "tests/session-fixture.php";test_dean_session();session_write_close();', dean, tag, token)
+    php('ini_set("session.use_strict_mode","0");session_id($argv[1]);session_start();$_SESSION=["teacher_user_id"=>(int)$argv[2],"teacher_username"=>$argv[3],"teacher_session_version"=>1,"teacher_role"=>"subject_teacher","csrf_token"=>$argv[4]];require "includes/config.php";$dbh->prepare("UPDATE tblusers SET MustChangePassword=0 WHERE id=?")->execute([(int)$argv[2]]);session_write_close();', teacher, str(f['teachers'][0]), tag + '_0', token)
     query = {'area': 'assessments', 'year': f['year'], 'term': f['term'], 'class': f['classes'][0], 'subject': f['subjects'][0]}
     page = 'dean-academics.php?' + urllib.parse.urlencode(query)
     _, body = request('dashboard.php', session=dean)
@@ -106,6 +106,15 @@ try:
         assert 'login.php' in url
     print('PASS: teacher ownership, Dean-only actions, locked assessment entry and authentication', flush=True)
 
+    coverage_page = 'teacher-academics.php?' + urllib.parse.urlencode(dict(query, area='coverage'))
+    coverage = dict(action='coverage', csrf_token=token, AcademicYearId=f['year'], TermId=f['term'], ClassId=f['classes'][0], SubjectId=f['subjects'][0], TeacherId=f['teachers'][1], ContentReference=tag + ' coverage', ExpectedProgress=70, ActualProgress=65, ReportDate='2026-09-12', Notes='Fixture coverage')
+    assert 'saved=1' in request(coverage_page, coverage, teacher)[0]
+    assert 'Enter a number' in request(coverage_page, dict(coverage, ActualProgress=101), teacher)[1]
+    assert 'assignment' in request(coverage_page, dict(coverage, SubjectId=f['subjects'][1]), teacher)[1].lower()
+    recorded = json.loads(php('require "includes/config.php";$q=$dbh->prepare("SELECT TeacherId,ActualProgress FROM tblcurriculumcoverage WHERE ContentReference=?");$q->execute([$argv[1]]);echo json_encode($q->fetchAll(PDO::FETCH_ASSOC));', tag + ' coverage'))
+    assert len(recorded) == 1 and recorded[0]['TeacherId'] == f['teachers'][0] and float(recorded[0]['ActualProgress']) == 65
+    print('PASS: curriculum coverage validates percentages, ignores forged teacher identity and rejects unrelated subjects without writes', flush=True)
+
     exam_page = 'dean-academics.php?' + urllib.parse.urlencode(dict(query, area='exams'))
     exam_lock = {'csrf_token': token, 'action': 'exam_lock', 'ExamId': f['exams'][0], 'EntryLocked': 1}
     request(exam_page, exam_lock, dean)
@@ -114,7 +123,7 @@ try:
     assert 'Exam result entry is closed' in body and len(json.loads(fixture('state'))) == 1
     request(exam_page, dict(exam_lock, EntryLocked=0), dean)
     _, body = request('add-result.php', marks, dean)
-    assert 'Result info added successfully' in body
+    assert 'Draft results saved' in body
     state = json.loads(fixture('state'))
     result_id = next(r['id'] for r in state if r['ExamId'] == f['exams'][0])
     result_page = 'edit-result.php?' + urllib.parse.urlencode({'stid': f['students'][0], 'examid': f['exams'][0]})
@@ -146,4 +155,4 @@ finally:
         print(fixture('cleanup'), flush=True)
     finally:
         for session in sessions:
-            php('session_id($argv[1]);session_start();session_destroy();', session)
+            php('ini_set("session.use_strict_mode","0");session_id($argv[1]);session_start();require "tests/session-fixture.php";test_session_cleanup();session_destroy();', session)

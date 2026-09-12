@@ -1,16 +1,16 @@
 <?php
-session_start();
-error_reporting(0);
-include('includes/config.php');
-include('includes/csrf.php');
-if(strlen($_SESSION['alogin'])==""){  
+require_once 'includes/bootstrap.php';
+
+require_once 'includes/config.php';
+require_once 'includes/csrf.php';
+if(empty($_SESSION['alogin'])){
     header("Location: index.php");
      }else{
 if(isset($_POST['submit']))
 {
 csrf_require_valid($_POST['csrf_token'] ?? '');
 $ntitle=$_POST['noticetitle'];
-$ndetails=$_POST['noticedetails']; 
+$ndetails=$_POST['noticedetails'];
 $sql="INSERT INTO  tblnotice(noticeTitle,noticeDetails) VALUES(:ntitle,:ndetails)";
 $query = $dbh->prepare($sql);
 $query->bindParam(':ntitle',$ntitle,PDO::PARAM_STR);
@@ -47,13 +47,13 @@ echo '<script>alert("Something went wrong. Please try again.")</script>';
         <div class="main-wrapper">
 
             <!-- ========== TOP NAVBAR ========== -->
-            <?php include('includes/topbar.php');?>   
-       
+            <?php include('includes/topbar.php');?>
+
             <div class="content-wrapper">
                 <div class="content-container">
 
 
-<?php include('includes/leftbar.php');?>                   
+<?php include('includes/leftbar.php');?>
 
 
                     <div class="main-page">
@@ -62,9 +62,9 @@ echo '<script>alert("Something went wrong. Please try again.")</script>';
                                 <div class="col-md-6">
                                     <h2 class="title">Add Notice</h2>
                                 </div>
-                                
+
                             </div>
-                      
+
                             <div class="row breadcrumb-div">
                                 <div class="col-md-6">
                                     <ul class="breadcrumb">
@@ -73,18 +73,18 @@ echo '<script>alert("Something went wrong. Please try again.")</script>';
             							<li class="active">Add Notice</li>
             						</ul>
                                 </div>
-                               
+
                             </div>
-                      
+
                         </div>
-               
+
 
                         <section class="section">
                             <div class="container-fluid">
 
-                             
 
-                              
+
+
 
                                 <div class="row">
                                     <div class="col-md-8 col-md-offset-2">
@@ -94,7 +94,7 @@ echo '<script>alert("Something went wrong. Please try again.")</script>';
                                                     <h5>Add Notice</h5>
                                                 </div>
                                             </div>
-  
+
                                             <div class="panel-body">
 
                                                 <form method="post">
@@ -119,10 +119,10 @@ echo '<script>alert("Something went wrong. Please try again.")</script>';
                                                     </div>
 
 
-                                                    
+
                                                 </form>
 
-                                              
+
                                             </div>
                                         </div>
                                     </div>
@@ -130,8 +130,8 @@ echo '<script>alert("Something went wrong. Please try again.")</script>';
                                 </div>
                                 <!-- /.row -->
 
-                               
-                               
+
+
 
                             </div>
                             <!-- /.container-fluid -->
@@ -150,7 +150,7 @@ echo '<script>alert("Something went wrong. Please try again.")</script>';
         <!-- /.main-wrapper -->
 
         <!-- ========== COMMON JS FILES ========== -->
-        <script src="js/jquery/jquery-2.2.4.min.js"></script>
+        <script src="js/jquery/jquery-3.7.1.min.js"></script>
         <script src="js/jquery-ui/jquery-ui.min.js"></script>
         <script src="js/bootstrap/bootstrap.min.js"></script>
         <script src="js/pace/pace.min.js"></script>

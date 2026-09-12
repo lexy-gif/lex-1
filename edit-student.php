@@ -1,9 +1,11 @@
 <?php
-session_start();
-error_reporting(0);
-include('includes/config.php');
-include('includes/csrf.php');
-if(strlen($_SESSION['alogin'])=="")
+require_once 'includes/bootstrap.php';
+$error=$msg='';
+
+require_once 'includes/config.php';
+require_once 'includes/csrf.php';
+require_once 'includes/student-validation.php';
+if(empty($_SESSION['alogin']))
     {   
     header("Location: index.php"); 
     }
@@ -14,10 +16,13 @@ $stid=intval($_GET['stid']);
 if(isset($_POST['submit']))
 {
 csrf_require_valid($_POST['csrf_token'] ?? '');
+try {
+$dbh->beginTransaction();
+$validated=student_validate($dbh,$_POST,$stid);
 $studentname=$_POST['fullanme'];
 $roolid=$_POST['rollid']; 
 $studentemail=$_POST['emailid']; 
-$parentphone=$_POST['parentphone'];
+$parentphone=$validated['phone'];
 $gender=$_POST['gender']; 
 $classid=$_POST['class']; 
 $dob=$_POST['dob']; 
@@ -34,7 +39,10 @@ $query->bindParam(':status',$status,PDO::PARAM_STR);
 $query->bindParam(':stid',$stid,PDO::PARAM_STR);
 $query->execute();
 
+audit_log($dbh,'student_updated','tblstudents',$stid,'Learner profile updated');
+$dbh->commit();
 $msg="Student info updated successfully";
+} catch(Throwable $e){if($dbh->inTransaction())$dbh->rollBack();error_log($e->getMessage());$error=$e instanceof DomainException?$e->getMessage():'Could not update student details.';}
 }
 
 
@@ -249,7 +257,7 @@ if($stats=="0")
             <!-- /.content-wrapper -->
         </div>
         <!-- /.main-wrapper -->
-        <script src="js/jquery/jquery-2.2.4.min.js"></script>
+        <script src="js/jquery/jquery-3.7.1.min.js"></script>
         <script src="js/bootstrap/bootstrap.min.js"></script>
         <script src="js/pace/pace.min.js"></script>
         <script src="js/lobipanel/lobipanel.min.js"></script>

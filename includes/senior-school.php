@@ -297,7 +297,7 @@ function senior_promote($db,$p) {
     foreach($students as $student) {
         $s=cbe_one($db,'SELECT * FROM tblstudents WHERE StudentId=? AND Status=1 FOR UPDATE',[$student]);
         $old=$s?senior_class($db,$s['ClassId']):null;
-        if(!$old || (int)$old['GradeNumber']+1!==(int)$target['GradeNumber'])throw new DomainException('Promote learners one grade at a time: Grade 9 to 10, 10 to 11, or 11 to 12.');
+        if(!$old || !in_array((int)$old['GradeNumber'],[10,11],true) || (int)$old['GradeNumber']+1!==(int)$target['GradeNumber'])throw new DomainException('Promote Senior School learners from Grade 10 to 11 or Grade 11 to 12.');
         if(academic_query($db,'SELECT id FROM tblstudentenrollments WHERE StudentId=? AND AcademicYearId=?',[$student,$year])->fetchColumn())throw new DomainException('A selected learner already has an enrollment in the destination year.');
         senior_enroll($db,$student,$sourceYear,$s['ClassId']);
         $a=cbe_one($db,'SELECT * FROM tblstudentpathways WHERE StudentId=? AND AcademicYearId=? AND Status=1',[$student,$sourceYear]);
@@ -368,7 +368,7 @@ function senior_learners($db,$f,$teacher=0,$promotions=false) {
         LEFT JOIN tblstudentpathways a ON a.StudentId=s.StudentId AND a.AcademicYearId=? AND a.Status=1 AND a.ClassId=c.id
         LEFT JOIN tblpathways p ON p.id=a.PathwayId LEFT JOIN tblpathwaytracks t ON t.id=a.TrackId LEFT JOIN tblschoolcombinations co ON co.id=a.CombinationId
         WHERE g.GradeNumber BETWEEN ? AND ? AND (en.id IS NOT NULL OR ?=?)';
-    $params=[$year,$year,$promotions?9:10,$promotions?11:12,$year,academic_year($db)];
+    $params=[$year,$year,10,$promotions?11:12,$year,academic_year($db)];
     foreach(['grade'=>'g.id','class'=>'c.id','pathway'=>'a.PathwayId','track'=>'a.TrackId','combination'=>'a.CombinationId','student'=>'s.StudentId'] as $key=>$column)if(!empty($f[$key])){$sql.=" AND $column=?";$params[]=$f[$key];}
     if(!empty($f['subject'])){$sql.=' AND EXISTS(SELECT 1 FROM tblstudentsubjects ss WHERE ss.StudentId=s.StudentId AND ss.ClassId=c.id AND ss.AcademicYearId=? AND ss.SubjectId=? AND ss.Status=1)';$params[]=$year;$params[]=$f['subject'];}
     if(!empty($f['gender'])){$sql.=' AND s.Gender=?';$params[]=$f['gender'];}
@@ -418,7 +418,7 @@ function senior_report($db,$kind,$f,$teacher=0) {
 function senior_csv($rows,$name) {
     header('Content-Type: text/csv; charset=utf-8');header('Content-Disposition: attachment; filename="'.$name.'.csv"');
     header('Cache-Control: no-store');$out=fopen('php://output','w');fwrite($out,"\xEF\xBB\xBF");
-    if($rows)fputcsv($out,array_keys($rows[0]));
-    foreach($rows as $row)fputcsv($out,array_map(fn($v)=>preg_match('/^[\s]*[=+@-]/',(string)$v)?"'".$v:($v??''),$row));
+    if($rows)cbe_csv_row($out,array_keys($rows[0]));
+    foreach($rows as $row)cbe_csv_row($out,array_map(fn($v)=>preg_match('/^[\s]*[=+@-]/',(string)$v)?"'".$v:($v??''),$row));
     fclose($out);exit;
 }

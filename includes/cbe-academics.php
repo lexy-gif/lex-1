@@ -3,6 +3,7 @@ require_once __DIR__.'/academic-assignments.php';
 require_once __DIR__.'/audit.php';
 require_once __DIR__.'/notification-service.php';
 function cbe_one($db,$sql,$p=[]) { return academic_query($db,$sql,$p)->fetch(PDO::FETCH_ASSOC); }
+function cbe_csv_row($out,$values) {return fputcsv($out,$values,',','"','');}
 function cbe_rows($db,$sql,$p=[]) { return academic_query($db,$sql,$p)->fetchAll(PDO::FETCH_ASSOC); }
 function cbe_text($p,$key,$max=255,$required=true) {
     $v=$p[$key]??'';if(!is_scalar($v))throw new DomainException('Invalid '.$key.'.');$v=trim((string)$v);
@@ -11,11 +12,12 @@ function cbe_text($p,$key,$max=255,$required=true) {
 function cbe_date($value) { $d=DateTime::createFromFormat('!Y-m-d',(string)$value);if(!$d || $d->format('Y-m-d')!==$value)throw new DomainException('Enter a valid date.');return $value; }
 function cbe_number($value,$min=0,$max=100) {if(!is_numeric($value)||!is_finite((float)$value)||(float)$value<$min||(float)$value>$max)throw new DomainException('Enter a number between '.$min.' and '.$max.'.');return (float)$value;}
 function cbe_ids($value) {if(!is_array($value))throw new DomainException('Select valid records.');$ids=array_map('intval',$value);if(count($ids)!==count(array_unique($ids))||in_array(0,$ids,true))throw new DomainException('Duplicate or invalid selection.');return $ids;}
-function cbe_actor() {return $_SESSION['alogin']??$_SESSION['teacher_username']??('teacher:'.($_SESSION['teacher_user_id']??0));}
+function cbe_actor() {return $_SESSION['alogin']??$_SESSION['teacher_username']??(isset($_SESSION['parent_user_id'])?'parent:'.$_SESSION['parent_user_id']:('teacher:'.($_SESSION['teacher_user_id']??0)));}
 function cbe_audit($db,$action,$table,$id,$before,$after) {audit_log($db,$action,$table,$id,json_encode(['old'=>$before,'new'=>$after],JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR));}
 function cbe_notify($db,$teacher,$title,$message,$url,$category='SYSTEM') {notification_create($db,$teacher,$title,$message,['category'=>$category,'action_url'=>$url,'type'=>'ACADEMIC_UPDATE']);}
 function cbe_assignment($db,$teacher,$class,$subject,$year,$term) {
     academic_period($db,$year,$term);
+    if(!academic_query($db,'SELECT id FROM tblclasses WHERE id=? AND ClassNameNumeric IN (10,11,12)',[$class])->fetchColumn())throw new DomainException('Select a Senior School class.');
     if(!academic_query($db,'SELECT a.id FROM tblsubjectteacherassignments a JOIN tblusers u ON u.id=a.TeacherId AND u.Status=1 JOIN tblsubjects s ON s.id=a.SubjectId AND s.Status=1 WHERE a.TeacherId=? AND a.ClassId=? AND a.SubjectId=? AND a.AcademicYearId=? AND a.Status=1 AND (a.TermId IS NULL OR a.TermId=?)',[$teacher,$class,$subject,$year,$term])->fetchColumn())throw new DomainException('An active teaching assignment for this class, subject and period is required.');
     academic_offering($db,$class,$subject);
 }
@@ -37,10 +39,10 @@ function cbe_configs() {
 }
 function cbe_options($db,$kind) {
     $queries=[
-      'levels'=>'SELECT id,Name Label FROM tblschoollevels', 'grades'=>'SELECT id,Name Label FROM tblgrades WHERE Status=1 ORDER BY GradeNumber',
+      'levels'=>'SELECT id,Name Label FROM tblschoollevels WHERE SeniorSchool=1 AND Status=1', 'grades'=>'SELECT id,Name Label FROM tblgrades WHERE Status=1 AND GradeNumber IN (10,11,12) ORDER BY GradeNumber',
       'teachers'=>'SELECT id,FullName Label FROM tblusers WHERE Status=1 AND Role IN ('.ACADEMIC_TEACHER_ROLES.') ORDER BY FullName',
       'subjects'=>'SELECT id,SubjectName Label FROM tblsubjects WHERE Status=1 ORDER BY SubjectName',
-      'classes'=>'SELECT id,CONCAT(ClassName," ",Section) Label FROM tblclasses ORDER BY ClassNameNumeric,Section',
+      'classes'=>'SELECT id,CONCAT(ClassName," ",Section) Label FROM tblclasses WHERE ClassNameNumeric IN (10,11,12) ORDER BY ClassNameNumeric,Section',
       'years'=>'SELECT id,AcademicYear Label FROM tblacademicyears ORDER BY AcademicYear DESC',
       'terms'=>'SELECT t.id,CONCAT(y.AcademicYear," / ",t.TermName) Label FROM tblterms t JOIN tblacademicyears y ON y.id=t.AcademicYearId ORDER BY y.AcademicYear DESC,t.id',
       'departments'=>'SELECT id,DepartmentName Label FROM tbldepartments WHERE Status=1',
@@ -70,8 +72,12 @@ function cbe_save_config($db,$entity,$p) {
         elseif($type==='text'||$type==='textarea')$values[$key]=cbe_text($p,$key,$type==='text'?100:5000,$type==='text');
         else { $kind=rtrim($type,'?');$v=(int)($p[$key]??0);if(!$v && str_ends_with($type,'?')){$values[$key]=null;continue;}if(!in_array($v,array_column(cbe_options($db,$kind),'id')))throw new DomainException('Select a valid '.$key.'.');$values[$key]=$v; }
     }
+    if($entity==='grades' && !in_array($values['GradeNumber'],[10,11,12],true))throw new DomainException('Only Grades 10, 11 and 12 are supported.');
+    if($entity==='grades')$values['Name']='Grade '.$values['GradeNumber'];
+    if($entity==='levels' && ($values['SeniorSchool']!==1 || $values['Name']!=='Senior School'))throw new DomainException('Only Senior School is supported.');
     $id=(int)($p['id']??0);$old=$id?cbe_one($db,"SELECT * FROM $table WHERE id=? FOR UPDATE",[$id]):null;
     if($id&&!$old)throw new DomainException('Record not found.');
+    if($entity==='grades'&&$old&&(int)$old['GradeNumber']!==$values['GradeNumber'])throw new DomainException('A configured grade number cannot be changed.');
     if($id)academic_query($db,"UPDATE $table SET ".implode(',',array_map(fn($k)=>$k.'=?',array_keys($values))).' WHERE id=?',[...array_values($values),$id]);
     else {academic_query($db,"INSERT INTO $table (".implode(',',array_keys($values)).') VALUES('.implode(',',array_fill(0,count($values),'?')).')',array_values($values));$id=(int)$db->lastInsertId();}
     cbe_audit($db,'academic_config_saved',$table,$id,$old,$values);return $id;
@@ -83,7 +89,7 @@ function cbe_save_class($db,$p) {
     if(!$gradeId)throw new DomainException('Select an active configured grade.');
     // Serialize saves for a grade so duplicate stream checks also cover concurrent requests.
     $grade=cbe_one($db,'SELECT * FROM tblgrades WHERE id=? AND Status=1 FOR UPDATE',[$gradeId]);
-    if(!$grade)throw new DomainException('Select an active configured grade.');
+    if(!$grade || !in_array((int)$grade['GradeNumber'],[10,11,12],true))throw new DomainException('Select an active Senior School grade: 10, 11 or 12.');
     $id=filter_var($p['id']??0,FILTER_VALIDATE_INT,['options'=>['min_range'=>0]]);
     if($id===false)throw new DomainException('Class not found.');
     $old=$id?cbe_one($db,'SELECT * FROM tblclasses WHERE id=? FOR UPDATE',[$id]):null;

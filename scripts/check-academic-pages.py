@@ -17,7 +17,7 @@ def request(page, cookie=None):
 
 sid='academiccheck'+secrets.token_hex(12)
 # Session file lives in PHP's session directory, never under the web root.
-code='session_id($argv[1]); session_start(); $_SESSION["alogin"]="local-validation"; session_write_close();'
+code='ini_set("session.use_strict_mode","0");session_id($argv[1]); session_start(); $_SESSION["alogin"]="local-validation"; require "tests/session-fixture.php";test_dean_session();session_write_close();'
 subprocess.run(['docker','compose','exec','-T','--user','www-data','web','php','-r',code,sid],check=True)
 try:
     for page in ['dean-academics.php?area='+a for a in ['dashboard','structure','subjects','pathways','allocation','workload','assessments','coverage','interventions','analytics','reports','class','permissions','exams','timetable']] + ['dashboard.php','dean-academic-periods.php','manage-exams.php','manage-teachers.php','dean-teacher-relationships.php','student-subjects.php','manage-subjects.php','manage-subjectcombination.php','view-teacher.php?id=1','edit-teacher.php?id=1','teacher-assignments.php']:
@@ -30,4 +30,4 @@ try:
         assert 'login.php' in url,page+' missing authentication'
         print('PASS authentication:',page)
 finally:
-    subprocess.run(['docker','compose','exec','-T','--user','www-data','web','php','-r','session_id($argv[1]); session_start(); session_destroy();',sid],check=True)
+    subprocess.run(['docker','compose','exec','-T','--user','www-data','web','php','-r','ini_set("session.use_strict_mode","0");session_id($argv[1]); session_start(); require "tests/session-fixture.php";test_session_cleanup();session_destroy();',sid],check=True)

@@ -1,8 +1,8 @@
 <?php
-session_start();
-error_reporting(0);
-include('includes/config.php');
-include('includes/teacher-auth.php');
+require_once 'includes/bootstrap.php';
+
+require_once 'includes/config.php';
+require_once 'includes/teacher-auth.php';
 require_class_teacher();
 $classId = teacher_class_id();
 ?>
@@ -27,10 +27,10 @@ $classId = teacher_class_id();
     <div class="row page-title-div"><div class="col-md-6"><h2 class="title">Students</h2></div></div>
     <section class="section"><div class="panel"><div class="panel-heading"><h5>Assigned Class Students</h5></div><div class="panel-body">
         <table id="example" class="display table table-striped table-bordered">
-            <thead><tr><th>#</th><th>Name</th><th>Admission No.</th><th>Email</th><th>Parent Phone</th><th>Status</th></tr></thead>
+            <thead><tr><th>#</th><th>Name</th><th>Admission No.</th><th>Email</th><th>Linked Guardians</th><th>Status</th></tr></thead>
             <tbody>
             <?php
-            $sql = "SELECT StudentName, RollId, StudentEmail, ParentPhone, Status FROM tblstudents WHERE ClassId = :classid AND Status=1 ORDER BY StudentName";
+            $sql = "SELECT s.StudentName,s.RollId,s.StudentEmail,s.Status,(SELECT GROUP_CONCAT(CONCAT(u.FullName,': ',COALESCE(u.ParentPhone,'No phone recorded')) SEPARATOR '; ') FROM tblparentstudents ps JOIN tblusers u ON u.id=ps.ParentId AND u.Role='parent' AND u.Status=1 WHERE ps.StudentId=s.StudentId AND ps.Status=1) ParentPhone FROM tblstudents s WHERE s.ClassId=:classid AND s.Status=1 ORDER BY s.StudentName";
             $query = $dbh->prepare($sql);
             $query->execute(array(':classid' => $classId));
             $cnt = 1;
@@ -40,7 +40,7 @@ $classId = teacher_class_id();
                     <td><?php echo htmlentities($student->StudentName); ?></td>
                     <td><?php echo htmlentities($student->RollId); ?></td>
                     <td><?php echo htmlentities($student->StudentEmail); ?></td>
-                    <td><?php echo htmlentities($student->ParentPhone); ?></td>
+                    <td><?php echo htmlentities($student->ParentPhone??'No linked guardian'); ?></td>
                     <td><?php echo $student->Status ? 'Active' : 'Blocked'; ?></td>
                 </tr>
             <?php $cnt++; } ?>
@@ -48,7 +48,7 @@ $classId = teacher_class_id();
         </table>
     </div></div></section>
 </div></div></div></div></div>
-<script src="js/jquery/jquery-2.2.4.min.js"></script>
+<script src="js/jquery/jquery-3.7.1.min.js"></script>
 <script src="js/bootstrap/bootstrap.min.js"></script>
 <script src="js/DataTables/datatables.min.js"></script>
 <script src="js/main.js"></script>

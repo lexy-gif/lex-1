@@ -1,5 +1,6 @@
 <?php
-session_start();
+require_once 'includes/bootstrap.php';
+$error=$msg='';
 require_once 'includes/config.php';
 require_once 'includes/csrf.php';
 require_once 'includes/dean-auth.php';
@@ -88,7 +89,7 @@ $formValue=static fn($key)=>is_scalar($form[$key]??null)?(string)$form[$key]:'';
     </div></div></div>
 </div></section>
 </div></div></div></div></div>
-<script src="js/jquery/jquery-2.2.4.min.js"></script>
+<script src="js/jquery/jquery-3.7.1.min.js"></script>
 <script src="js/bootstrap/bootstrap.min.js"></script>
 <script src="js/DataTables/datatables.min.js"></script>
 <script src="js/main.js"></script>

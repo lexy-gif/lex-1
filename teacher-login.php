@@ -1,17 +1,21 @@
 <?php
-session_start();
-error_reporting(0);
-include('includes/config.php');
-include('includes/csrf.php');
-include('includes/audit.php');
+require_once 'includes/bootstrap.php';
+$error=$msg='';
+
+require_once 'includes/config.php';
+require_once 'includes/csrf.php';
+require_once 'includes/audit.php';
 require_once 'includes/teacher-auth.php';
+require_once 'includes/security.php';
 
 if(isset($_POST['login'])) {
     csrf_require_valid($_POST['csrf_token'] ?? '');
-    $username = trim($_POST['username']);
-    $password = $_POST['password'];
+    $username = is_string($_POST['username']??null)?trim($_POST['username']):'';
+    $password = is_string($_POST['password']??null)?$_POST['password']:'';
+    $loginKey=security_login_key('teacher',$username);
+    $loginAllowed=security_login_allowed($dbh,$loginKey);
 
-    $sql = "SELECT id, FullName, Username, PasswordHash, Role, ClassId, Status
+    $sql = "SELECT id, FullName, Username, PasswordHash, Role, ClassId, Status, SessionVersion
             FROM tblusers
             WHERE Username = :username AND Role IN ('class_teacher','subject_teacher','head_of_department','exams_officer','deputy_dean')
             LIMIT 1";
@@ -20,8 +24,10 @@ if(isset($_POST['login'])) {
     $query->execute();
     $teacher = $query->fetch(PDO::FETCH_OBJ);
 
-    if($teacher && (int)$teacher->Status === 1 && password_verify($password, $teacher->PasswordHash)) {
-        session_regenerate_id(true);
+    $valid=$loginAllowed&&$teacher&&(int)$teacher->Status===1&&password_verify($password,$teacher->PasswordHash);
+    if($loginAllowed)security_login_result($dbh,$loginKey,$valid);
+    if($valid) {
+        security_login_session(['teacher_session_version'=>(int)$teacher->SessionVersion]);
         $_SESSION['teacher_user_id'] = $teacher->id;
         $_SESSION['teacher_username'] = $teacher->Username;
         $_SESSION['teacher_name'] = $teacher->FullName;
@@ -97,7 +103,7 @@ if(isset($_POST['login'])) {
             </div>
         </div>
     </div>
-    <script src="js/jquery/jquery-2.2.4.min.js"></script>
+    <script src="js/jquery/jquery-3.7.1.min.js"></script>
     <script src="js/bootstrap/bootstrap.min.js"></script>
 </body>
 </html>

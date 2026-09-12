@@ -1,35 +1,29 @@
-# SRMS Production Readiness Checklist
+# Senior School deployment checklist
 
-## Completed Baseline
+The current implementation and executed checks are recorded in [SENIOR_SYSTEM_AUDIT.md](SENIOR_SYSTEM_AUDIT.md). This replaces the former lower-grade/default-account setup checklist.
 
-- Removed demo operational data from the local database while keeping the admin account.
-- Seeded Grade 1 through Grade 9.
-- Seeded academic year `2026`, `Term 1`, and `Term 1 Exam`.
-- Seeded grading scale A to E.
-- Added exam-aware result entry and viewing.
-- Made `password_hash.php` CLI-only so it cannot be used from the browser.
-- Added database environment variables to `.env.example`.
-- Added CSRF protection to admin create, update, delete, activate, and deactivate actions.
-- Added the first version of the Class Teacher module with assigned-class access, student account management, attendance, result review, comments, reports, notifications, and audit logging.
-- Reframed the existing administrator role as the Dean of Studies with school-wide academic administration, approval/publication workflow, teacher account management, academic period setup, and audit log viewing.
+## Repository and installation
 
-## Before Real Deployment
+- [x] Restrict new academic configuration/admissions to Grades 10, 11 and 12.
+- [x] Replace public result lookup with authenticated, explicitly linked guardians.
+- [x] Require submission, class review and Dean approval before publication.
+- [x] Queue parent notifications on publication and protect against repeated sends.
+- [x] Provide schema-only fresh installation and repeatable, data-preserving migrations.
+- [x] Require private database/provider configuration; no default Dean password.
+- [x] Separate production Compose from development source mounts and database administration ports.
+- [x] Pass isolated production MySQL 8.4 installation, secure cookies, health, assets and anonymous-route checks.
+- [x] Disable public diagnostics, directory indexes, source/config downloads and web execution of CLI helpers.
 
-- Change the default admin password.
-- Use strong values for `MYSQL_ROOT_PASSWORD`, `DB_PASS`, and SMS API keys.
-- Set `AFRICASTALKING_SMS_ENABLED=true` only after live credentials are tested.
-- Disable public database access in production. Keep MySQL bound to the Docker network only.
-- Run the app behind HTTPS.
-- Back up the MySQL volume regularly.
-- Extend role-based access to subject teachers, parents, and student portal routes.
-- Add audit logging for login, result edits, student edits, and fee/payment changes.
-- Review all delete actions and add confirmation plus access control.
+## School go-live requirements
 
-## Recommended Next Feature
+- [ ] Set school identity, HTTPS APP_URL, private database passwords and appropriate access to the host.
+- [ ] Put TLS termination in front of the loopback web port and verify secure-cookie login through the real domain.
+- [ ] Review pathways, subject policy, individual registrations, teachers and school-approved performance bands.
+- [ ] Verify guardian identities and child links, temporary-password handover and SMS contact preferences.
+- [ ] Test Africa's Talking with an authorized recipient; reconcile provider acceptance with actual delivery.
+- [ ] Enable/supervise the SMS worker; test SMTP separately if teacher email is enabled.
+- [ ] Configure encrypted off-host backups, retention, restore rehearsal and health/error monitoring.
+- [ ] Record the deployed image version, migration result and rollback/recovery procedure.
+- [ ] Review retained Bootstrap 3 compatibility and plan its eventual replacement; it is an end-of-life dependency.
 
-Build the attendance module next:
-
-- Attendance table is already available from the foundation migration.
-- Add daily attendance entry by grade/class.
-- Add attendance reports by student and grade.
-- Optionally send SMS to parents when a learner is marked absent.
+Use the exact local and production commands in the [README](../README.md). Never import the fresh schema over an existing school database or remove its volume to fix a startup problem.

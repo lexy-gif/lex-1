@@ -1,8 +1,8 @@
 <?php
-session_start();
-error_reporting(0);
-include('includes/config.php');
-include('includes/teacher-auth.php');
+require_once 'includes/bootstrap.php';
+
+require_once 'includes/config.php';
+require_once 'includes/teacher-auth.php';
 require_teacher();
 $sql = "SELECT u.FullName, u.Username, u.Email, u.StaffNumber, u.PhoneNumber, u.Department, u.Role, u.EmailStatus, u.EmailVerifiedAt, u.Status, c.ClassName, c.Section
         FROM tblusers u
@@ -45,7 +45,7 @@ $teacher = $query->fetch(PDO::FETCH_OBJ);
 </div></div>
 </section>
 </div></div></div></div></div>
-<script src="js/jquery/jquery-2.2.4.min.js"></script>
+<script src="js/jquery/jquery-3.7.1.min.js"></script>
 <script src="js/bootstrap/bootstrap.min.js"></script>
 <script src="js/main.js"></script>
 </body>

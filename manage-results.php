@@ -1,14 +1,30 @@
-
 <?php
-session_start();
-error_reporting(0);
-include('includes/config.php');
-if(strlen($_SESSION['alogin'])=="")
-    {   
-    header("Location: index.php"); 
+require_once 'includes/bootstrap.php';
+$error=$msg='';
+
+require_once 'includes/config.php';
+require_once 'includes/management-list.php';
+if(empty($_SESSION['alogin']))
+    {
+    header("Location: index.php");
     }
     else{
 
+$sql="SELECT tblstudents.StudentName,tblstudents.RollId,tblstudents.RegDate,tblstudents.StudentId,tblstudents.Status,
+tblclasses.ClassName,tblclasses.Section,tblresult.ExamId,tblexams.ExamName,tblacademicyears.AcademicYear,tblterms.TermName
+from tblresult
+join tblstudents on tblstudents.StudentId=tblresult.StudentId
+join tblclasses on tblclasses.id=tblresult.ClassId
+left join tblexams on tblexams.id=tblresult.ExamId
+left join tblacademicyears on tblacademicyears.id=tblexams.AcademicYearId
+left join tblterms on tblterms.id=tblexams.TermId
+group by tblstudents.StudentId,tblresult.ExamId,tblstudents.StudentName,tblstudents.RollId,tblstudents.RegDate,tblstudents.Status,tblclasses.ClassName,tblclasses.Section,tblexams.ExamName,tblacademicyears.AcademicYear,tblterms.TermName
+order by tblstudents.StudentName,tblresult.ExamId desc";
+$query=management_list_query($dbh,$sql,['StudentName','RollId','ClassName','ExamName','AcademicYear','TermName'],'StudentName');
+$query->execute();
+$allListRows=$query->fetchAll(PDO::FETCH_OBJ);
+$GLOBALS['management_list_has_next']=count($allListRows)>25;
+$results=array_slice($allListRows,0,25);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -31,20 +47,20 @@ if(strlen($_SESSION['alogin'])=="")
         <div class="main-wrapper">
 
             <!-- ========== TOP NAVBAR ========== -->
-   <?php include('includes/topbar.php');?> 
+   <?php include('includes/topbar.php');?>
             <!-- ========== WRAPPER FOR BOTH SIDEBARS & MAIN CONTENT ========== -->
             <div class="content-wrapper">
                 <div class="content-container">
-<?php include('includes/leftbar.php');?>  
+<?php include('includes/leftbar.php');?>
 
                     <div class="main-page">
                         <div class="container-fluid">
                             <div class="row page-title-div">
                                 <div class="col-md-6">
                                     <h2 class="title">Manage Results</h2>
-                                
+
                                 </div>
-                                
+
                                 <!-- /.col-md-6 text-right -->
                             </div>
                             <!-- /.row -->
@@ -56,7 +72,7 @@ if(strlen($_SESSION['alogin'])=="")
             							<li class="active">Manage Results</li>
             						</ul>
                                 </div>
-                             
+
                             </div>
                             <!-- /.row -->
                         </div>
@@ -65,7 +81,7 @@ if(strlen($_SESSION['alogin'])=="")
                         <section class="section">
                             <div class="container-fluid">
 
-                             
+
 
                                 <div class="row">
                                     <div class="col-md-12">
@@ -79,7 +95,7 @@ if(strlen($_SESSION['alogin'])=="")
 <?php if($msg){?>
 <div class="alert alert-success left-icon-alert" role="alert">
  <strong>Well done!</strong><?php echo htmlentities($msg); ?>
- </div><?php } 
+ </div><?php }
 else if($error){?>
     <div class="alert alert-danger left-icon-alert" role="alert">
                                             <strong>Oh snap!</strong> <?php echo htmlentities($error); ?>
@@ -87,7 +103,7 @@ else if($error){?>
                                         <?php } ?>
                                             <div class="panel-body p-20">
 
-                                                <table id="example" class="display table table-striped table-bordered" cellspacing="0" width="100%">
+                                                <?php management_list_controls(); ?><table id="example" class="display table table-striped table-bordered" cellspacing="0" width="100%">
                                                     <thead>
                                                         <tr>
                                                             <th>#</th>
@@ -113,19 +129,7 @@ else if($error){?>
                                                         </tr>
                                                     </tfoot>
                                                     <tbody>
-<?php $sql = "SELECT tblstudents.StudentName,tblstudents.RollId,tblstudents.RegDate,tblstudents.StudentId,tblstudents.Status,
-tblclasses.ClassName,tblclasses.Section,tblresult.ExamId,tblexams.ExamName,tblacademicyears.AcademicYear,tblterms.TermName
-from tblresult
-join tblstudents on tblstudents.StudentId=tblresult.StudentId
-join tblclasses on tblclasses.id=tblresult.ClassId
-left join tblexams on tblexams.id=tblresult.ExamId
-left join tblacademicyears on tblacademicyears.id=tblexams.AcademicYearId
-left join tblterms on tblterms.id=tblexams.TermId
-group by tblstudents.StudentId,tblresult.ExamId,tblstudents.StudentName,tblstudents.RollId,tblstudents.RegDate,tblstudents.Status,tblclasses.ClassName,tblclasses.Section,tblexams.ExamName,tblacademicyears.AcademicYear,tblterms.TermName
-order by tblstudents.StudentName,tblresult.ExamId desc";
-$query = $dbh->prepare($sql);
-$query->execute();
-$results=$query->fetchAll(PDO::FETCH_OBJ);
+<?php
 $cnt=1;
 if($query->rowCount() > 0)
 {
@@ -142,28 +146,28 @@ foreach($results as $result)
 echo htmlentities('Active');
 }
 else{
-   echo htmlentities('Blocked'); 
+   echo htmlentities('Blocked');
 }
                                                                 ?></td>
 <td>
-<a href="edit-result.php?stid=<?php echo htmlentities($result->StudentId);?>&examid=<?php echo htmlentities($result->ExamId);?>" class="btn btn-primary btn-xs">Edit</a> 
+<a href="edit-result.php?stid=<?php echo htmlentities($result->StudentId);?>&examid=<?php echo htmlentities($result->ExamId);?>" class="btn btn-primary btn-xs">Edit</a>
 
 </td>
 </tr>
 <?php $cnt=$cnt+1;}} ?>
-                                                       
-                                                    
+
+
                                                     </tbody>
                                                 </table>
 
-                                         
+
                                                 <!-- /.col-md-12 -->
                                             </div>
                                         </div>
                                     </div>
                                     <!-- /.col-md-6 -->
 
-                                                               
+
                                                 </div>
                                                 <!-- /.col-md-12 -->
                                             </div>
@@ -183,7 +187,7 @@ else{
                     </div>
                     <!-- /.main-page -->
 
-                    
+
 
                 </div>
                 <!-- /.content-container -->
@@ -194,7 +198,7 @@ else{
         <!-- /.main-wrapper -->
 
         <!-- ========== COMMON JS FILES ========== -->
-        <script src="js/jquery/jquery-2.2.4.min.js"></script>
+        <script src="js/jquery/jquery-3.7.1.min.js"></script>
         <script src="js/bootstrap/bootstrap.min.js"></script>
         <script src="js/pace/pace.min.js"></script>
         <script src="js/lobipanel/lobipanel.min.js"></script>
@@ -208,7 +212,7 @@ else{
         <script src="js/main.js"></script>
         <script>
             $(function($) {
-                $('#example').DataTable();
+                $('#example').DataTable({paging:false,searching:false,info:false});
 
                 $('#example2').DataTable( {
                     "scrollY":        "300px",

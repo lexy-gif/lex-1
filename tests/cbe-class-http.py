@@ -75,8 +75,8 @@ def denied(page, data=None, status=403):
 
 try:
     f = fixture('setup')
-    php('session_id($argv[1]);session_start();$_SESSION=["alogin"=>$argv[2],"csrf_token"=>$argv[3]];session_write_close();', dean, tag, token)
-    php('session_id($argv[1]);session_start();$_SESSION=["teacher_username"=>$argv[2],"csrf_token"=>$argv[3]];session_write_close();', teacher, tag, token)
+    php('ini_set("session.use_strict_mode","0");session_id($argv[1]);session_start();$_SESSION=["alogin"=>$argv[2],"csrf_token"=>$argv[3]];require "tests/session-fixture.php";test_dean_session();session_write_close();', dean, tag, token)
+    php('ini_set("session.use_strict_mode","0");session_id($argv[1]);session_start();$_SESSION=["teacher_username"=>$argv[2],"csrf_token"=>$argv[3]];session_write_close();', teacher, tag, token)
     create = {'submit': '', 'csrf_token': token, 'classname': tag + '_new', 'GradeId': f['grades'][0]['id'], 'section': f['stream'], 'classnamenumeric': 1}
     legacy_page = 'edit-class.php?classid=' + str(f['legacy'])
     for page in ['create-class.php', legacy_page]:
@@ -89,7 +89,7 @@ try:
     _, body = request('create-class.php')
     for grade in f['grades']:
         assert f'>{"Grade " + str(grade["GradeNumber"])}</option>' in body
-    assert tag + '_grade_0' in body and tag + '_grade_1' not in body
+    assert tag + '_grade_0' not in body and tag + '_grade_1' not in body
     for grade in f['grades']:
         _, body = request('create-class.php', dict(create, GradeId=grade['id'], classname=tag + '_' + str(grade['GradeNumber'])))
         assert 'Class Created successfully' in body
@@ -101,15 +101,15 @@ try:
 
     for value in [0, 'invalid', '999999999', str(f['custom'][0]) + '.5', f['custom'][1]]:
         _, body = request('create-class.php', dict(create, GradeId=value))
-        assert 'Select an active configured grade.' in body
+        assert 'Select an active' in body
     malformed = dict(create)
     del malformed['GradeId']
     malformed['GradeId[]'] = [f['custom'][0]]
     _, body = request('create-class.php', malformed)
-    assert 'Select an active configured grade.' in body
+    assert 'Select an active' in body
     _, body = request('create-class.php', dict(create, section='TOOLONG'))
     assert 'at most 5 characters' in body
-    for grade_id in [f['grades'][0]['id'], f['custom'][0]]:
+    for grade_id in [f['grades'][0]['id']]:
         _, body = request('create-class.php', dict(create, GradeId=grade_id))
         assert 'This grade and stream already exist.' in body
     workspace = 'dean-academics.php?area=structure'
@@ -125,28 +125,29 @@ try:
     assert 'This grade and stream already exist.' in body and html.escape(edit['classname'], quote=True) in body
     assert re.search(r'<option value="' + str(edit['GradeId']) + r'"\s+selected', body)
     assert fixture('state') == state
-    # Moving this fixture to the custom grade, in a separate stream, retains its ID.
+    # Unsupported catalog grades cannot be used, even through a forged form.
     _, body = request(edit_page, dict(edit, GradeId=f['custom'][0], section='MOVE'))
+    assert 'Senior School grade' in body and fixture('state') == state
+    _, body = request(edit_page, dict(edit, GradeId=f['grades'][1]['id'], section='MOVE'))
     assert 'Data has been updated successfully' in body
     moved = next(r for r in fixture('state')['classes'] if r['id'] == row['id'])
-    assert moved['GradeId'] == f['custom'][0] and moved['ClassNameNumeric'] == f['number']
+    assert moved['GradeId'] == f['grades'][1]['id'] and moved['ClassNameNumeric'] == 11
     _, body = request(legacy_page)
-    assert re.search(r'<option value="' + str(f['custom'][0]) + r'"\s+selected', body)
     assert next(r for r in fixture('state')['classes'] if r['id'] == f['legacy'])['GradeId'] is None
-    _, body = request(legacy_page, dict(create, update='', classname=tag + '_legacy', GradeId=f['custom'][0]))
+    _, body = request(legacy_page, dict(create, update='', classname=tag + '_legacy', GradeId=f['grades'][2]['id'], section='HIST'))
     assert 'Data has been updated successfully' in body
-    _, body = request(workspace, {'action': 'class', 'csrf_token': token, 'id': f['legacy'], 'GradeId': f['custom'][0], 'Section': 'EDIT'})
+    _, body = request(workspace, {'action': 'class', 'csrf_token': token, 'id': f['legacy'], 'GradeId': f['grades'][2]['id'], 'Section': 'EDIT'})
     assert 'Academic changes saved.' in body
     state = fixture('state')
     legacy = next(r for r in state['classes'] if r['id'] == f['legacy'])
-    assert legacy['GradeId'] == f['custom'][0] and legacy['ClassName'] == tag + '_legacy'
+    assert legacy['GradeId'] == f['grades'][2]['id'] and legacy['ClassName'] == tag + '_legacy'
     assert state['studentClass'] == f['legacy']
     _, body = request('edit-class.php?classid=' + str(f['inactiveClass']))
     assert re.search(r'<option value="' + str(f['custom'][1]) + r'"\s+selected\s+disabled', body)
-    print('PASS: custom grades work; rejected edits retain input; legacy mapping preserves class names, IDs and student links', flush=True)
+    print('PASS: unsupported grades rejected; rejected edits retain input; legacy mapping preserves class names, IDs and student links', flush=True)
 finally:
     try:
         print(fixture('cleanup'), flush=True)
     finally:
         for session in [dean, teacher]:
-            php('session_id($argv[1]);session_start();session_destroy();', session)
+            php('ini_set("session.use_strict_mode","0");session_id($argv[1]);session_start();require "tests/session-fixture.php";test_session_cleanup();session_destroy();', session)

@@ -1,1 +1,10 @@
 .env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+*.log
+test-artifacts/
+schema-review.tmp.txt
+
+.venv

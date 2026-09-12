@@ -1,9 +1,11 @@
 <?php
-session_start();
-include('includes/config.php');
-include('includes/csrf.php');
+require_once 'includes/bootstrap.php';
+$error=$msg='';
+require_once 'includes/config.php';
+require_once 'includes/csrf.php';
 require_once 'includes/dean-auth.php';
 require_once 'includes/exam-results.php';
+require_once 'includes/result-workflow.php';
 require_dean();
 $msg=$error='';
 
@@ -32,7 +34,7 @@ try {
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>SMS Admin| Student result info < </title>
+    <title>Student Result | SRMS</title>
             <link rel="stylesheet" href="css/bootstrap.min.css" media="screen">
             <link rel="stylesheet" href="css/font-awesome.min.css" media="screen">
             <link rel="stylesheet" href="css/animate-css/animate.min.css" media="screen">
@@ -165,7 +167,7 @@ if($examid > 0) {
 }
 $query->execute();
 $results=$query->fetchAll(PDO::FETCH_OBJ);
-$editable=0;$contexts=[];$contextErrors=[];
+$editable=0;$contexts=[];$contextErrors=[];$maximumMarks=[];
 $cnt=1;
 if($query->rowCount() > 0)
 {
@@ -174,10 +176,11 @@ foreach($results as $result)
     $resultClass=(int)$result->ClassId;
     if(!array_key_exists($resultClass,$contexts)) {
         $contexts[$resultClass]=[];
-        try { $contexts[$resultClass]=result_entry_context($dbh,$resultClass,$stid,$examid)['subjects']; }
+        try { $entryContext=result_entry_context($dbh,$resultClass,$stid,$examid); $contexts[$resultClass]=$entryContext['subjects']; $maximumMarks[$resultClass]=$entryContext['exam']['MaximumMarks']; }
         catch(DomainException $e) { $contextErrors[$resultClass]=$examid?$e->getMessage():'Historical results without an exam are read-only.'; }
     }
     $canEdit=isset($contexts[$resultClass][(int)$result->SubjectId]);
+    if($canEdit) { try { workflow_editable($dbh,$resultClass,$examid,(int)$result->SubjectId); } catch(DomainException $e) { $canEdit=false; $contextErrors[$resultClass]=$e->getMessage(); } }
     $editable+=$canEdit?1:0;
     $displayMark=$result->marks;
     if($error && is_array($_POST['id']??null) && is_array($_POST['marks']??null)) {
@@ -194,7 +197,7 @@ foreach($results as $result)
                                                 <div class="col-sm-10">
                                                     <?php if($canEdit) { ?><input type="hidden" name="id[]"
                                                         value="<?php echo htmlentities($result->resultid)?>">
-                                                    <input type="number" name="marks[]" class="form-control" min="0" max="100" step="any"
+                                                    <input type="number" name="marks[]" class="form-control" min="0" max="<?= academic_h($maximumMarks[$resultClass]??100) ?>" step="any"
                                                         value="<?= academic_h($displayMark) ?>"
                                                         required="required" autocomplete="off">
                                                     <?php } else { ?><p class="form-control-static"><?= academic_h($result->marks) ?></p><p class="help-block"><?= academic_h($contextErrors[$resultClass]??'Subject registration or offering is inactive for this exam year. Restore it before editing this mark.') ?></p><?php } ?>
@@ -227,7 +230,7 @@ foreach($results as $result)
             <!-- /.content-wrapper -->
         </div>
         <!-- /.main-wrapper -->
-        <script src="js/jquery/jquery-2.2.4.min.js"></script>
+        <script src="js/jquery/jquery-3.7.1.min.js"></script>
         <script src="js/bootstrap/bootstrap.min.js"></script>
         <script src="js/pace/pace.min.js"></script>
         <script src="js/lobipanel/lobipanel.min.js"></script>

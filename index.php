@@ -1,6 +1,6 @@
 <?php
-error_reporting(0);
-include('includes/config.php'); 
+
+require_once 'includes/config.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -31,7 +31,7 @@ include('includes/config.php');
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                     <li class="nav-item"><a class="nav-link active" href="index.php">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="find-result.php">Students</a></li>
+                    <li class="nav-item"><a class="nav-link" href="parent-login.php">Parents / Guardians</a></li>
                     <li class="nav-item"><a class="nav-link" href="student-senior.php">Senior School Subjects</a></li>
                     <li class="nav-item"><a class="nav-link" href="teacher-login.php">Class Teacher</a></li>
                     <li class="nav-item"><a class="nav-link" href="admin-login.php">Dean of Studies</a></li>
@@ -46,7 +46,7 @@ include('includes/config.php');
         <div class="container text-center position-relative">
             <h1 class="display-5 fw-bold">Welcome to the Student Result Management System</h1>
             <p class="lead mb-4">Effortlessly manage, view, and access student academic results online.</p>
-            <a href="find-result.php" class="btn btn-primary btn-lg me-2">Student Login</a>
+            <a href="parent-login.php" class="btn btn-primary btn-lg me-2">Parent / Guardian Login</a>
             <a href="teacher-login.php" class="btn btn-outline-light btn-lg">Class Teacher Login</a>
         </div>
     </header>
@@ -90,13 +90,13 @@ include('includes/config.php');
                     <hr color="#000" />
 
                     <ul class="notice-list">
-                        <?php 
+                        <?php
               $sql = "SELECT * FROM tblnotice";
               $query = $dbh->prepare($sql);
               $query->execute();
               $results = $query->fetchAll(PDO::FETCH_OBJ);
               if($query->rowCount() > 0) {
-                foreach($results as $result) { 
+                foreach($results as $result) {
             ?>
                         <li>
                             <a href="notice-details.php?nid=<?php echo htmlentities($result->id);?>" target="_blank"

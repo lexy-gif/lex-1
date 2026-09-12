@@ -64,8 +64,8 @@ try:
     a, b, elective, other_subject = f['subjects']
     exam, next_exam, other_exam, shared_exam = f['exams']
     for sid in [dean, other_dean]:
-        php('session_id($argv[1]);session_start();$_SESSION=["alogin"=>$argv[2],"csrf_token"=>$argv[3]];session_write_close();', sid, tag, token)
-    php('session_id($argv[1]);session_start();$_SESSION=["teacher_user_id"=>1,"teacher_role"=>"subject_teacher"];session_write_close();', teacher)
+        php('ini_set("session.use_strict_mode","0");session_id($argv[1]);session_start();$_SESSION=["alogin"=>$argv[2],"csrf_token"=>$argv[3]];require "tests/session-fixture.php";test_dean_session();session_write_close();', sid, tag, token)
+    php('ini_set("session.use_strict_mode","0");session_id($argv[1]);session_start();$_SESSION=["teacher_user_id"=>1,"teacher_session_version"=>1,"teacher_role"=>"subject_teacher"];session_write_close();', teacher)
     selection = {'class': c, 'studentid': s, 'examid': exam}
     add = dict(selection, csrf_token=token, submit='', **{f'marks[{b}]': 81, f'marks[{a}]': 67})
     for page in ['add-result.php', 'edit-result.php?stid=' + str(s), 'get_student.php']:
@@ -111,7 +111,7 @@ try:
     print('PASS: forged, missing, stale and inactive subjects reject the whole save; input is retained', flush=True)
 
     _, body = request('add-result.php', add)
-    assert 'Result info added successfully' in body
+    assert 'Draft results saved' in body
     rows = sorted((r for r in fixture('state') if r['ExamId'] == exam), key=lambda r: r['SubjectId'])
     assert {r['SubjectId']: r['marks'] for r in rows} == {a: 67, b: 81}
     rejected('add-result.php', add, 'Result already declared')
@@ -142,7 +142,7 @@ try:
     simultaneous = dict(add, examid=shared_exam)
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
         responses = list(pool.map(lambda sid: request('add-result.php', simultaneous, sid)[1], [dean, other_dean]))
-    assert sum('Result info added successfully' in body for body in responses) == 1
+    assert sum('Draft results saved' in body for body in responses) == 1
     assert sum('Result already declared' in body for body in responses) == 1
     assert len([r for r in fixture('state') if r['ExamId'] == shared_exam]) == 2
     fixture('disable_subject')
@@ -157,4 +157,4 @@ finally:
         print(fixture('cleanup'), flush=True)
     finally:
         for sid in sessions:
-            php('session_id($argv[1]);session_start();session_destroy();', sid)
+            php('ini_set("session.use_strict_mode","0");session_id($argv[1]);session_start();require "tests/session-fixture.php";test_session_cleanup();session_destroy();', sid)

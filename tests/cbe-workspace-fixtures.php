@@ -19,7 +19,7 @@ try {
         [$term,$term2]=$terms;
         $classes=[];$subjects=[];$teachers=[];$students=[];
         for($i=0;$i<2;$i++) {
-            academic_query($dbh,'INSERT INTO tblclasses(ClassName,Section) VALUES(?,?)',[$tag.'_'.$i,'TEST']);$classes[]=(int)$dbh->lastInsertId();
+            academic_query($dbh,'INSERT INTO tblclasses(ClassName,Section,ClassNameNumeric) VALUES(?,?,10)',[$tag.'_'.$i,'TEST']);$classes[]=(int)$dbh->lastInsertId();
             academic_query($dbh,'INSERT INTO tblsubjects(SubjectName) VALUES(?)',[$tag.'_'.$i]);$subjects[]=(int)$dbh->lastInsertId();
             academic_query($dbh,'INSERT INTO tblsubjectcombination(ClassId,SubjectId,status) VALUES(?,?,1)',[$classes[$i],$subjects[$i]]);
             academic_query($dbh,"INSERT INTO tblusers(FullName,Username,PasswordHash,Role,Status) VALUES(?,?,?,'subject_teacher',1)",[$tag.'_'.$i,$tag.'_'.$i,password_hash(bin2hex(random_bytes(16)),PASSWORD_DEFAULT)]);$teachers[]=(int)$dbh->lastInsertId();
@@ -46,6 +46,7 @@ try {
         $dbh->commit();echo json_encode(compact('year','term','term2','classes','subjects','teachers','students','type','level','outcomes','otherAssessment','exams','otherResult'));
     } elseif($mode==='state') {
         $rows=cbe_rows($dbh,'SELECT r.id,r.StudentId,r.ExamId,r.marks FROM tblresult r JOIN tblexams e ON e.id=r.ExamId JOIN tblacademicyears y ON y.id=e.AcademicYearId WHERE y.AcademicYear=? ORDER BY r.id',[substr($tag,-16)]);
+        foreach($rows as &$row)$row['marks']=(float)$row['marks'];unset($row);
         $dbh->rollBack();echo json_encode($rows);
     } elseif($mode==='verify') {
         $year=(int)academic_query($dbh,'SELECT id FROM tblacademicyears WHERE AcademicYear=?',[substr($tag,-16)])->fetchColumn();
@@ -71,7 +72,7 @@ try {
             academic_query($dbh,'DELETE r FROM tblresult r JOIN tblexams e ON e.id=r.ExamId WHERE e.AcademicYearId=?',[$year]);
             academic_query($dbh,'DELETE FROM tblexams WHERE AcademicYearId=?',[$year]);
             foreach(['tbloutcomeobservations','tblassessmentresults','tblassessmentoutcomes'] as $table)academic_query($dbh,"DELETE r FROM $table r JOIN tblassessments a ON a.id=r.AssessmentId WHERE a.AcademicYearId=?",[$year]);
-            foreach(['tblassessments','tblstudentsubjects','tblsubjectteacherassignments','tblclassteacherassignments'] as $table)academic_query($dbh,"DELETE FROM $table WHERE AcademicYearId=?",[$year]);
+            foreach(['tblcurriculumcoverage','tblassessments','tblstudentsubjects','tblsubjectteacherassignments','tblclassteacherassignments'] as $table)academic_query($dbh,"DELETE FROM $table WHERE AcademicYearId=?",[$year]);
             $teachers=academic_query($dbh,'SELECT id FROM tblusers WHERE Username IN (?,?)',[$tag.'_0',$tag.'_1'])->fetchAll(PDO::FETCH_COLUMN);
             foreach($teachers as $teacher) {
                 foreach(['tblnotificationdeliveries'=>'UserId','tblnotificationpreferences'=>'UserId','tblteachernotifications'=>'TeacherId'] as $table=>$column)academic_query($dbh,"DELETE FROM $table WHERE $column=?",[$teacher]);

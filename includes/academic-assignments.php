@@ -24,7 +24,7 @@ function academic_teacher($db, $teacher) {
     return $row;
 }
 function academic_class_lock($db, $class) {
-    if (!academic_query($db,'SELECT id FROM tblclasses WHERE id=? FOR UPDATE',[$class])->fetchColumn()) throw new DomainException('Select a valid class.');
+    if (!academic_query($db,'SELECT id FROM tblclasses WHERE id=? AND ClassNameNumeric IN (10,11,12) FOR UPDATE',[$class])->fetchColumn()) throw new DomainException('Select a valid Senior School class.');
 }
 function academic_offering($db,$class,$subject) {
     if (!academic_query($db,'SELECT id FROM tblsubjectcombination WHERE ClassId=? AND SubjectId=? AND status=1',[$class,$subject])->fetchColumn()) throw new DomainException('The subject must be actively offered in the selected class.');

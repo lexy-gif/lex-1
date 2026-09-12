@@ -1,9 +1,10 @@
-<?php 
-// DB credentials.
-define('DB_HOST', getenv('DB_HOST') ?: 'db');
-define('DB_USER', getenv('DB_USER') ?: 'srms_user');
-define('DB_PASS', getenv('DB_PASS') ?: 'srms_password');
-define('DB_NAME', getenv('DB_NAME') ?: 'srms');
+<?php
+require_once __DIR__.'/bootstrap.php';
+foreach (['DB_HOST','DB_USER','DB_PASS','DB_NAME'] as $key) {
+    $value=getenv($key);
+    if ($value===false || $value==='') throw new RuntimeException('Missing required environment variable: '.$key);
+    define($key,$value);
+}
 // Establish database connection.
 try
 {
@@ -14,7 +15,17 @@ $dbh = new PDO("mysql:host=".DB_HOST.";dbname=".DB_NAME.";charset=utf8mb4", DB_U
 }
 catch (PDOException $e)
 {
-error_log("Database connection failed: " . $e->getMessage());
-exit("Database connection failed. Please try again later.");
+throw $e;
+}
+// Every legacy and current Dean route loads this file before reading the session.
+if (PHP_SAPI !== 'cli' && !empty($_SESSION['alogin'])) {
+    require_once __DIR__.'/dean-account.php';
+    $sessionDean = dean_find_by_username($dbh, $_SESSION['alogin']);
+    if (!$sessionDean || !hash_equals(hash('sha256', $sessionDean->Password), (string)($_SESSION['dean_password_version'] ?? ''))) {
+        $_SESSION = [];
+        session_regenerate_id(true);
+        header('Location: admin-login.php', true, 303);
+        exit;
+    }
 }
 ?>

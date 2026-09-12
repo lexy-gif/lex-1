@@ -1,10 +1,12 @@
 <?php
-session_start();
-error_reporting(0);
-include('includes/config.php');
-include('includes/csrf.php');
-include('includes/audit.php');
-include('includes/dean-account.php');
+require_once 'includes/bootstrap.php';
+$error=$msg='';
+
+require_once 'includes/config.php';
+require_once 'includes/csrf.php';
+require_once 'includes/audit.php';
+require_once 'includes/dean-account.php';
+require_once 'includes/security.php';
 if(empty($_SESSION['alogin']))
     {   
     header("Location: index.php"); 
@@ -13,20 +15,24 @@ if(empty($_SESSION['alogin']))
 if(isset($_POST['submit']))
     {
 csrf_require_valid($_POST['csrf_token'] ?? '');
-$password=$_POST['password'];
-$newpassword=password_hash($_POST['newpassword'], PASSWORD_DEFAULT);
+try {
+$password=is_string($_POST['password']??null)?$_POST['password']:'';
+if(($_POST['newpassword']??null)!==($_POST['confirmpassword']??null))throw new DomainException('New passwords do not match.');
+$newpassword=security_password($_POST['newpassword']??null);
 $username=$_SESSION['alogin'];
 $result = dean_find_by_username($dbh, $username);
 $passwordMatches = $result && (password_verify($password, $result->Password) || hash_equals($result->Password, md5($password)));
 if($passwordMatches)
 {
 dean_update_password($dbh, $username, $newpassword);
+$_SESSION['dean_password_version']=hash('sha256',$newpassword);session_regenerate_id(true);
 audit_log($dbh, 'dean_password_changed', 'dean', $username, 'Dean changed password');
 $msg="Your password was successfully changed";
 }
 else {
 $error="Your current password is wrong";    
 }
+} catch(DomainException $e){$error=$e->getMessage();}
 }
 ?>
 <!DOCTYPE html>
@@ -174,7 +180,7 @@ else if($error){?>
         <!-- /.main-wrapper -->
 
         <!-- ========== COMMON JS FILES ========== -->
-        <script src="js/jquery/jquery-2.2.4.min.js"></script>
+        <script src="js/jquery/jquery-3.7.1.min.js"></script>
         <script src="js/jquery-ui/jquery-ui.min.js"></script>
         <script src="js/bootstrap/bootstrap.min.js"></script>
         <script src="js/pace/pace.min.js"></script>

@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once 'includes/bootstrap.php';
 require_once 'includes/dean-auth.php';
 require_dean();
 require_once 'includes/config.php';
@@ -16,7 +16,7 @@ try {
         $context=result_entry_context($dbh,$class,$student,$exam);
         $duplicate=(bool)academic_query($dbh,'SELECT id FROM tblresult WHERE StudentId=? AND ExamId=? LIMIT 1',[$student,$exam])->fetchColumn();
         $message=$duplicate?'Result already declared for this student and exam.':(!$context['subjects']?'No active subject registrations for this learner in the exam year. Register subjects before entering marks.':'');
-        ob_start();result_subject_fields($context['subjects']);$fields=ob_get_clean();
+        ob_start();result_subject_fields($context['subjects'],[],(float)$context['exam']['MaximumMarks']);$fields=ob_get_clean();
         echo json_encode(['fields'=>$fields,'message'=>$message,'canSubmit'=>!$duplicate && (bool)$context['subjects']],JSON_THROW_ON_ERROR);
     }
 } catch(Throwable $e) {

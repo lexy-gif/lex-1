@@ -4,7 +4,7 @@ if(php_sapi_name() !== 'cli') {
     exit('This script can only be run from the command line.');
 }
 
-include('includes/config.php');
+require_once 'includes/config.php';
 include('includes/email-service.php');
 
 $limit = isset($argv[1]) ? (int)$argv[1] : 20;

@@ -1,21 +1,21 @@
 <?php
-session_start();
-error_reporting(0);
-include('includes/config.php');
-if(strlen($_SESSION['alogin'])=="") {   
-    header("Location: index.php"); 
+require_once 'includes/bootstrap.php';
+
+require_once 'includes/config.php';
+if(empty($_SESSION['alogin'])) {
+    header("Location: index.php");
 } else {
-$totalStudents = $dbh->query("SELECT COUNT(*) FROM tblstudents")->fetchColumn();
+$totalStudents = $dbh->query("SELECT COUNT(*) FROM tblstudents s JOIN tblclasses c ON c.id=s.ClassId WHERE c.ClassNameNumeric IN (10,11,12)")->fetchColumn();
 $totalSubjects = $dbh->query("SELECT COUNT(*) FROM tblsubjects")->fetchColumn();
-$totalClasses = $dbh->query("SELECT COUNT(*) FROM tblclasses")->fetchColumn();
+$totalClasses = $dbh->query("SELECT COUNT(*) FROM tblclasses WHERE ClassNameNumeric IN (10,11,12)")->fetchColumn();
 $teacherRoleSql = "'class_teacher','subject_teacher','head_of_department','exams_officer','deputy_dean'";
 $totalTeachers = $dbh->query("SELECT COUNT(*) FROM tblusers WHERE Role IN ($teacherRoleSql)")->fetchColumn();
 $activeTeachers = $dbh->query("SELECT COUNT(*) FROM tblusers WHERE Role IN ($teacherRoleSql) AND Status = 1")->fetchColumn();
 $inactiveTeachers = $dbh->query("SELECT COUNT(*) FROM tblusers WHERE Role IN ($teacherRoleSql) AND Status = 0")->fetchColumn();
 $activeExamCount = $dbh->query("SELECT COUNT(*) FROM tblexams WHERE Status IN ('marks_entry','submitted','under_review','approved')")->fetchColumn();
-$resultsSubmitted = $dbh->query("SELECT COUNT(DISTINCT CONCAT(StudentId, '-', COALESCE(ExamId, 0))) FROM tblresult")->fetchColumn();
-$classesAwaitingApproval = $dbh->query("SELECT COUNT(*) FROM tblresultreviews WHERE Status = 'approved'")->fetchColumn();
-$schoolMean = $dbh->query("SELECT ROUND(AVG(marks), 2) FROM tblresult")->fetchColumn();
+$resultsSubmitted = $dbh->query("SELECT COUNT(DISTINCT CONCAT(r.StudentId, '-', r.ExamId)) FROM tblresult r JOIN tblresultsubmissions rs ON rs.ExamId=r.ExamId AND rs.ClassId=r.ClassId AND rs.SubjectId=r.SubjectId AND rs.Status='submitted'")->fetchColumn();
+$classesAwaitingApproval = $dbh->query("SELECT COUNT(*) FROM tblresultreviews rr WHERE rr.Status = 'approved' AND NOT EXISTS(SELECT 1 FROM tbldeanapprovals da WHERE da.ClassId=rr.ClassId AND da.ExamId=rr.ExamId AND da.Status IN ('approved','published'))")->fetchColumn();
+$schoolMean = $dbh->query("SELECT ROUND(AVG(100*r.marks/e.MaximumMarks),2) FROM tblresult r JOIN tblexams e ON e.id=r.ExamId JOIN tblresultpublications p ON p.ClassId=r.ClassId AND p.ExamId=r.ExamId")->fetchColumn();
 $classesScheduled = $dbh->query("SELECT COUNT(DISTINCT ClassId) FROM tblclasstimetableentries WHERE Status = 'published'")->fetchColumn();
 $timetableConflicts = 0;
 $examTimetableStatusQuery = $dbh->query("SELECT Status FROM tblexamtimetableentries ORDER BY id DESC LIMIT 1");
@@ -227,7 +227,7 @@ $pendingResults = max(0, ((int)$totalStudents) - ((int)$resultsSubmitted));
     </script>
 
     <!-- JS FILES -->
-    <script src="js/jquery/jquery-2.2.4.min.js"></script>
+    <script src="js/jquery/jquery-3.7.1.min.js"></script>
     <script src="js/bootstrap/bootstrap.min.js"></script>
     <script src="js/lobipanel/lobipanel.min.js"></script>
     <script src="js/toastr/toastr.min.js"></script>

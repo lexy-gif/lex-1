@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__.'/bootstrap.php';
 require_once __DIR__.'/config.php';require_once __DIR__.'/csrf.php';require_once __DIR__.'/dean-auth.php';
 require_once __DIR__.'/senior-ui.php';require_dean();
 $areas=['pathways'=>'Senior School Pathways','subjects'=>'Manage Senior School Subjects','combinations'=>'Subject Combinations','assignments'=>'Assign Learners to Pathways','teachers'=>'Senior School Teacher Assignments','promotions'=>'Senior School Promotion','reports'=>'Senior School Reports'];
@@ -57,5 +57,5 @@ require __DIR__.'/senior-views.php';
 } ?>
 </div></main></div></div></div>
 <div class="modal fade" id="senior-confirm" tabindex="-1" role="dialog" aria-labelledby="senior-confirm-title"><div class="modal-dialog" role="document"><div class="modal-content"><div class="modal-header"><h3 class="modal-title" id="senior-confirm-title">Confirm change</h3></div><div class="modal-body"><p class="senior-confirm-message"></p></div><div class="modal-footer"><button class="btn btn-default" data-dismiss="modal">Cancel</button><button type="button" class="btn btn-primary senior-confirm-accept">Confirm</button></div></div></div></div>
-<script src="js/jquery/jquery-2.2.4.min.js"></script><script src="js/bootstrap/bootstrap.min.js"></script><script src="js/DataTables/datatables.min.js"></script><script src="js/main.js"></script><script src="js/senior-school.js"></script>
+<script src="js/jquery/jquery-3.7.1.min.js"></script><script src="js/bootstrap/bootstrap.min.js"></script><script src="js/DataTables/datatables.min.js"></script><script src="js/main.js"></script><script src="js/senior-school.js"></script>
 </body></html>

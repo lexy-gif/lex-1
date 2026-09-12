@@ -1,7 +1,7 @@
 <?php
 function audit_log($dbh, $action, $entityType = null, $entityId = null, $details = null)
 {
-    $actor = $_SESSION['alogin'] ?? $_SESSION['teacher_username'] ?? 'system';
+    $actor = $_SESSION['alogin'] ?? $_SESSION['teacher_username'] ?? (isset($_SESSION['parent_user_id'])?'parent:'.$_SESSION['parent_user_id']:'system');
     $ipAddress = $_SERVER['REMOTE_ADDR'] ?? null;
 
     try {
@@ -17,6 +17,7 @@ function audit_log($dbh, $action, $entityType = null, $entityId = null, $details
         $query->execute();
     } catch (Exception $e) {
         error_log('Audit log failed: ' . $e->getMessage());
+        if($dbh->inTransaction())throw $e;
     }
 }
 ?>

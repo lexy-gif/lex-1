@@ -1,5 +1,6 @@
 <?php
-session_start();
+require_once 'includes/bootstrap.php';
+$error=$msg='';
 require 'includes/config.php'; require 'includes/csrf.php'; require 'includes/dean-auth.php'; require 'includes/audit.php';
 require_once 'includes/academic-assignments.php'; require_dean();
 $ready=academic_ready($dbh); $error=''; $msg=''; $conflict=null;
@@ -46,7 +47,7 @@ if ($ready && $_SERVER['REQUEST_METHOD']==='POST') {
 }
 $years=$dbh->query('SELECT * FROM tblacademicyears ORDER BY AcademicYear DESC')->fetchAll(PDO::FETCH_ASSOC);
 $teachers=$dbh->query('SELECT id,FullName Label,Status FROM tblusers WHERE Role IN ('.ACADEMIC_TEACHER_ROLES.') ORDER BY FullName')->fetchAll(PDO::FETCH_ASSOC);
-$classes=$dbh->query('SELECT id,CONCAT(ClassName," ",Section) Label FROM tblclasses ORDER BY ClassNameNumeric,Section')->fetchAll(PDO::FETCH_ASSOC);
+$classes=$dbh->query('SELECT id,CONCAT(ClassName," ",Section) Label FROM tblclasses WHERE ClassNameNumeric IN (10,11,12) ORDER BY ClassNameNumeric,Section')->fetchAll(PDO::FETCH_ASSOC);
 $subjects=$dbh->query('SELECT id,SubjectName Label FROM tblsubjects ORDER BY SubjectName')->fetchAll(PDO::FETCH_ASSOC);
 function ar_options($rows,$selected=0) { foreach($rows as $r) echo '<option value="'.(int)$r['id'].'" '.((int)$r['id']===$selected?'selected':'').'>'.academic_h($r['Label']).'</option>'; }
 function ar_hidden($name,$value) { if(is_array($value)) { foreach($value as $k=>$v) ar_hidden($name.'['.$k.']',$v); } else echo '<input type="hidden" name="'.academic_h($name).'" value="'.academic_h($value).'">'; }
@@ -96,4 +97,4 @@ $rows=academic_query($dbh,$sql.' ORDER BY a.Status DESC,u.FullName,a.id DESC',$p
 <hr><h4>Create responsibility type</h4><form method="post"><?php csrf_field(); ?><input type="hidden" name="year" value="<?= $year ?>"><input type="hidden" name="action" value="type"><label>Name</label><input name="name" class="form-control" maxlength="150" required><label>Description</label><textarea name="description" class="form-control"></textarea><button class="btn btn-default">Create Type</button></form>
 <details><summary>Activate / deactivate responsibility types</summary><?php foreach($dbh->query('SELECT * FROM tblresponsibilitytypes ORDER BY Name') as $r) { ?><form method="post"><?php csrf_field(); ?><input type="hidden" name="year" value="<?= $year ?>"><input type="hidden" name="action" value="type_status"><input type="hidden" name="type" value="<?= (int)$r['id'] ?>"><input type="hidden" name="active" value="<?= $r['Active']?0:1 ?>"><?= academic_h($r['Name']) ?> <button class="btn btn-xs btn-default"><?= $r['Active']?'Deactivate':'Activate' ?></button></form><?php } ?></details></div>
 <?php if($conflict) { ?><div class="modal fade" id="academic-confirmation" tabindex="-1" role="dialog" aria-labelledby="confirm-title"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h4 id="confirm-title">Confirm reassignment</h4></div><div class="modal-body"><p><?= academic_h($conflict->getMessage()) ?></p></div><div class="modal-footer"><form method="post"><?php foreach($_POST as $k=>$v) ar_hidden($k,$v); ?><input type="hidden" name="confirmed_assignments[]" value="<?= academic_h($conflict->assignmentKey) ?>"><button class="btn btn-warning">Replace assignment</button><a class="btn btn-default" href="dean-teacher-relationships.php?year=<?= $year ?>&teacher=<?= $teacher ?>">Cancel</a></form></div></div></div></div><?php } ?>
-<?php } ?></section></div></div></div></div></div><script src="js/jquery/jquery-2.2.4.min.js"></script><script src="js/bootstrap/bootstrap.min.js"></script><script src="js/main.js"></script><script src="js/academic-assignments.js"></script></body></html>
+<?php } ?></section></div></div></div></div></div><script src="js/jquery/jquery-3.7.1.min.js"></script><script src="js/bootstrap/bootstrap.min.js"></script><script src="js/main.js"></script><script src="js/academic-assignments.js"></script></body></html>

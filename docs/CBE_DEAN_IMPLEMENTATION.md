@@ -1,5 +1,7 @@
 # CBE Dean module: current-system analysis and implementation plan
 
+> Historical design notes. The current Senior School scope, guardian portal and deployment status are documented in [SENIOR_SYSTEM_AUDIT.md](SENIOR_SYSTEM_AUDIT.md) and the [README](../README.md). Earlier plans below are not current installation instructions.
+
 Result-entry continuation on 9 September 2026: legacy examination forms now use each learner's active subject registrations in the exam year. Subject IDs bind marks to subjects; creation and editing recheck membership transactionally, and inactive or historical results stay readable. Authenticated lookups and HTTP tests cover learner/year isolation, stale submissions, rejected batch rollback and competing declarations. No schema changes were required; see [CBE_WORKSPACE.md](CBE_WORKSPACE.md).
 
 Academic-period continuation on 8 September 2026: period creation, term-date updates and activation now use a shared transactional service. Ordinary saves preserve activation; explicit activation switches one year/term pair under a shared lock. Exam creation reuses the service without activating periods, and workspace defaults read the active pair together. Isolated HTTP tests cover rollback, context changes and competing writes. No schema changes were required; see [CBE_WORKSPACE.md](CBE_WORKSPACE.md).

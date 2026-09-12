@@ -10,9 +10,9 @@ function senior_url($page,$changes=[]) {
 function senior_choices($db,$kind,$f=[]) {
     switch($kind) {
         case 'grades':return cbe_rows($db,'SELECT id,Name Label FROM tblgrades WHERE GradeNumber BETWEEN 10 AND 12 ORDER BY GradeNumber');
-        case 'promotion-grades':return cbe_rows($db,'SELECT id,Name Label FROM tblgrades WHERE GradeNumber BETWEEN 9 AND 12 ORDER BY GradeNumber');
+        case 'promotion-grades':return cbe_rows($db,'SELECT id,Name Label FROM tblgrades WHERE GradeNumber BETWEEN 10 AND 12 ORDER BY GradeNumber');
         case 'classes':return cbe_rows($db,'SELECT c.id,CONCAT(c.ClassName," ",c.Section) Label FROM tblclasses c JOIN tblgrades g ON g.id=c.GradeId WHERE g.GradeNumber BETWEEN 10 AND 12 ORDER BY g.GradeNumber,c.Section');
-        case 'promotion-classes':return cbe_rows($db,'SELECT c.id,CONCAT(c.ClassName," ",c.Section) Label FROM tblclasses c JOIN tblgrades g ON g.id=c.GradeId WHERE g.GradeNumber BETWEEN 9 AND 12 ORDER BY g.GradeNumber,c.Section');
+        case 'promotion-classes':return cbe_rows($db,'SELECT c.id,CONCAT(c.ClassName," ",c.Section) Label FROM tblclasses c JOIN tblgrades g ON g.id=c.GradeId WHERE g.GradeNumber BETWEEN 10 AND 12 ORDER BY g.GradeNumber,c.Section');
         case 'pathways':return cbe_rows($db,'SELECT id,CONCAT(Name,IF(Status=0," (inactive)","")) Label FROM tblpathways ORDER BY Name');
         case 'tracks':return cbe_rows($db,'SELECT t.id,CONCAT(p.Name," / ",t.Name,IF(t.Status=0," (inactive)","")) Label FROM tblpathwaytracks t JOIN tblpathways p ON p.id=t.PathwayId WHERE (?=0 OR p.id=?) ORDER BY p.Name,t.Name',[$f['pathway']??0,$f['pathway']??0]);
         case 'language':case 'mathematics':return cbe_rows($db,"SELECT id,SubjectName Label FROM tblsubjects WHERE SeniorType='core' AND CoreRole=? AND Status=1 ORDER BY SubjectName",[$kind]);

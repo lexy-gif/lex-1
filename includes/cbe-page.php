@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__.'/bootstrap.php';
 require_once __DIR__.'/config.php';require_once __DIR__.'/csrf.php';require_once __DIR__.'/dean-auth.php';require_once __DIR__.'/teacher-auth.php';
 require_once __DIR__.'/cbe-learning.php';require_once __DIR__.'/cbe-reports.php';require_once __DIR__.'/cbe-ui.php';
 require_once __DIR__.'/cbe-timetable.php';
@@ -86,7 +86,7 @@ if(!isset($reportKinds[$report])&&!isset($_GET['export']))$report='performance';
 if(isset($_GET['export'])) {
  if($cbeTeacherPortal||!isset($reportKinds[$report])){http_response_code(403);exit('Export not permitted.');}
  $rows=cbe_report($dbh,$report,$year,$term,$teacher,$class,$subject,$student);header('Content-Type: text/csv; charset=utf-8');header('Content-Disposition: attachment; filename="academic-'.$report.'.csv"');$out=fopen('php://output','w');
- if($rows){fputcsv($out,array_keys($rows[0]));foreach($rows as $r)fputcsv($out,array_map(fn($v)=>preg_match('/^[=+@\-\t\r]/',(string)$v)?"'".$v:$v,$r));}fclose($out);exit;
+ if($rows){cbe_csv_row($out,array_keys($rows[0]));foreach($rows as $r)cbe_csv_row($out,array_map(fn($v)=>preg_match('/^[\s]*[=+@-]/',(string)$v)?"'".$v:$v,$r));}fclose($out);exit;
 }
 ?>
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?= academic_h($areas[$area]) ?> | SRMS</title><link rel="stylesheet" href="css/bootstrap.min.css"><link rel="stylesheet" href="css/font-awesome.min.css"><link rel="stylesheet" href="css/main.css"><link rel="stylesheet" href="js/DataTables/datatables.min.css"><link rel="stylesheet" href="css/custom.css"><link rel="stylesheet" href="css/cbe-academics.css"></head><body class="top-navbar-fixed"><div class="main-wrapper"><?php include __DIR__.($cbeTeacherPortal?'/teacher-topbar.php':'/topbar.php'); ?><div class="content-wrapper"><div class="content-container"><?php include __DIR__.($cbeTeacherPortal?'/teacher-leftbar.php':'/leftbar.php'); ?><div class="main-page"><div class="container-fluid"><div class="cbe-heading"><div><h2><?= academic_h($areas[$area]) ?></h2><p>School academic administration</p></div><button class="btn btn-default cbe-no-print" onclick="window.print()">Print View</button></div>
@@ -105,7 +105,7 @@ foreach(cbe_filter_names($area,$cbeTeacherPortal,$report) as $filter) {
 <?php
 if($area==='structure') {
  echo '<p><a href="dean-academic-periods.php">Academic Years and Terms</a> · <a href="manage-classes.php">Existing Classes</a></p>';
- foreach(['levels','grades','departments'] as $key){$spec=cbe_configs()[$key];$val=$edit&&$entity===$key?cbe_one($dbh,'SELECT * FROM '.$spec[0].' WHERE id=?',[$edit]):[];cbe_form($dbh,'Create / Edit '.$spec[1],'config',$spec[2],$val?:[],['entity'=>$key]);cbe_table(cbe_rows($dbh,'SELECT * FROM '.$spec[0]),$base.'?area=structure&entity='.$key.'&id=');}
+ foreach(['levels','grades','departments'] as $key){$spec=cbe_configs()[$key];$val=$edit&&$entity===$key?cbe_one($dbh,'SELECT * FROM '.$spec[0].' WHERE id=?',[$edit]):[];cbe_form($dbh,'Create / Edit '.$spec[1],'config',$spec[2],$val?:[],['entity'=>$key]);cbe_table(cbe_rows($dbh,'SELECT * FROM '.$spec[0].($key==='levels'?' WHERE SeniorSchool=1':($key==='grades'?' WHERE GradeNumber IN (10,11,12)':''))),$base.'?area=structure&entity='.$key.'&id=');}
  $val=$edit&&$entity==='class'?cbe_one($dbh,'SELECT * FROM tblclasses WHERE id=?',[$edit]):[];cbe_form($dbh,'Create / Edit Grade and Stream','class',['GradeId'=>'grades','Section'=>'text'],$val?:[]);
  cbe_table(cbe_rows($dbh,'SELECT c.id,g.Name Grade,l.Name Level,c.ClassName LegacyName,c.Section Stream FROM tblclasses c LEFT JOIN tblgrades g ON g.id=c.GradeId LEFT JOIN tblschoollevels l ON l.id=g.SchoolLevelId ORDER BY c.ClassNameNumeric,c.Section'),$base.'?area=structure&entity=class&id=');
  cbe_form($dbh,'Carry Whole-Year Teacher Assignments Forward','carry',['FromYear'=>'years','ToYear'=>'years','Confirm'=>'bool']);
@@ -134,7 +134,7 @@ if($area==='structure') {
 } elseif($area==='assessments') {
  if(!$cbeTeacherPortal)foreach(['types','levels-performance','competencies','outcomes'] as $key){$spec=cbe_configs()[$key];$val=$edit&&$entity===$key?cbe_one($dbh,'SELECT * FROM '.$spec[0].' WHERE id=?',[$edit]):[];cbe_form($dbh,'Configure '.$spec[1],'config',$spec[2],$val?:[],['entity'=>$key]);echo '<details><summary>Existing '.academic_h($spec[1]).'</summary>';cbe_table(cbe_rows($dbh,'SELECT * FROM '.$spec[0]),$base.'?area=assessments&entity='.$key.'&id=');echo '</details>';}
  $val=$selectedAssessment?:$defaults;if(!empty($val['id']))$val['Outcomes']=academic_query($dbh,'SELECT OutcomeId FROM tblassessmentoutcomes WHERE AssessmentId=?',[$edit])->fetchAll(PDO::FETCH_COLUMN);
- $fields=['Title'=>'text','AssessmentTypeId'=>'types','AcademicYearId'=>'years','TermId'=>'terms','ClassId'=>'classes','SubjectId'=>'subjects'];if(!$cbeTeacherPortal)$fields['TeacherId']='teachers';$fields+=['MaximumScore'=>'number?','AssessmentDate'=>'date','Outcomes'=>'outcomes[]','Status'=>'enum:'.($cbeTeacherPortal?'draft|open|submitted':'draft|open|submitted|locked|published|archived')];
+ $fields=['Title'=>'text','AssessmentTypeId'=>'types','AcademicYearId'=>'years','TermId'=>'terms','ClassId'=>'classes','SubjectId'=>'subjects'];if(!$cbeTeacherPortal)$fields['TeacherId']='teachers';$fields+=['MaximumScore'=>'number?','AssessmentDate'=>'date','Outcomes'=>'outcomes[]','Status'=>'enum:'.($cbeTeacherPortal?'draft|open|submitted':'draft|open|submitted|locked|approved|published|archived')];
  cbe_form($dbh,'Create / Edit Assessment','assessment',$fields,$val?:$defaults);
  cbe_table(cbe_report($dbh,'assessments',$year,$term,$teacher,$class,$subject),$base.'?area=assessments&entity=assessment&year='.$year.'&id=');
  if($edit&&$entity==='assessment') {
@@ -183,4 +183,4 @@ if($area==='structure') {
 } elseif($area==='timetable') {include __DIR__.'/cbe-timetable-view.php';}
 else {include __DIR__.'/cbe-dashboard.php';}
 ?>
-</div></div></div></div></div><script src="js/jquery/jquery-2.2.4.min.js"></script><script src="js/bootstrap/bootstrap.min.js"></script><script src="js/DataTables/datatables.min.js"></script><script src="js/main.js"></script><script src="js/academic-assignments.js"></script><script>$(function(){ $('.cbe-filters [name=year]').on('change',function(){ var term=$(this.form).find('[name=term]');term.val('0');this.form.submit(); }); $('.cbe-table').each(function(){ $(this).DataTable({pageLength:15,order:[]}); }); });</script></body></html>
+</div></div></div></div></div><script src="js/jquery/jquery-3.7.1.min.js"></script><script src="js/bootstrap/bootstrap.min.js"></script><script src="js/DataTables/datatables.min.js"></script><script src="js/main.js"></script><script src="js/academic-assignments.js"></script><script>$(function(){ $('.cbe-filters [name=year]').on('change',function(){ var term=$(this.form).find('[name=term]');term.val('0');this.form.submit(); }); $('.cbe-table').each(function(){ $(this).DataTable({pageLength:15,order:[]}); }); });</script></body></html>

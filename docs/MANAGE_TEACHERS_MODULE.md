@@ -17,9 +17,7 @@ The Dean of Studies can manage teacher accounts from one dedicated area without 
 
 Run this migration after the teacher notification migration:
 
-```bash
-Get-Content database-updates\manage-teachers-extension.sql | docker compose exec -T db mysql -usrms_user -psrms_password srms
-```
+Use the repeatable setup/migration procedure in the [README](../README.md); it reads database credentials from the private environment.
 
 The migration adds `LastLoginAt` and expands teacher role support to:
 

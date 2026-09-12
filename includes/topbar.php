@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__.'/csrf.php';
 $deanDeliveryCount = 0;
 try {
     if(isset($dbh)) {
@@ -39,7 +40,7 @@ try {
                             <li class="dropdown-header">Dean of Studies</li>
                             <li><a href="change-password.php"><i class="fa fa-lock" aria-hidden="true"></i> Change Password</a></li>
                             <li role="separator" class="divider"></li>
-                            <li><a href="logout.php" class="color-danger"><i class="fa fa-sign-out" aria-hidden="true"></i> Logout</a></li>
+                            <li><form method="post" action="logout.php" class="srms-logout-form"><?php csrf_field(); ?><button type="submit" class="srms-logout-button color-danger"><i class="fa fa-sign-out" aria-hidden="true"></i> Logout</button></form></li>
                         </ul>
                     </li>
                 </ul>

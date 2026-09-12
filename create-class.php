@@ -1,5 +1,6 @@
 <?php
-session_start();
+require_once 'includes/bootstrap.php';
+$error=$msg='';
 require_once 'includes/config.php';
 require_once 'includes/csrf.php';
 require_once 'includes/dean-auth.php';
@@ -7,7 +8,7 @@ require_once 'includes/cbe-academics.php';
 require_dean();
 $msg=$error='';
 $classValues=['ClassName'=>'','GradeId'=>'','Section'=>''];
-$grades=cbe_rows($dbh,'SELECT id,Name,Status FROM tblgrades WHERE Status=1 ORDER BY GradeNumber');
+$grades=cbe_rows($dbh,'SELECT id,Name,Status FROM tblgrades WHERE Status=1 AND GradeNumber IN (10,11,12) ORDER BY GradeNumber');
 if(isset($_POST['submit']))
 {
 csrf_require_valid($_POST['csrf_token'] ?? '');
@@ -145,7 +146,7 @@ else if($error){?>
         <!-- /.main-wrapper -->
 
         <!-- ========== COMMON JS FILES ========== -->
-        <script src="js/jquery/jquery-2.2.4.min.js"></script>
+        <script src="js/jquery/jquery-3.7.1.min.js"></script>
         <script src="js/jquery-ui/jquery-ui.min.js"></script>
         <script src="js/bootstrap/bootstrap.min.js"></script>
         <script src="js/pace/pace.min.js"></script>

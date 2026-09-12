@@ -1,12 +1,14 @@
 <?php
-session_start();
-error_reporting(0);
-include('includes/config.php');
-include('includes/csrf.php');
-require_once 'includes/senior-school.php';
+require_once 'includes/bootstrap.php';
+$error=$msg='';
 
-if(strlen($_SESSION['alogin'])=="") {   
-    header("Location: index.php"); 
+require_once 'includes/config.php';
+require_once 'includes/csrf.php';
+require_once 'includes/senior-school.php';
+require_once 'includes/student-validation.php';
+
+if(empty($_SESSION['alogin'])) {
+    header("Location: index.php");
 } else {
 
 if(isset($_POST['submit']))
@@ -15,19 +17,21 @@ if(isset($_POST['submit']))
     $studentname = $_POST['fullanme'];
 
     // ✅ Validate: name must contain only letters and spaces (no numbers)
-    if(!preg_match("/^[a-zA-Z\s]+$/", $studentname)) {
+    if(!is_string($studentname) || !preg_match("/^[\p{L}\p{M} .'-]+$/uD", $studentname)) {
         $error = "Full name must contain only letters and spaces — no numbers allowed.";
     } else {
-        $roolid = $_POST['rollid']; 
-        $studentemail = $_POST['emailid']; 
+        $roolid = $_POST['rollid'];
+        $studentemail = $_POST['emailid'];
         $parentphone = $_POST['parentphone'];
-        $gender = $_POST['gender']; 
-        $classid = $_POST['class']; 
-        $dob = $_POST['dob']; 
+        $gender = $_POST['gender'];
+        $classid = $_POST['class'];
+        $dob = $_POST['dob'];
         $status = 1;
 
         try {
         $dbh->beginTransaction();
+        $validated=student_validate($dbh,$_POST);
+        $parentphone=$validated['phone'];
         $sql = "INSERT INTO tblstudents(StudentName, RollId, StudentEmail, ParentPhone, Gender, ClassId, DOB, Status)
                 VALUES(:studentname, :roolid, :studentemail, :parentphone, :gender, :classid, :dob, :status)";
         $query = $dbh->prepare($sql);
@@ -181,8 +185,8 @@ if(isset($_POST['submit']))
                                                     <select name="class" class="form-control" id="default"
                                                         required="required">
                                                         <option value="">Select Class</option>
-                                                        <?php 
-                $sql = "SELECT * from tblclasses";
+                                                        <?php
+                $sql = "SELECT * from tblclasses WHERE ClassNameNumeric IN (10,11,12)";
                 $query = $dbh->prepare($sql);
                 $query->execute();
                 $results = $query->fetchAll(PDO::FETCH_OBJ);
@@ -223,7 +227,7 @@ if(isset($_POST['submit']))
         </div> <!-- /.content-wrapper -->
     </div> <!-- /.main-wrapper -->
 
-    <script src="js/jquery/jquery-2.2.4.min.js"></script>
+    <script src="js/jquery/jquery-3.7.1.min.js"></script>
     <script src="js/bootstrap/bootstrap.min.js"></script>
     <script src="js/pace/pace.min.js"></script>
     <script src="js/lobipanel/lobipanel.min.js"></script>

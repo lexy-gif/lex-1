@@ -11,10 +11,11 @@
                 <li><a href="teacher-academic-assignments.php"><i class="fa fa-book"></i> <span>My Teaching Assignments</span></a></li>
                 <li><a href="teacher-academics.php"><i class="fa fa-graduation-cap"></i> <span>My Academic Workspace</span></a></li>
                 <li><a href="teacher-senior.php"><i class="fa fa-book"></i> <span>Senior School</span></a></li>
+                <li><a href="teacher-mark-entry.php"><i class="fa fa-pencil"></i> <span>Examination Marks</span></a></li>
                 <?php if(teacher_class_id()) { ?>
                 <li><a href="teacher-dashboard.php"><i class="fa fa-dashboard"></i> <span>Dashboard</span></a></li>
                 <li><a href="teacher-students.php"><i class="fa fa-users"></i> <span>Students</span></a></li>
-                <li><a href="teacher-accounts.php"><i class="fa fa-user-plus"></i> <span>Manage Accounts</span></a></li>
+
                 <li><a href="teacher-results.php"><i class="fa fa-check-square-o"></i> <span>Results Review</span></a></li>
                 <li><a href="teacher-attendance.php"><i class="fa fa-calendar-check-o"></i> <span>Attendance</span></a></li>
                 <li><a href="teacher-timetable.php"><i class="fa fa-table"></i> <span>Timetable</span></a></li>
@@ -23,7 +24,7 @@
                 <li><a href="teacher-reports.php"><i class="fa fa-bar-chart"></i> <span>Reports</span></a></li>
                 <?php } ?>
                 <li><a href="teacher-notifications.php"><i class="fa fa-bell"></i> <span>Notifications</span></a></li>
-                <li><a href="teacher-profile.php"><i class="fa fa-user"></i> <span>Profile</span></a></li>
+                <li><a href="teacher-change-password.php"><i class="fa fa-lock"></i> <span>Change Password</span></a></li><li><a href="teacher-profile.php"><i class="fa fa-user"></i> <span>Profile</span></a></li>
             </ul>
         </div>
     </div>

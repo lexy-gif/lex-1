@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once 'includes/bootstrap.php';
 require 'includes/config.php';
 require_once 'includes/teacher-auth.php';
 require_once 'includes/senior-ui.php';
@@ -41,5 +41,5 @@ try {
     }
 } ?>
 </div></main></div></div></div>
-<script src="js/jquery/jquery-2.2.4.min.js"></script><script src="js/bootstrap/bootstrap.min.js"></script><script src="js/DataTables/datatables.min.js"></script><script src="js/main.js"></script><script src="js/senior-school.js"></script>
+<script src="js/jquery/jquery-3.7.1.min.js"></script><script src="js/bootstrap/bootstrap.min.js"></script><script src="js/DataTables/datatables.min.js"></script><script src="js/main.js"></script><script src="js/senior-school.js"></script>
 </body></html>

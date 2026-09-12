@@ -1,19 +1,19 @@
-
 <?php
-session_start();
-error_reporting(0);
-include('includes/config.php');
-include('includes/csrf.php');
-if(strlen($_SESSION['alogin'])=="")
+require_once 'includes/bootstrap.php';
+$error=$msg='';
+
+require_once 'includes/config.php';
+require_once 'includes/csrf.php';
+if(empty($_SESSION['alogin']))
     {   
     header("Location: index.php"); 
     }
     else{
  // for activate Subject   	
-if(isset($_GET['acid']))
+if(isset($_POST['acid']))
 {
-csrf_require_valid($_GET['csrf_token'] ?? '');
-$acid=intval($_GET['acid']);
+csrf_require_valid($_POST['csrf_token'] ?? '');
+$acid=intval($_POST['acid']);
 $status=1;
 $sql="update tblsubjectcombination set status=:status where id=:acid ";
 $query = $dbh->prepare($sql);
@@ -24,10 +24,10 @@ $msg="Subject Activate successfully";
 }
 
  // for Deactivate Subject
-if(isset($_GET['did']))
+if(isset($_POST['did']))
 {
-csrf_require_valid($_GET['csrf_token'] ?? '');
-$did=intval($_GET['did']);
+csrf_require_valid($_POST['csrf_token'] ?? '');
+$did=intval($_POST['did']);
 $status=0;
 $sql="update tblsubjectcombination set status=:status where id=:did ";
 $query = $dbh->prepare($sql);
@@ -161,9 +161,9 @@ else
 <td>
 <?php if($stts=='0')
 { ?>
-<a href="manage-subjectcombination.php?acid=<?php echo htmlentities($result->scid);?>&<?php echo csrf_url_param();?>" onclick="return confirm('do you really want to activate this subject');"><i class="fa fa-check" title="Activate Record"></i> </a><?php } else {?>
+<form method="post" class="form-inline-block"><?php csrf_field(); ?><input type="hidden" name="acid" value="<?php echo htmlentities($result->scid); ?>"><button class="btn btn-warning btn-xs" onclick="return confirm('Confirm activate?')">Activate</button></form><?php } else {?>
 
-<a href="manage-subjectcombination.php?did=<?php echo htmlentities($result->scid);?>&<?php echo csrf_url_param();?>" onclick="return confirm('do you really want to deactivate this subject');"><i class="fa fa-times" title="Deactivate Record"></i> </a>
+<form method="post" class="form-inline-block"><?php csrf_field(); ?><input type="hidden" name="did" value="<?php echo htmlentities($result->scid); ?>"><button class="btn btn-warning btn-xs" onclick="return confirm('Confirm deactivate?')">Deactivate</button></form>
 <?php }?>
 </td>
 </tr>
@@ -208,7 +208,7 @@ else
             <!-- /.content-wrapper -->
 
         </div>
-        <script src="js/jquery/jquery-2.2.4.min.js"></script>
+        <script src="js/jquery/jquery-3.7.1.min.js"></script>
         <script src="js/bootstrap/bootstrap.min.js"></script>
         <script src="js/pace/pace.min.js"></script>
         <script src="js/lobipanel/lobipanel.min.js"></script>

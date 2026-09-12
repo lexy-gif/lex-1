@@ -20,7 +20,7 @@ def php(code, *args):
 
 
 def fixture(mode):
-    return json.loads(subprocess.check_output(['docker', 'compose', 'exec', '-T', 'web', 'php', 'tests/timetable-fixtures.php', mode, tag], text=True))
+    return json.loads(subprocess.check_output(['docker', 'compose', 'exec', '-T', 'web', 'php', 'tests/timetable-fixtures.php', mode, tag, dean, other_dean], text=True))
 
 
 def request(page, data=None, session=dean):
@@ -53,9 +53,9 @@ def table_text(page, session=dean):
 try:
     f = fixture('setup')
     for sid in [dean, other_dean]:
-        php('session_id($argv[1]);session_start();$_SESSION=["alogin"=>$argv[2],"csrf_token"=>$argv[3]];session_write_close();', sid, tag, token)
+        php('ini_set("session.use_strict_mode","0");session_id($argv[1]);session_start();$_SESSION=["alogin"=>$argv[2],"csrf_token"=>$argv[3]];require "tests/session-fixture.php";test_dean_session();session_write_close();', sid, tag, token)
     for i, sid in enumerate(teacher_sessions):
-        php('session_id($argv[1]);session_start();$_SESSION=["teacher_user_id"=>(int)$argv[2],"teacher_username"=>$argv[3],"teacher_role"=>"subject_teacher","csrf_token"=>$argv[4]];session_write_close();', sid, str(f['teachers'][i]), tag + '_' + str(i), token)
+        php('ini_set("session.use_strict_mode","0");session_id($argv[1]);session_start();$_SESSION=["teacher_user_id"=>(int)$argv[2],"teacher_username"=>$argv[3],"teacher_session_version"=>1,"teacher_role"=>"subject_teacher","csrf_token"=>$argv[4]];require "includes/config.php";$dbh->prepare("UPDATE tblusers SET MustChangePassword=0 WHERE id=?")->execute([(int)$argv[2]]);session_write_close();', sid, str(f['teachers'][i]), tag + '_' + str(i), token)
     context = urllib.parse.urlencode({'year': f['year'], 'term': f['terms'][0]})
     exams_page = 'dean-exam-timetable.php?' + context
     lessons_page = 'dean-class-timetable.php?' + context
@@ -205,4 +205,4 @@ finally:
         print(fixture('cleanup'), flush=True)
     finally:
         for sid in sessions:
-            php('session_id($argv[1]);session_start();session_destroy();', sid)
+            php('ini_set("session.use_strict_mode","0");session_id($argv[1]);session_start();require "tests/session-fixture.php";test_session_cleanup();session_destroy();', sid)

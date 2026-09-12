@@ -2,6 +2,7 @@ services:
   web:
     image: alexistechiz/srms:latest
     build: .
+    env_file: .env
     environment:
       DB_HOST: ${DB_HOST}
       DB_NAME: ${DB_NAME}
@@ -33,7 +34,7 @@ services:
       - "127.0.0.1:3000:3306"
     volumes:
       - mysql-data:/var/lib/mysql
-      - ./srms.sql:/docker-entrypoint-initdb.d/srms.sql
+      - ./srms.sql:/docker-entrypoint-initdb.d/srms.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h localhost -u$${MYSQL_USER} -p$${MYSQL_PASSWORD} --silent"]
       interval: 10s
