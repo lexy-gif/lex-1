@@ -108,10 +108,8 @@ try:
     assert 'admin-login.php' in request(parent, 'manage-parents.php')[0]
     assert 'teacher-login.php' in request(parent, 'teacher-mark-entry.php')[0]
     request(dean, 'manage-parents.php', {'action': 'save', 'csrf_token': 'invalid'}, expected=403)
-    mixed = browser()
-    login(mixed,'parent-login.php','guardian','Test-parent-pass-123')
-    login(mixed,'student-senior.php','student_account','Test-student-pass-123')
-    assert 'parent-login.php' in request(mixed,'parent-dashboard.php')[0]
+    from guardian_access_checks import verify_access, verify_notifications
+    verify_access(globals())
     print('PASS: real Dean/teacher/guardian login, siblings, student role rejection, public lookup closure, IDOR and CSRF', flush=True)
 
     for page in ['manage-students.php', 'manage-results.php', 'manage-classes.php', 'manage-subjects.php', 'manage-parents.php', 'dean-grading.php', 'dean-sms-deliveries.php']:
@@ -219,10 +217,13 @@ try:
     assert php(sender)=='1'
     assert query('SELECT Status,Attempts FROM tblparentsms WHERE id='+str(failed))==[{'Status':'accepted','Attempts':2}]
     assert php('require "includes/sms.php";echo json_encode([normalize_phone_number("0712345678"),normalize_phone_number("0112345678"),normalize_phone_number("+254712345678"),normalize_phone_number("254112345678"),normalize_phone_number("+255712345678")]);')=='["+254712345678","+254112345678","+254712345678","+254112345678",""]'
+    verify_notifications(globals())
     post(parent, 'parent-notifications.php', {'action': 'all'})
     assert not query(f'SELECT id FROM tblparentnotifications WHERE ParentId={f["parents"][0]} AND ReadAt IS NULL')
     root(f'UPDATE tblparentstudents SET Status=0 WHERE ParentId={f["parents"][0]} AND StudentId={f["students"][0]};', database)
     request(parent, report, expected=404)
+    for route in ['parent-child.php', 'parent-attendance.php', 'parent-timetable.php', 'parent-assessments.php']:
+        request(parent, route+'?student='+str(f['students'][0]), expected=404)
     root(f'UPDATE tblusers SET Status=0 WHERE id={f["teachers"][1]};', database)
     assert 'teacher-login.php' in request(teacher, page)[0]
     assert 'teacher-login.php' in login(browser(), 'teacher-login.php', 'test_subject', 'Test-teacher-pass-123')[0]
@@ -233,7 +234,7 @@ try:
     assert 'admin-login.php' in request(other_dean,'dashboard.php')[0]
     assert 'dashboard.php' in request(dean,'dashboard.php')[0]
     print('PASS: Dean password changes invalidate other sessions',flush=True)
-    for client,route,login_route in [(dean,'logout.php','index.php'),(class_teacher,'teacher-logout.php','teacher-login.php')]:
+    for client,route,login_route in [(dean,'logout.php','/staff/login/'),(class_teacher,'teacher-logout.php','/staff/login/')]:
         request(client,route,expected=405)
         request(client,route,dict(csrf_token='invalid'),expected=403)
         csrf=token(request(client,'dashboard.php' if client is dean else 'teacher-dashboard.php')[1])
@@ -251,6 +252,17 @@ try:
                 assert pg.evaluate('document.documentElement.scrollWidth <= innerWidth + 1'), width
                 Path('test-artifacts').mkdir(exist_ok=True)
                 pg.screenshot(path=str(Path('test-artifacts') / f'parent-dashboard-{width}.png'), full_page=True)
+            pg.locator('#portal-student').select_option(str(f['students'][1]))
+            pg.get_by_role('button', name='View student').click()
+            pg.wait_for_url('**/parent-dashboard.php?student=*')
+            pg.get_by_role('navigation',name='Student information').get_by_role('link', name='Reports and feedback').click()
+            pg.get_by_role('link',name='View report',exact=True).click()
+            assert '42.50' in pg.locator('table').inner_text()
+            pg.emulate_media(media='print')
+            assert not pg.locator('.parent-child-navigation').is_visible()
+            artifact=Path('test-artifacts/guardian-report.pdf')
+            pg.pdf(path=str(artifact), format='A4', print_background=True)
+            assert artifact.read_bytes().startswith(b'%PDF-') and artifact.stat().st_size>1000
             b.close()
         print('PASS: parent dashboard desktop/tablet/mobile widths', flush=True)
 finally:

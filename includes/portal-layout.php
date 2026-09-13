@@ -14,6 +14,16 @@ function portal_end($role='parent') {
     if ($role!=='parent') echo '<script src="js/main.js"></script>';
     echo '</body></html>';
 }
+function portal_child_navigation($parent, $student=0) {
+    global $dbh;
+    $routes=['parent-dashboard.php'=>'Overview','parent-child.php'=>'Subjects and profile','parent-report.php'=>'Reports and feedback','parent-assessments.php'=>'Assessments','parent-attendance.php'=>'Attendance','parent-timetable.php'=>'Timetables'];
+    $page=basename($_SERVER['SCRIPT_NAME']??'');
+    $action=isset($routes[$page])?$page:'parent-child.php';
+    $children=parent_children($dbh,$parent);
+    if (!$children) return;
+    ?><div class="parent-child-navigation"><form method="get" action="<?= academic_h($action) ?>" class="parent-selector"><label for="portal-student">Student</label><select id="portal-student" name="student" class="form-control" required><?php if(!$student){ ?><option value="">Select a student</option><?php } foreach($children as $child){ ?><option value="<?= (int)$child['StudentId'] ?>" <?= (int)$child['StudentId']===$student?'selected':'' ?>><?= academic_h($child['StudentName'].' ('.$child['RollId'].')') ?></option><?php } ?></select><button class="btn btn-primary">View student</button></form>
+    <?php if($student){ ?><nav class="report-actions" aria-label="Student information"><?php foreach($routes as $route=>$label){ ?><a class="btn <?= $page===$route?'btn-primary':'btn-default' ?>" href="<?= academic_h($route.'?student='.$student) ?>" <?= $page===$route?'aria-current="page"':'' ?>><?= academic_h($label) ?></a> <?php } ?></nav><?php } ?></div><?php
+}
 function portal_input($label,$name,$value='',$type='text',$required=true,$extra='') {
     echo '<div class="form-group"><label for="'.academic_h($name).'">'.academic_h($label).'</label><input id="'.academic_h($name).'" class="form-control" type="'.academic_h($type).'" name="'.academic_h($name).'" value="'.academic_h($value).'" '.($required?'required ':'').$extra.'></div>';
 }

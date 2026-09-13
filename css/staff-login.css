@@ -1,0 +1,112 @@
+/* Staff entry page. Keep these styles scoped to the direct staff login route. */
+.staff-login-page {
+    min-height: 100vh;
+    min-height: 100svh;
+    background: #f1f4f8;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    padding: 32px 24px;
+}
+
+.staff-shell { width: 100%; max-width: 1120px; margin: auto; }
+.staff-header, .staff-footer { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.staff-header { margin-bottom: 30px; }
+.staff-brand { display: flex; align-items: center; gap: 13px; min-width: 0; }
+.staff-brand:hover, .staff-brand:focus { text-decoration: none; }
+.staff-brand strong { display: block; font-size: 18px; font-weight: 700; color: #173247; overflow-wrap: anywhere; }
+.staff-brand-caption { display: block; margin-top: 2px; color: var(--text-secondary); font-size: 12px; }
+.staff-brand-mark { display: grid; place-items: center; width: 44px; height: 44px; flex-shrink: 0; background: #173247; color: #fff; border-radius: 12px; font-size: 21px; }
+.staff-access-label { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #526379; white-space: nowrap; }
+.staff-access-label .fa { color: #667e92; }
+
+.staff-panel {
+    display: grid;
+    grid-template-columns: .9fr 1.1fr;
+    background: #fff;
+    border: 1px solid #dce4ed;
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: 0 18px 60px rgb(23 43 67 / 7%);
+}
+
+.staff-welcome { display: flex; flex-direction: column; padding: 48px 44px 32px; background: #173247; color: #c5d5e1; }
+.staff-eyebrow { display: flex; align-items: center; gap: 10px; font-size: 11px; font-weight: 700; letter-spacing: 1.8px; text-transform: uppercase; }
+.staff-welcome .staff-eyebrow { color: #e6c493; }
+.staff-accent-line { width: 24px; height: 2px; background: #e6ba78; }
+.staff-welcome h2 { margin: 34px 0 19px; color: #fff; font-size: clamp(30px, 3.4vw, 42px); font-weight: 650; line-height: 1.2; letter-spacing: -1.6px; overflow-wrap: normal; }
+.staff-welcome h2 span { color: #e6c493; }
+.staff-welcome > p { max-width: 310px; font-size: 15px; line-height: 1.85; margin-bottom: 0; }
+.staff-illustration { display: block; width: 100%; max-width: 350px; height: auto; margin: auto auto 25px; padding-top: 26px; }
+.staff-welcome-footer { display: flex; gap: 24px; border-top: 1px solid #355064; padding-top: 20px; margin-top: 2px; font-size: 12px; letter-spacing: 1px; color: #b9cddd; }
+
+.staff-accounts { padding: 47px 46px 34px; scroll-margin-top: 20px; }
+.staff-accounts-heading .staff-eyebrow { color: #62788b; }
+.staff-accounts h1 { margin: 13px 0 10px; font-size: 34px; line-height: 1.2; font-weight: 700; letter-spacing: -1px; }
+.staff-accounts-heading > p { color: var(--text-secondary); font-size: 14px; line-height: 1.65; margin: 0; }
+.staff-role-options { display: grid; gap: 16px; margin-top: 30px; }
+.staff-role-card { display: flex; align-items: flex-start; gap: 16px; padding: 23px 21px; border: 1px solid #dce3ec; border-radius: 12px; background: #fff; transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease, background-color 160ms ease; }
+.staff-role-card--teacher { border-color: #c7d8eb; background: #f7faff; }
+.staff-role-card:hover, .staff-role-card:focus { text-decoration: none; }
+.staff-role-card:hover { border-color: #7f9fbe; box-shadow: 0 7px 20px rgb(23 43 67 / 8%); transform: translateY(-2px); }
+.staff-role-card:focus-visible { background: #f0f6fd; }
+.staff-role-icon { display: grid; place-items: center; width: 42px; height: 42px; flex-shrink: 0; border-radius: 10px; background: #e4eefb; color: #2864a5; font-size: 19px; }
+.staff-role-card--dean .staff-role-icon { background: #f7efdf; color: #926829; }
+.staff-role-content { display: block; min-width: 0; flex: 1; }
+.staff-role-content h2 { margin: 1px 0 6px; font-size: 18px; font-weight: 700; letter-spacing: -.3px; line-height: 1.3; }
+.staff-role-description { display: block; color: #607086; font-size: 12px; line-height: 1.6; }
+.staff-role-action { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 17px; font-size: 11px; font-weight: 600; color: #2864a5; line-height: 1.55; }
+.staff-role-action .fa { flex-shrink: 0; transition: transform 160ms ease; }
+.staff-role-card:hover .staff-role-action .fa { transform: translateX(3px); }
+.staff-login-help { display: flex; align-items: flex-start; gap: 10px; margin: 27px 0 0; color: #607086; font-size: 12px; line-height: 1.8; }
+.staff-login-help .fa { font-size: 16px; margin-top: 3px; color: #7a8d9e; }
+.staff-footer { margin-top: 23px; color: #607086; font-size: 12px; }
+.staff-footer a { display: inline-flex; align-items: center; gap: 9px; padding: 8px 0; color: #526379; }
+.staff-footer a:hover { color: #2864a5; }
+.staff-skip-link { position: fixed; left: 20px; top: -100px; z-index: 10; padding: 12px 18px; border-radius: 6px; background: #fff; box-shadow: var(--shadow-menu); }
+.staff-skip-link:focus { top: 15px; }
+
+@media (max-width: 1000px) {
+    .staff-welcome { padding: 38px 30px 28px; }
+    .staff-accounts { padding: 38px 30px 30px; }
+    .staff-role-card { gap: 12px; padding: 21px 17px; }
+    .staff-role-content h2 { font-size: 17px; }
+    .staff-role-action { font-size: 11px; }
+}
+
+@media (max-width: 760px) {
+    .staff-login-page { padding: 24px 20px; }
+    .staff-shell { max-width: 560px; }
+    .staff-header { margin-bottom: 23px; }
+    .staff-brand strong { font-size: 16px; }
+    .staff-brand-caption { font-size: 10px; }
+    .staff-access-label { display: none; }
+    .staff-panel { grid-template-columns: 1fr; border-radius: 17px; }
+    .staff-welcome { padding: 27px 30px 28px; }
+    .staff-welcome h2 { margin: 19px 0 13px; font-size: 31px; letter-spacing: -1px; }
+    .staff-welcome > p { max-width: 370px; font-size: 13px; line-height: 1.65; }
+    .staff-illustration, .staff-welcome-footer { display: none; }
+    .staff-accounts { padding: 29px 30px 28px; }
+    .staff-accounts h1 { font-size: 29px; }
+    .staff-role-options { margin-top: 24px; }
+    .staff-role-action { font-size: 12px; }
+    .staff-footer { font-size: 11px; flex-wrap: wrap; gap: 3px 20px; }
+}
+
+@media (max-width: 380px) {
+    .staff-login-page { padding: 20px 14px; }
+    .staff-brand { gap: 10px; }
+    .staff-brand-mark { width: 38px; height: 38px; font-size: 19px; }
+    .staff-brand-caption { max-width: 195px; }
+    .staff-welcome { padding: 24px 22px; }
+    .staff-welcome h2 { font-size: 28px; }
+    .staff-accounts { padding: 26px 20px; }
+    .staff-role-card { padding: 18px 14px; gap: 10px; }
+    .staff-role-icon { width: 32px; height: 32px; font-size: 16px; border-radius: 8px; }
+    .staff-role-action { font-size: 11px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .staff-role-card, .staff-role-action .fa { transition: none; }
+    .staff-role-card:hover, .staff-role-card:hover .staff-role-action .fa { transform: none; }
+}

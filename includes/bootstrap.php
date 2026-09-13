@@ -19,6 +19,11 @@ if (PHP_SAPI!=='cli') {
         session_set_cookie_params(['httponly'=>true,'secure'=>filter_var(getenv('SESSION_COOKIE_SECURE')?:'false',FILTER_VALIDATE_BOOLEAN),'samesite'=>'Lax','path'=>'/']);
         session_start();
     }
+    // Retired learner identities must never survive on any application route.
+    if (isset($_SESSION['student_user_id']) || isset($_SESSION['student_session_version'])) {
+        $_SESSION=[];
+        session_regenerate_id(true);
+    }
     $idle=max(300,(int)(getenv('SESSION_IDLE_SECONDS')?:1800));
     if ((!empty($_SESSION['last_activity']) && time()-$_SESSION['last_activity']>$idle)
         || (!empty($_SESSION['authenticated_at']) && time()-$_SESSION['authenticated_at']>43200)) {

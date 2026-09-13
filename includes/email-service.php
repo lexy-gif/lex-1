@@ -8,8 +8,9 @@ function email_service_enabled()
 
 function email_service_process_queue($dbh, $limit = 20)
 {
-    $query = $dbh->prepare("SELECT d.id, d.Destination, n.Title, n.Message
+    $query = $dbh->prepare("SELECT d.id, d.Destination, n.Title, n.Message, u.Role, u.Status AccountStatus
                             FROM tblnotificationdeliveries d
+                            JOIN tblusers u ON u.id=d.UserId
                             LEFT JOIN tblteachernotifications n ON n.id = d.NotificationId
                             WHERE d.Channel = 'EMAIL' AND d.Status IN ('PENDING','RETRYING')
                             ORDER BY d.CreationDate ASC
@@ -17,6 +18,10 @@ function email_service_process_queue($dbh, $limit = 20)
     $query->execute();
 
     foreach($query->fetchAll(PDO::FETCH_OBJ) as $delivery) {
+        if($delivery->Role==='student' || (int)$delivery->AccountStatus!==1) {
+            $dbh->prepare("UPDATE tblnotificationdeliveries SET Status='SKIPPED',ErrorMessage='Recipient account is inactive or student access is retired.' WHERE id=?")->execute([$delivery->id]);
+            continue;
+        }
         if(!email_service_enabled()) {
             $update = $dbh->prepare("UPDATE tblnotificationdeliveries
                                      SET Status = 'SKIPPED', ErrorMessage = 'MAIL_ENABLED is not true.'

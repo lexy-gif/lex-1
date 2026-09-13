@@ -31,10 +31,7 @@ require_once 'includes/config.php';
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                     <li class="nav-item"><a class="nav-link active" href="index.php">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="parent-login.php">Parents / Guardians</a></li>
-                    <li class="nav-item"><a class="nav-link" href="student-senior.php">Senior School Subjects</a></li>
-                    <li class="nav-item"><a class="nav-link" href="teacher-login.php">Class Teacher</a></li>
-                    <li class="nav-item"><a class="nav-link" href="admin-login.php">Dean of Studies</a></li>
+                    <li class="nav-item"><a class="nav-link" href="parent-login.php">Parent/Guardian Login</a></li>
                 </ul>
             </div>
         </div>
@@ -46,8 +43,7 @@ require_once 'includes/config.php';
         <div class="container text-center position-relative">
             <h1 class="display-5 fw-bold">Welcome to the Student Result Management System</h1>
             <p class="lead mb-4">Effortlessly manage, view, and access student academic results online.</p>
-            <a href="parent-login.php" class="btn btn-primary btn-lg me-2">Parent / Guardian Login</a>
-            <a href="teacher-login.php" class="btn btn-outline-light btn-lg">Class Teacher Login</a>
+            <a href="parent-login.php" class="btn btn-primary btn-lg">Parent/Guardian Login</a>
         </div>
     </header>
 
@@ -58,15 +54,14 @@ require_once 'includes/config.php';
             <div class="row justify-content-center">
                 <div class="col-md-4 mb-4">
                     <div class="public-feature">
-                        <h5 class="fw-bold mb-2">Student Access</h5>
-                        <p>Easily check your academic performance and download results anytime, anywhere.</p>
+                        <h5 class="fw-bold mb-2">Parent/Guardian Access</h5>
+                        <p>View your children's published results, reports, attendance and timetables.</p>
                     </div>
                 </div>
                 <div class="col-md-4 mb-4">
                     <div class="public-feature">
-                        <h5 class="fw-bold mb-2">Class Teacher Management</h5>
-                        <p>Class Teacher can efficiently upload results, manage students, and post important notices.
-                        </p>
+                        <h5 class="fw-bold mb-2">Learner Progress</h5>
+                        <p>Follow registered subjects, assessments and published teacher feedback in one account.</p>
                     </div>
                 </div>
                 <div class="col-md-4 mb-4">

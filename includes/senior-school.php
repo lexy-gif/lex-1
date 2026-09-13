@@ -195,14 +195,15 @@ function senior_notify_pathway($db,$student,$allocation,$message,$subjects) {
     $a=cbe_one($db,'SELECT * FROM tblstudentpathways WHERE id=?',[$allocation]);
     $recipients=academic_query($db,'SELECT TeacherId FROM tblclassteacherassignments WHERE ClassId=? AND AcademicYearId=? AND Status=1',[$s['ClassId'],$a['AcademicYearId']])->fetchAll(PDO::FETCH_COLUMN);
     foreach($subjects as $subject)$recipients=[...$recipients,...academic_query($db,'SELECT TeacherId FROM tblsubjectteacherassignments WHERE ClassId=? AND SubjectId=? AND AcademicYearId=? AND Status=1',[$s['ClassId'],$subject,$a['AcademicYearId']])->fetchAll(PDO::FETCH_COLUMN)];
-    $studentAccount=academic_query($db,"SELECT id FROM tblusers WHERE StudentId=? AND Role='student' AND Status=1",[$student])->fetchColumn();
-    if($studentAccount)$recipients[]=$studentAccount;
+    parent_student_notify($db,$student,'pathway:'.$allocation,'Learner pathway updated',
+        'Subjects and placement for '.$s['StudentName'].' have been updated. Open the learner profile to view them.',
+        'parent-child.php?student='.$student.'&year='.$a['AcademicYearId']);
     $options=['category'=>'SYSTEM','type'=>'SENIOR_PATHWAY','class_id'=>$s['ClassId'],'related_entity_type'=>'tblstudentpathways','related_entity_id'=>$allocation];
     // A school-wide in-app record remains available even when no recipient account exists yet.
     academic_query($db,"INSERT INTO tblteachernotifications(TeacherId,ClassId,Type,Category,RelatedEntityType,RelatedEntityId,Title,Message,ActionUrl) VALUES(NULL,?,'SENIOR_PATHWAY','SYSTEM','tblstudentpathways',?,'Learner pathway updated',?,?)",[$s['ClassId'],$allocation,$message,'dean-senior-assignments.php?student='.$student.'&year='.$a['AcademicYearId']]);
     foreach(array_unique($recipients) as $recipient) {
         if(!academic_query($db,'SELECT id FROM tblusers WHERE id=? AND Status=1',[$recipient])->fetchColumn())continue;
-        $options['action_url']=(int)$recipient===(int)$studentAccount?'student-senior.php':'teacher-senior.php?year='.$a['AcademicYearId'];
+        $options['action_url']='teacher-senior.php?year='.$a['AcademicYearId'];
         notification_create($db,$recipient,'Learner pathway updated',$message,$options);
     }
 }

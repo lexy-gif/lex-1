@@ -25,5 +25,5 @@ function parent_children($db, $parent) {
     return cbe_rows($db,'SELECT s.StudentId,s.StudentName,s.RollId,c.ClassName,c.Section
         FROM tblparentstudents ps JOIN tblstudents s ON s.StudentId=ps.StudentId AND s.Status=1
         JOIN tblclasses c ON c.id=s.ClassId WHERE ps.ParentId=? AND ps.Status=1
-        AND c.ClassNameNumeric IN (10,11,12) ORDER BY s.StudentName LIMIT 100',[$parent]);
+        AND c.ClassNameNumeric IN (10,11,12) ORDER BY s.StudentName,s.StudentId',[$parent]);
 }

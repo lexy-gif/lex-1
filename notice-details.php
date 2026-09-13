@@ -31,8 +31,7 @@ require_once 'includes/config.php';
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                     <li class="nav-item"><a class="nav-link active" href="index.php">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="find-result.php">Students</a></li>
-                    <li class="nav-item"><a class="nav-link" href="admin-login.php">Admin</a></li>
+                    <li class="nav-item"><a class="nav-link" href="parent-login.php">Parent/Guardian Login</a></li>
                 </ul>
             </div>
         </div>
@@ -54,7 +53,7 @@ require_once 'includes/config.php';
                 <div class="col-lg-10 bg-white p-5 rounded shadow-sm notice-content">
 
                     <?php
-          $noticeid = $_GET['nid'];
+          $noticeid = (int)($_GET['nid'] ?? 0);
           $sql = "SELECT * FROM tblnotice WHERE id = :nid";
           $query = $dbh->prepare($sql);
           $query->bindParam(':nid', $noticeid, PDO::PARAM_STR);

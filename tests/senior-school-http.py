@@ -168,19 +168,12 @@ try:
     status('teacher-senior.php?student='+str(foreign), 403, session=class_teacher)
     status('teacher-senior.php?student='+str(student), 403, session=outsider)
     status('teacher-senior.php', 405, allocation, class_teacher)
-    # Real student login and an attempted learner-ID override exercise account-bound access.
-    browser = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
-    body = request('student-senior.php', session=None, opener=browser)[1]
-    student_token = re.search(r'name="csrf_token" value="([^"]+)"', body)[1]
-    body = request('student-senior.php', {'csrf_token':student_token,'username':'senior_student','password':'wrong'}, session=None, opener=browser)[1]
-    assert 'Invalid student login details.' in body
-    request('student-senior.php', {'csrf_token':student_token,'username':'senior_student','password':'test-student-only'}, session=None, opener=browser)
-    body = request('student-senior.php?student='+str(foreign), session=None, opener=browser)[1]
-    assert 'Senior learner 0' in body and 'Senior learner 2' not in body and '<td>Agriculture</td>' in body
-    root_sql(f"UPDATE tblusers SET Status=0 WHERE id={f['account']};", database)
-    assert 'Student Sign In' in request('student-senior.php', session=None, opener=browser)[1]
-    root_sql(f"UPDATE tblusers SET Status=1 WHERE id={f['account']};", database)
-    print('PASS: reports, teacher class/subject restrictions and student login/identity/deactivation', flush=True)
+    # Retired student accounts remain historical references, without authentication.
+    status('student-senior.php', 410, session=None)
+    status('student-senior.php?student='+str(foreign), 410, session=None)
+    status('student-senior.php', 410, {'username':'senior_student','password':'test-student-only'}, None)
+    assert query(f"SELECT Status FROM tblusers WHERE id={f['account']}")[0]['Status']==0
+    print('PASS: reports, teacher class/subject restrictions and retired student access', flush=True)
 
     # Two Deans submit the same stale initial allocation; only one can win.
     competing = dict(allocation, csrf_token=token, **{'Students[]':[peer], f'ExpectedAllocations[{peer}]':0})

@@ -42,12 +42,12 @@ $classId = teacher_class_id();
         echo '<p>Students without results: <strong>' . htmlentities($missing->fetchColumn()) . '</strong></p>';
         ?>
     </div></div></div>
-    <div class="col-md-4"><div class="panel"><div class="panel-heading"><h5>Account Report</h5></div><div class="panel-body">
+    <div class="col-md-4"><div class="panel"><div class="panel-heading"><h5>Enrollment Report</h5></div><div class="panel-body">
         <?php
-        $accounts = $dbh->prepare("SELECT Status, COUNT(*) total FROM tblusers WHERE ClassId = :classid AND Role = 'student' GROUP BY Status");
+        $accounts = $dbh->prepare("SELECT Status, COUNT(*) total FROM tblstudents WHERE ClassId = :classid GROUP BY Status");
         $accounts->execute(array(':classid' => $classId));
         foreach($accounts->fetchAll(PDO::FETCH_OBJ) as $row) {
-            echo '<p>' . ($row->Status ? 'Active' : 'Inactive') . ' accounts: <strong>' . htmlentities($row->total) . '</strong></p>';
+            echo '<p>' . ($row->Status ? 'Active' : 'Inactive') . ' learners: <strong>' . htmlentities($row->total) . '</strong></p>';
         }
         ?>
     </div></div></div>

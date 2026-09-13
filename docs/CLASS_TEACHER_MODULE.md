@@ -2,10 +2,10 @@
 
 ## What It Adds
 
-- Separate class teacher login at `teacher-login.php`.
+- Teacher Login for class and subject teachers, reached directly through `/staff/login`.
 - Assigned-class dashboard.
 - Assigned-class student list.
-- Student account creation, activation/deactivation, and password reset.
+- Student records managed by assigned staff; student account access is retired. Guardians use independent verified accounts (see [guardian access](GUARDIAN_ACCESS.md)).
 - Result monitoring by exam.
 - Result review workflow: approve or request correction.
 - Attendance recording by date.

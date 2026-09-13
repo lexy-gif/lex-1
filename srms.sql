@@ -1308,7 +1308,8 @@ CREATE TABLE `tblusers` (
   KEY `idx_users_role_class` (`Role`,`ClassId`),
   KEY `fk_users_class` (`ClassId`),
   CONSTRAINT `fk_users_class` FOREIGN KEY (`ClassId`) REFERENCES `tblclasses` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_users_student` FOREIGN KEY (`StudentId`) REFERENCES `tblstudents` (`StudentId`) ON DELETE SET NULL
+  CONSTRAINT `fk_users_student` FOREIGN KEY (`StudentId`) REFERENCES `tblstudents` (`StudentId`) ON DELETE SET NULL,
+  CONSTRAINT `chk_student_accounts_disabled` CHECK (`Role` <> 'student' OR `Status` = 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;

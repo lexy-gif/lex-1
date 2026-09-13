@@ -92,13 +92,13 @@ if(isset($_POST['login'])) {
                                 <div class="form-group">
                                     <div class="col-sm-offset-3 col-sm-9">
                                         <button type="submit" name="login" class="btn btn-success pull-right">Sign in</button>
-                                        <a href="index.php" class="btn btn-default">Back Home</a>
+                                        <a href="/staff/login/" class="btn btn-default">Staff login</a>
                                     </div>
                                 </div>
                             </form>
                         </div>
                     </div>
-                    <p class="text-muted text-center"><small>Access is limited to assigned class data.</small></p>
+                    <p class="text-muted text-center"><small>For class teachers and subject teachers. Access follows your assigned classes, subjects and responsibilities.</small></p>
                 </div>
             </div>
         </div>

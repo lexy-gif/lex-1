@@ -24,8 +24,11 @@ if (PHP_SAPI !== 'cli' && !empty($_SESSION['alogin'])) {
     if (!$sessionDean || !hash_equals(hash('sha256', $sessionDean->Password), (string)($_SESSION['dean_password_version'] ?? ''))) {
         $_SESSION = [];
         session_regenerate_id(true);
-        header('Location: admin-login.php', true, 303);
-        exit;
+        // Expired staff credentials must not change the public guardian entry point.
+        if (!in_array(basename($_SERVER['SCRIPT_NAME']??''), ['index.php','notice-details.php','parent-login.php'], true)) {
+            header('Location: admin-login.php', true, 303);
+            exit;
+        }
     }
 }
 ?>

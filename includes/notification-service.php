@@ -1,4 +1,18 @@
 <?php
+function parent_student_notify($dbh, $student, $event, $title, $message, $url)
+{
+    if(!$dbh->inTransaction())throw new LogicException('Guardian notifications require a transaction.');
+    // Student-related messages follow explicit guardian links, never a learner user account.
+    $q=$dbh->prepare("INSERT IGNORE INTO tblparentnotifications(ParentId,StudentId,EventKey,Title,Message,ActionUrl)
+        SELECT ps.ParentId,ps.StudentId,?,?,?,? FROM tblparentstudents ps
+        JOIN tblusers u ON u.id=ps.ParentId AND u.Role='parent' AND u.Status=1
+        JOIN tblstudents s ON s.StudentId=ps.StudentId AND s.Status=1
+        JOIN tblclasses c ON c.id=s.ClassId AND c.ClassNameNumeric IN (10,11,12)
+        WHERE ps.StudentId=? AND ps.Status=1");
+    $q->execute([$event,$title,$message,$url,$student]);
+    return $q->rowCount();
+}
+
 function notification_normalize_email($email)
 {
     $email = trim((string)$email);
@@ -33,6 +47,10 @@ function notification_queue_email($dbh, $notificationId, $userId, $destination)
 
 function notification_create($dbh, $userId, $title, $message, $options = array())
 {
+    // This is the internal staff channel. Learner publications use verified guardian links.
+    $recipient=$dbh->prepare("SELECT id FROM tblusers WHERE id=? AND Status=1 AND Role IN ('class_teacher','subject_teacher','head_of_department','exams_officer','deputy_dean')");
+    $recipient->execute([$userId]);
+    if(!$recipient->fetchColumn())return null;
     $category = $options['category'] ?? 'SYSTEM';
     $type = $options['type'] ?? $category;
     $classId = $options['class_id'] ?? null;

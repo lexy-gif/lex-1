@@ -15,6 +15,7 @@ if($examId){
     $rows=cbe_rows($dbh,'SELECT sub.SubjectName,r.marks FROM tblresult r JOIN tblsubjects sub ON sub.id=r.SubjectId WHERE r.StudentId=? AND r.ClassId=? AND r.ExamId=? ORDER BY sub.SubjectName',[$studentId,$classId,$examId]);
 }
 portal_start($examId?'Published report card':'Academic history');
+portal_child_navigation($parent['id'],(int)$studentId);
 ?><div class="report-actions"><a class="btn btn-default" href="parent-dashboard.php">My children</a> <a class="btn btn-default" href="parent-report.php?student=<?= (int)$studentId ?>">All reports</a><?php if($examId){ ?> <button class="btn btn-primary" onclick="window.print()">Print / Save PDF</button><?php } ?></div>
 <section class="parent-card"><h2><?= academic_h(getenv('SCHOOL_NAME')?:'Senior School') ?></h2><p><?= academic_h(getenv('SCHOOL_ADDRESS')?:'') ?></p><div class="report-meta"><p><strong>Learner:</strong> <?= academic_h($student['StudentName']) ?></p><p><strong>Admission:</strong> <?= academic_h($student['RollId']) ?></p>
 <?php if($publication){

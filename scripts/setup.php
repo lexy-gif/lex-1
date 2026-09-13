@@ -16,7 +16,7 @@ try{
     $dbh->commit();
 }catch(Throwable $e){if($dbh->inTransaction())$dbh->rollBack();throw $e;}
 // Each existing migration has its own idempotence marker and transaction.
-foreach(['migrate-teacher-management.php','migrate-cbe-academics.php','migrate-senior-school.php','migrate-parent-results.php','migrate-senior-integrity.php'] as $file){
+foreach(['migrate-teacher-management.php','migrate-cbe-academics.php','migrate-senior-school.php','migrate-parent-results.php','migrate-senior-integrity.php','migrate-guardian-access.php'] as $file){
     $process=proc_open([PHP_BINARY,__DIR__.'/'.$file],[0=>STDIN,1=>STDOUT,2=>STDERR],$pipes);
     if(!is_resource($process)||proc_close($process)!==0)throw new RuntimeException('Setup migration failed: '.$file);
 }

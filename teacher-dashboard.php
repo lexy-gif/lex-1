@@ -86,7 +86,6 @@ $nextLesson = $nextLessonQuery->fetch(PDO::FETCH_OBJ);
                             <div class="col-md-8">
                                 <div class="panel"><div class="panel-heading"><h5>Quick Actions</h5></div><div class="panel-body">
                                     <a class="btn btn-primary" href="teacher-students.php"><i class="fa fa-users"></i> View Students</a>
-                                    <a class="btn btn-info" href="teacher-accounts.php"><i class="fa fa-user-plus"></i> Manage Accounts</a>
                                     <a class="btn btn-success" href="teacher-results.php"><i class="fa fa-check-square-o"></i> View Results</a>
                                     <a class="btn btn-warning" href="teacher-attendance.php"><i class="fa fa-calendar"></i> Attendance</a>
                                     <a class="btn btn-info" href="teacher-timetable.php"><i class="fa fa-table"></i> Timetable</a>

@@ -7,9 +7,11 @@ SRMS supports Kenyan CBE **Grades 10, 11 and 12** using PHP, MySQL, Apache and t
 - **Dean:** learners, teachers, guardians and child links, classes, periods, pathways, assignments, timetables, review/publication, grading configuration and audit/delivery history.
 - **Subject teacher:** assigned class/subject mark sheets, CBE assessments, submission, personal timetable and notifications.
 - **Class teacher:** assigned class records, attendance, result review, report comments and performance.
-- **Parent/guardian:** linked children, published examinations and CBE assessments, academic history, printable reports, notifications, passwords and contact maintenance.
+- **Parent/guardian:** a student selector, linked children's subjects and placement history, attendance, published class/exam timetables, announcements, examinations and CBE assessments, printable reports and teacher feedback, notifications, passwords and contact maintenance.
 
-The guardian portal replaces public admission-number result lookup. Retained student subject-placement accounts do **not** grant parent-result access. Historical lower-grade records are retained, but new classes and admissions support Grades 10-12 only.
+The public portal shows only **Parent/Guardian Login** as its account entry point, for every visitor. Staff open `/staff/login` directly, then select **Teacher Login** or **Dean of Studies Login**. Teacher login accepts class and subject teachers and preserves assignment-based responsibilities; Dean credentials remain in the separate Dean account table. Every protected endpoint checks authentication on the server.
+
+Student login and account management are retired. Students remain records without login accounts. Old student sessions are invalidated on their next request, and `student-senior.php` returns HTTP 410 for GET and POST. `teacher-accounts.php` also rejects account creation, activation and password reset. Historical lower-grade records are retained, but new classes and admissions support Grades 10-12 only.
 
 ## Requirements
 
@@ -44,7 +46,7 @@ Remove-Item Env:SETUP_DEAN_USERNAME
 Setup does not overwrite an existing Dean account. It runs repeatable migrations and creates Grades 10-12, an academic year/term and configurable pathway defaults. `SETUP_ACADEMIC_YEAR` can override the current year. No examination or result is automatically published. Review the curriculum defaults and configure school-approved percentage/performance bands in **Performance Scale** before publication.
 
 - Application: [localhost:5000](http://localhost:5000)
-- Dean: [admin-login.php](http://localhost:5000/admin-login.php)
+- Staff (direct URL): [staff/login](http://localhost:5000/staff/login)
 - Guardians: [parent-login.php](http://localhost:5000/parent-login.php)
 - Local database administration: [localhost:8081](http://localhost:8081)
 
@@ -56,9 +58,12 @@ The continuation expects the earlier academic and Senior School migrations docum
 python scripts/backup-academic-database.py
 docker compose exec -T web php scripts/migrate-parent-results.php
 docker compose exec -T web php scripts/migrate-senior-integrity.php
+docker compose exec -T web php scripts/migrate-guardian-access.php
 ```
 
 Backups are stored outside the web root at `%USERPROFILE%/.codex/backups/srms`. The migrations add guardian links, subject submissions, publication records, SMS outbox/history, login throttling, session versions and integrity constraints. They retain learner/results history and disable lower-grade catalogue options. They do not infer guardianship from shared phone numbers or turn student accounts into parent accounts.
+
+The guardian access migration disables old student user rows, increments their session versions, skips pending student deliveries and adds a database constraint preventing active student accounts. It preserves user IDs, credentials as inactive history, student links and all historical references. Academic records already reference `tblstudents.StudentId`, so no learner/result/attendance IDs need rewriting. Existing explicit legacy parent links are copied to `tblparentstudents` without reactivating revoked links. Guardians receive new, independent credentials after school verification. See [guardian access migration and verification](docs/GUARDIAN_ACCESS.md).
 
 Integrity checks stop on duplicate admissions/orphan references so valid school records are not deleted. MySQL DDL commits independently; interrupted migrations can be rerun. Rebuilding containers does not migrate a database. Do not import fresh `srms.sql` over a school database or remove its volume as a troubleshooting step.
 
@@ -68,7 +73,7 @@ Integrity checks stop on duplicate admissions/orphan references so valid school 
 2. In **Parents / Guardians**, create a guardian account, verify guardianship and link learners by admission number. Link siblings to one account. Select which contacts receive result SMS.
 3. Create an examination with its maximum marks and entry dates. Subject teachers save and submit **Examination Marks** for registered learners.
 4. The class teacher reviews complete submissions. The Dean approves, then publishes the specific class/examination. Publishing one class does not publish another.
-5. Guardians sign in, replace their temporary password, then view published reports or print/save them as PDF.
+5. Guardians sign in, replace their temporary password, then choose a student to view subjects, placement history, recorded attendance, published timetables, assessments and reports. Open a report and use **Print / Save PDF** to download a PDF through the browser.
 
 A correction request before publication records a reason, unlocks submissions and notifies affected teachers. Published results remain locked. Repeated publication is idempotent. Old examinations require a reviewed publication record before parent access; the old exam status alone grants no access.
 

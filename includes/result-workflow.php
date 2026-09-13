@@ -82,6 +82,7 @@ function workflow_review($db, $teacher, $class, $exam, $action, $reason) {
     cbe_audit($db,'class_result_review','tblexams',$exam,null,['class'=>$class,'decision'=>$action,'reason'=>$reason]);
 }
 function parent_publication_notify($db, $student, $event, $title, $url) {
+    if (!$db->inTransaction()) throw new LogicException('Guardian publication notifications require a transaction.');
     $s=cbe_one($db,'SELECT StudentName FROM tblstudents WHERE StudentId=? AND Status=1',[$student]); if (!$s) return;
     $parents=cbe_rows($db,"SELECT u.id,u.ParentPhone,ps.NotifyResults FROM tblparentstudents ps JOIN tblusers u
         ON u.id=ps.ParentId AND u.Role='parent' AND u.Status=1 WHERE ps.StudentId=? AND ps.Status=1",[$student]);

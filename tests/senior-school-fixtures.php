@@ -65,7 +65,7 @@ if ($mode === 'base') {
     }
     academic_assign($dbh, 'class', $teachers[0], $classes[0], 0, $years[0]);
     academic_assign($dbh, 'subject', $teachers[1], $classes[0], $subjects['Biology'], $years[0]);
-    academic_query($dbh, "INSERT INTO tblusers(FullName,Username,PasswordHash,Role,StudentId,ClassId,Status) VALUES('Senior student','senior_student',?,'student',?,?,1)", [password_hash('test-student-only',PASSWORD_DEFAULT),$students[0],$classes[0]]);
+    academic_query($dbh, "INSERT INTO tblusers(FullName,Username,PasswordHash,Role,StudentId,ClassId,Status) VALUES('Senior student','senior_student',?,'student',?,?,0)", [password_hash('test-student-only',PASSWORD_DEFAULT),$students[0],$classes[0]]);
     $account = (int)$dbh->lastInsertId();
     academic_query($dbh, "INSERT INTO tblnotificationpreferences(UserId,Category,InAppEnabled,EmailEnabled) VALUES(?,'SYSTEM',1,0)", [$account]);
     $pathway = (int)academic_query($dbh, "SELECT id FROM tblpathways WHERE Name='STEM'")->fetchColumn();

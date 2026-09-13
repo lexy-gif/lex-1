@@ -108,7 +108,8 @@ exit;
                                 </div>
                             </div>
                             <p class="text-muted text-center mt-3">
-                                <small>Secure Access Portal - Dean of Studies Only</small>
+                                <small>Secure Access Portal - Dean of Studies Only</small><br>
+                                <a href="/staff/login/">Staff login</a>
                             </p>
                         </section>
                     </div>
