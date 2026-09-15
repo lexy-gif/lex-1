@@ -1,4 +1,5 @@
 // Variables
 $grid-float-breakpoint: 992px;
 
-@import "bootstrap-sass/bootstrap";
+// Match the Bootstrap 3.4.1 CSS already used by the application.
+@import "bootstrap-sass/assets/stylesheets/bootstrap";

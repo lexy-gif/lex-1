@@ -8,3 +8,4 @@ test-artifacts/
 schema-review.tmp.txt
 
 .venv
+node_modules/
