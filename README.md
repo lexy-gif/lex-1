@@ -156,4 +156,4 @@ python -m venv .venv
 
 The production smoke test builds a release image and installs it against a disposable MySQL 8.4 volume; it removes only its uniquely named test stack. The guardian suite installs a fresh schema in a disposable DB, uses synthetic accounts and a stub SMS transport, then removes its container/database. Other suites document temporary fixtures in their source. See [the continuation audit](docs/SENIOR_SYSTEM_AUDIT.md) for **actual outcomes and remaining deployment limitations**. A passing stub does not establish live SMS delivery or hosting readiness.
 
-Further guides: [relationships](docs/RELATIONAL_TEACHER_MANAGEMENT.md), [timetables](docs/TIMETABLE_MODULE.md), [Senior School](docs/SENIOR_SCHOOL.md), [styles](docs/CSS_GUIDE.md).
+Further guides: [relationships](docs/RELATIONAL_TEACHER_MANAGEMENT.md), [timetables](docs/TIMETABLE_MODULE.md), [Senior School](docs/SENIOR_SCHOOL.md), [styles](docs/CSS_GUIDE.md), [frontend build and Jenkins Pipeline](docs/FRONTEND_BUILD.md).

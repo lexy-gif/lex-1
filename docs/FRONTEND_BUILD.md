@@ -21,6 +21,9 @@ npm ci --include=dev
 npm run build
 ```
 
+In Windows PowerShell, use `npm.cmd` in place of `npm` if the execution policy
+blocks `npm.ps1`. This uses npm's batch launcher without changing system policy.
+
 The build runs lint first, then styles, scripts, and images in parallel. It
 finishes with exit code 0 on success. Compilation, minification, image processing,
 and lint errors fail the command. It does not start BrowserSync or file watchers.
@@ -72,6 +75,84 @@ build context. The current PHP/Apache Dockerfile copies the generated assets,
 and `.dockerignore` excludes `node_modules`. Node does not need to be installed
 inside the PHP runtime image. A multi-stage Docker build is a separate future
 deployment choice.
+
+## Versioned Jenkins Pipeline
+
+The root `Jenkinsfile` automates the same Windows build and then creates a Docker
+image. Keeping the pipeline in Git makes changes to the build reviewable with
+the application changes they support.
+
+The stages run in order:
+
+1. Check out the commit selected by Jenkins.
+2. Check that the agent is Windows and can reach Docker's Linux engine.
+3. Run `npm.cmd ci --include=dev --engine-strict` to install the lockfile and
+   enforce the declared Node version requirements.
+4. Run `npm.cmd run test:build` to check outputs and failure handling in fixtures.
+5. Run `npm.cmd run build` to lint and generate the application's assets.
+6. Build `srms-ci:build-<Jenkins build number>-<12-character commit>` from this
+   same workspace, so the PHP image contains the freshly generated assets.
+7. Start disposable containers to check PHP and its PDO MySQL extension, then
+   archive `test-artifacts/ci-image.txt` with the resulting image tag.
+
+Each failed command fails its stage and prevents later stages from running.
+The image stays in the build agent's local Docker engine. Registry publishing
+and deployment are separate steps; this pipeline does not need registry
+credentials or a school database. The PHP checks do not establish authenticated
+application/database behavior. Use the existing production smoke test below
+for that additional installation check.
+
+### Configure the job
+
+The Jenkins agent needs Git, Node 24.15.0 or newer within 24.x, npm, and Docker
+on its PATH. Start Docker Desktop with Linux containers. Verify access from the
+**Jenkins agent account**: Docker working in your personal terminal does not
+prove that a Windows service account can use the same engine.
+
+1. Create a **Pipeline** job, for example `srms-ci`. An existing Freestyle job
+   can keep using the earlier instructions while this job is introduced.
+2. Under **Pipeline**, choose **Pipeline script from SCM**, then **Git**.
+3. Enter this repository's Git URL and credentials if the repository is private.
+4. Set the branch to `*/master` and the script path to `Jenkinsfile`.
+5. Save and select **Build Now** after the pipeline files are committed and
+   available in that repository.
+
+This pipeline uses `agent any` for the current Windows setup and rejects Unix
+agents. If Jenkins has several agents, replace it with a label for a configured
+Windows agent, such as `agent { label 'srms-windows' }`, and assign that label to
+the matching node. All stages use the same agent and workspace.
+
+Jenkins must have the Pipeline (including Declarative Pipeline) and Git plugins.
+See the official [Pipeline job setup guide](https://www.jenkins.io/doc/book/pipeline/getting-started/)
+and [Pipeline syntax reference](https://www.jenkins.io/doc/book/pipeline/syntax/).
+
+The job keeps the latest 20 build records, allows one run of this job at a time,
+and has a 30-minute timeout. Docker images have their own lifecycle: deleting a
+Jenkins build record does not remove its image. Remove obsolete CI image tags
+explicitly when they are no longer needed.
+
+### Local verification
+
+These commands exercise the frontend stages from PowerShell:
+
+```powershell
+npm.cmd ci --include=dev --engine-strict
+npm.cmd run test:build
+npm.cmd run build
+```
+
+With Docker running, the existing release test builds the image, initializes a
+new MySQL 8.4 database, installs the school schema, and checks HTTP access:
+
+```powershell
+python -u tests/production-smoke.py
+```
+
+It uses a unique Compose project, temporary credentials, a random loopback port,
+and a disposable test volume. It cleans up its own test resources afterward.
+It needs the local `.env` file referenced by production Compose; its generated
+test settings override the database and delivery settings. This check is
+separate from the Jenkins job and requires Python 3 and Docker Compose.
 
 ## Local development
 
@@ -151,3 +232,25 @@ Docker Desktop's Linux engine was stopped during validation, so authenticated
 PHP/database workflows were not exercised. The browser checks used static
 fixtures with the actual application styles and scripts. PHP and Docker
 configuration files were not modified.
+
+## Jenkins continuation validation (16 September 2026)
+
+- `npm.cmd ci --include=dev --engine-strict` passed on Node 24.21.0.
+- `npm.cmd run lint` and `npm.cmd run test:build` passed. The fixture suite
+  checked both successful outputs and nonzero exits for invalid inputs.
+- `npm.cmd run build` passed, generating the application styles, scripts and
+  optimized images. The existing Sass deprecation warnings remain.
+- The first fixture run timed out during its invalid-image check while Docker
+  Desktop was starting and Windows reported about 68 MB free physical memory
+  on a 4 GB machine. After Docker was stopped and dependencies were reinstalled,
+  the complete suite passed without changes to its tests or timeout.
+- Docker's Linux API remained unavailable during startup. Docker Desktop was
+  returned to its stopped state; the image build, PHP container checks and
+  production smoke test have not been verified in this continuation.
+- The local Jenkins service was running, but its API returned HTTP 403 without
+  authentication. The Jenkinsfile has not yet been executed by Jenkins. The
+  job setup described above remains necessary after the files are committed
+  and made available to Jenkins through Git.
+
+The Jenkinsfile is excluded from release images and denied by Apache when the
+development Compose stack mounts the repository into the web root.
