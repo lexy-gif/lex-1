@@ -1,0 +1,15 @@
+{
+    "name": "alexistechiz/srms",
+    "description": "Student Result Management System",
+    "type": "project",
+    "require": {
+        "php": ">=8.4.1",
+        "ext-pdo_mysql": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "13.3.4"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

@@ -7,7 +7,7 @@
 .github
 .codex
 schema-review.tmp.txt
-tests
+.phpunit.cache
 __pycache__
 *.pyc
 node_modules

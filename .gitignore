@@ -9,3 +9,5 @@ schema-review.tmp.txt
 
 .venv
 node_modules/
+/vendor/
+/.phpunit.cache/

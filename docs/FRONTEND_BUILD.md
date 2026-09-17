@@ -90,17 +90,32 @@ The stages run in order:
    enforce the declared Node version requirements.
 4. Run `npm.cmd run test:build` to check outputs and failure handling in fixtures.
 5. Run `npm.cmd run build` to lint and generate the application's assets.
-6. Build `srms-ci:build-<Jenkins build number>-<12-character commit>` from this
-   same workspace, so the PHP image contains the freshly generated assets.
-7. Start disposable containers to check PHP and its PDO MySQL extension, then
-   archive `test-artifacts/ci-image.txt` with the resulting image tag.
+6. Build `srms-ci:<Jenkins build number>` from this same workspace, so the PHP
+   image contains the freshly generated assets and locked Composer dependencies.
+7. Start disposable containers to check PHP and its PDO MySQL extension.
+8. Run `php vendor/bin/phpunit tests` inside that image.
+9. Log in to Docker Hub using the Jenkins `dockerhub-credentials` credential.
+10. Tag the tested image as `alexistechiz/srms:<Jenkins build number>`.
+11. Push that tag to Docker Hub. Log out in the pipeline's `post` cleanup.
 
 Each failed command fails its stage and prevents later stages from running.
-The image stays in the build agent's local Docker engine. Registry publishing
-and deployment are separate steps; this pipeline does not need registry
-credentials or a school database. The PHP checks do not establish authenticated
-application/database behavior. Use the existing production smoke test below
-for that additional installation check.
+The image is built once. A failed frontend test prevents Docker Build; a failed
+PHPUnit test prevents Docker Login, Docker Tag and Docker Push. Publishing uses
+the exact image tested by PHPUnit. Docker Push runs in its own batch step so
+logging cannot hide a failed push. The pipeline publishes an image but does not
+deploy it or start a school database.
+
+PHP, Composer and PHPUnit run inside Docker; they are not Windows agent
+prerequisites. PHPUnit 13.3.4 is pinned in `composer.json`, and `composer.lock`
+locks its dependencies. The initial smoke suite checks required PHP extensions
+and packaged application files/assets. Existing standalone PHP, Python and
+browser integration suites are separate; PHPUnit discovers `*Test.php` files.
+Use the existing production smoke test below for application/database behavior.
+
+The published image includes development dependencies and tests to satisfy the
+same-image requirement. Apache denies HTTP access to `vendor/`, `tests/`, the
+Composer manifests and PHPUnit configuration. Host `vendor/` stays excluded
+from the build context; Composer installs dependencies in the image.
 
 ### Configure the job
 
@@ -122,9 +137,22 @@ agents. If Jenkins has several agents, replace it with a label for a configured
 Windows agent, such as `agent { label 'srms-windows' }`, and assign that label to
 the matching node. All stages use the same agent and workspace.
 
-Jenkins must have the Pipeline (including Declarative Pipeline) and Git plugins.
+Jenkins must have the Pipeline (including Declarative Pipeline), Git,
+Credentials Binding and Timestamper plugins.
 See the official [Pipeline job setup guide](https://www.jenkins.io/doc/book/pipeline/getting-started/)
 and [Pipeline syntax reference](https://www.jenkins.io/doc/book/pipeline/syntax/).
+
+Create a Jenkins **Username with password** credential with ID
+`dockerhub-credentials`. Its username is the Docker Hub account and its password
+is a Personal Access Token with push access to `alexistechiz/srms`. Do not put
+the token in repository files or job command text. The login step reads it from
+the credential environment and uses Node to pass it directly to Docker's
+`--password-stdin`, without shell expansion or printing the token.
+
+Use this publishing job only for trusted source revisions. Reserve its image
+tags for this job on the Docker engine; `disableConcurrentBuilds()` serializes
+this job, not other jobs sharing the same engine. Logout uses the Jenkins
+agent account's Docker credential store, so use a dedicated agent account.
 
 The job keeps the latest 20 build records, allows one run of this job at a time,
 and has a 30-minute timeout. Docker images have their own lifecycle: deleting a
@@ -140,6 +168,34 @@ npm.cmd ci --include=dev --engine-strict
 npm.cmd run test:build
 npm.cmd run build
 ```
+
+Then build and check the image without publishing it:
+
+```powershell
+docker build --tag srms-ci:local .
+docker run --rm --entrypoint php srms-ci:local --version
+docker run --rm --entrypoint php srms-ci:local -m
+docker run --rm --entrypoint php srms-ci:local -l tests/SmokeTest.php
+docker run --rm --entrypoint php srms-ci:local vendor/bin/phpunit tests
+```
+
+Composer normally installs the committed lockfile during Docker Build. To
+deliberately regenerate it after changing `composer.json`, use the Dockerfile's
+PHP 8.4 tooling target from the repository root:
+
+```powershell
+docker build --target php-base --tag srms-composer:local .
+docker run --rm --mount "type=bind,source=$($PWD.Path),target=/work" --workdir /work --entrypoint composer srms-composer:local update --no-install --no-interaction --prefer-dist --no-plugins --no-scripts
+```
+
+Review and commit both Composer files. Keep development dependencies installed
+for CI; do not use `--no-dev`. A missing or incompatible extension fails the
+Composer install/platform check instead of being ignored.
+
+The development Compose stack bind-mounts the repository over `/var/www/html`,
+which hides the image's installed `vendor/`. Use the direct `docker run` commands
+above to test the packaged image. Jenkins uses these commands without a source
+mount.
 
 With Docker running, the existing release test builds the image, initializes a
 new MySQL 8.4 database, installs the school schema, and checks HTTP access:
