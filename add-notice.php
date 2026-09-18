@@ -9,14 +9,19 @@ if(empty($_SESSION['alogin'])){
 if(isset($_POST['submit']))
 {
 csrf_require_valid($_POST['csrf_token'] ?? '');
+$scope=staff_can('notices.all')&&($_POST['scope']??'')==='general'?'general':'academic';
 $ntitle=$_POST['noticetitle'];
 $ndetails=$_POST['noticedetails'];
 $sql="INSERT INTO  tblnotice(noticeTitle,noticeDetails) VALUES(:ntitle,:ndetails)";
 $query = $dbh->prepare($sql);
 $query->bindParam(':ntitle',$ntitle,PDO::PARAM_STR);
 $query->bindParam(':ndetails',$ndetails,PDO::PARAM_STR);
+$dbh->beginTransaction();
 $query->execute();
 $lastInsertId = $dbh->lastInsertId();
+$dbh->prepare('INSERT INTO tblnoticescope(NoticeId,Scope,CreatedBy) VALUES(?,?,?)')->execute([$lastInsertId,$scope,$_SESSION['alogin']]);
+require_once 'includes/audit.php';audit_log($dbh,'notice_created','tblnotice',$lastInsertId,$scope);
+$dbh->commit();
 if($lastInsertId)
 {
 echo '<script>alert("Notice added succesfully")</script>';
@@ -99,6 +104,7 @@ echo '<script>alert("Something went wrong. Please try again.")</script>';
 
                                                 <form method="post">
                                                     <?php csrf_field(); ?>
+<?php if(staff_can('notices.all')) { ?><label>Notice scope <select name="scope" class="form-control"><option value="academic">Academic</option><option value="general">General school notice</option></select></label><?php } else { ?><p>Academic notices for learners and guardians.</p><?php } ?>
                                                     <div class="form-group has-success">
                                                         <label for="success" class="control-label">Notice Title</label>
                                                 		<div class="">

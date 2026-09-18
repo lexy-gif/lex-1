@@ -6,13 +6,16 @@ require_once 'includes/csrf.php';
 if(empty($_SESSION['alogin'])){
 header("Location: index.php");
 }else{
-//For Deleting the notice
+// Existing unclassified notices remain general; academic-only staff cannot change them.
 
 if(isset($_POST['id']))
 {
 csrf_require_valid($_POST['csrf_token'] ?? '');
 $id=$_POST['id'];
-$sql="delete from tblnotice where id=:id";
+$sql="delete from tblnotice where id=:id".(staff_can('notices.all')?'':" AND EXISTS(SELECT 1 FROM tblnoticescope sc WHERE sc.NoticeId=tblnotice.id AND sc.Scope='academic')");
+if(!staff_can('notices.all')) {
+    $check=$dbh->prepare("SELECT 1 FROM tblnoticescope WHERE NoticeId=? AND Scope='academic'");$check->execute([$id]);if(!$check->fetchColumn())staff_forbid();
+}
 $query = $dbh->prepare($sql);
 $query->bindParam(':id',$id,PDO::PARAM_STR);
 $query->execute();
@@ -53,7 +56,7 @@ echo "<script>window.location.href ='manage-notices.php'</script>";
                         <div class="container-fluid">
                             <div class="row page-title-div">
                                 <div class="col-md-6">
-                                    <h2 class="title">Manage Notices</h2>
+                                    <h2 class="title">Manage Notices</h2><a class="btn btn-primary" href="add-notice.php">Add academic notice</a>
 
                                 </div>
 
@@ -111,7 +114,7 @@ echo "<script>window.location.href ='manage-notices.php'</script>";
                                                         </tr>
                                                     </tfoot>
                                                     <tbody>
-<?php $sql = "SELECT * from tblnotice";
+<?php $sql = "SELECT * from tblnotice".(staff_can('notices.all')?'':" WHERE EXISTS(SELECT 1 FROM tblnoticescope sc WHERE sc.NoticeId=tblnotice.id AND sc.Scope='academic')");
 $query = $dbh->prepare($sql);
 $query->execute();
 $results=$query->fetchAll(PDO::FETCH_OBJ);

@@ -66,22 +66,22 @@ $examRows = $examDuties->fetchAll(PDO::FETCH_OBJ);
 <div class="main-page"><div class="container-fluid">
 <div class="row page-title-div">
     <div class="col-md-8"><h2 class="title">Teacher Profile</h2></div>
-    <div class="col-md-4 text-right"><a href="edit-teacher.php?id=<?php echo htmlentities($teacher->id); ?>" class="btn btn-primary">Edit Teacher</a></div>
+    <?php if(staff_can('accounts.teachers')) { ?><div class="col-md-4 text-right"><a href="edit-teacher.php?id=<?php echo htmlentities($teacher->id); ?>" class="btn btn-primary">Edit Teacher</a></div><?php } ?>
 </div>
 <section class="section">
 <?php require_once 'includes/academic-teacher-summary.php'; if(academic_ready($dbh)) { ?><div class="panel panel-body"><h4>Academic relationships — active academic year</h4><?php academic_teacher_summary($dbh,(int)$teacher->id,null,true); ?><a href="dean-teacher-relationships.php?teacher=<?= (int)$teacher->id ?>">Change assignments / view history and other years</a></div><?php } ?>
 <div class="row">
-    <div class="col-md-6"><div class="panel"><div class="panel-heading"><h5>Account Details</h5></div><div class="panel-body">
+    <div class="col-md-6"><div class="panel"><div class="panel-heading"><h5>Academic staff details</h5></div><div class="panel-body">
         <p><strong>Name:</strong> <?php echo htmlentities($teacher->FullName); ?></p>
         <p><strong>Staff Number:</strong> <?php echo htmlentities($teacher->StaffNumber); ?></p>
         <p><strong>Email:</strong> <?php echo htmlentities($teacher->Email); ?></p>
         <p><strong>Phone:</strong> <?php echo htmlentities($teacher->PhoneNumber); ?></p>
-        <p><strong>Username:</strong> <?php echo htmlentities($teacher->Username); ?></p>
+        <?php if(staff_can('accounts.teachers')) { ?><p><strong>Username:</strong> <?php echo htmlentities($teacher->Username); ?></p><?php } ?>
         <p><strong>Department:</strong> <?php echo htmlentities($teacher->Department); ?></p>
-        <p><strong>Account category:</strong> <?php echo htmlentities($teacherRoles[$teacher->Role] ?? $teacher->Role); ?></p>
+        <?php if(staff_can('accounts.teachers')) { ?><p><strong>Account category:</strong> <?php echo htmlentities($teacherRoles[$teacher->Role] ?? $teacher->Role); ?></p>
         <p><strong>Status:</strong> <?php echo $teacher->Status ? 'ACTIVE' : 'INACTIVE'; ?></p>
         <p><strong>Joined:</strong> <?php echo htmlentities($teacher->CreationDate); ?></p>
-        <p><strong>Last Login:</strong> <?php echo $teacher->LastLoginAt ? htmlentities($teacher->LastLoginAt) : 'Never Logged In'; ?></p>
+        <p><strong>Last Login:</strong> <?php echo $teacher->LastLoginAt ? htmlentities($teacher->LastLoginAt) : 'Never Logged In'; ?></p><?php } ?>
     </div></div></div>
     <div class="col-md-6"><div class="panel"><div class="panel-heading"><h5>Assignment Summary</h5></div><div class="panel-body">
         <p><strong>Timetable Lessons:</strong> <?php echo count($lessonRows); ?></p>

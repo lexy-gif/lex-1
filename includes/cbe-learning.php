@@ -6,11 +6,24 @@ function cbe_assessment_access($db,$id,$teacher=0,$write=false) {
     return $a;
 }
 function cbe_save_assessment($db,$p,$teacher=0) {
+    if(!$teacher)staff_assert('assessments.manage');
     $id=(int)($p['id']??0);$old=$id?cbe_assessment_access($db,$id,$teacher,true):null;
     $tid=$teacher?:(int)($p['TeacherId']??0);$class=(int)($p['ClassId']??0);$subject=(int)($p['SubjectId']??0);$year=(int)($p['AcademicYearId']??0);$term=(int)($p['TermId']??0);
     if(!$term)throw new DomainException('Select a term.');cbe_assignment($db,$tid,$class,$subject,$year,$term);
     $type=(int)($p['AssessmentTypeId']??0);if(!in_array($type,array_column(cbe_options($db,'types'),'id')))throw new DomainException('Select an active assessment type.');
     $status=$p['Status']??'draft';$allowed=$teacher?['draft','open','submitted']:['draft','open','submitted','locked','approved','published','archived'];if(!in_array($status,$allowed,true))throw new DomainException('Invalid assessment status.');
+    if(!$teacher) {
+        if($status==='approved')staff_assert('results.approve');
+        if($status==='published')staff_assert('results.publish');
+        if($old&&in_array($old['Status'],['submitted','locked','approved','archived'],true)&&in_array($status,['draft','open'],true)) {
+            staff_assert('results.correct');
+            cbe_text($p,'CorrectionReason',5000);
+            cbe_audit($db,'assessment_correction_requested','tblassessments',$id,$old,['reason'=>$p['CorrectionReason']]);
+        }
+        if($old&&$old['Status']==='approved'&&$status!==$old['Status']&&$status!=='published') {
+            staff_assert('results.correct');cbe_text($p,'CorrectionReason',5000);
+        }
+    }
     if($teacher&&$old&&in_array($old['Status'],['submitted','locked','approved','published','archived'],true))throw new DomainException('This assessment is locked. Ask the Dean to reopen it.');
     if($old&&$old['Status']==='published')throw new DomainException('Published assessments are locked.');
     if($status==='approved' && (!$old||!in_array($old['Status'],['submitted','locked','approved'],true)))throw new DomainException('Submit and review the assessment before approval.');
@@ -38,6 +51,7 @@ function cbe_save_assessment($db,$p,$teacher=0) {
     cbe_audit($db,'assessment_saved','tblassessments',$id,$old,$v);cbe_notify($db,$tid,'Assessment updated',$v[0].' is '.$status.'.','teacher-academics.php?area=assessments');return $id;
 }
 function cbe_score($db,$p,$teacher=0) {
+    if(!$teacher)staff_assert('assessment.scores');
     $id=(int)($p['AssessmentId']??0);$a=cbe_assessment_access($db,$id,$teacher,true);
     if($a['Status']!=='open')throw new DomainException('Score entry is closed. The Dean must reopen the assessment.');
     $student=(int)($p['StudentId']??0);cbe_student($db,$student,$a['ClassId'],$a['SubjectId'],$a['AcademicYearId']);
@@ -55,6 +69,7 @@ function cbe_score($db,$p,$teacher=0) {
     cbe_audit($db,'assessment_result_saved','tblassessmentresults',$id,$old,['student'=>$student,'score'=>$score,'level'=>$level,'evidence'=>$evidence,'outcome'=>$outcome]);
 }
 function cbe_coverage($db,$p,$teacher=0) {
+    if(!$teacher)staff_assert('coverage.record');
     $tid=$teacher?:(int)($p['TeacherId']??0);$class=(int)($p['ClassId']??0);$subject=(int)($p['SubjectId']??0);$year=(int)($p['AcademicYearId']??0);$term=(int)($p['TermId']??0);
     if(!$term)throw new DomainException('Select a term.');cbe_assignment($db,$tid,$class,$subject,$year,$term);
     academic_query($db,'INSERT INTO tblcurriculumcoverage(TeacherId,ClassId,SubjectId,AcademicYearId,TermId,ContentReference,ExpectedProgress,ActualProgress,ReportDate,Notes) VALUES(?,?,?,?,?,?,?,?,?,?)',[$tid,$class,$subject,$year,$term,cbe_text($p,'ContentReference'),cbe_number($p['ExpectedProgress']??''),cbe_number($p['ActualProgress']??''),cbe_date($p['ReportDate']??''),cbe_text($p,'Notes',5000,false)]);

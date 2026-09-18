@@ -20,7 +20,7 @@ function academic_teacher_summary($db,$id,$year=null,$students=false,$currentTer
         echo '<p>'.academic_h($r['SubjectName'].' → '.$r['Label'].' ('.($r['TermName']?:'Whole year').')').'</p>';
         if($students) academic_student_list($db,$r['ClassId'],$r['SubjectId'],$year);
     }
-    foreach(academic_query($db,'SELECT rt.Name,r.StartDate,r.EndDate,r.Notes FROM tblteacherresponsibilities r JOIN tblresponsibilitytypes rt ON rt.id=r.ResponsibilityTypeId WHERE r.TeacherId=? AND r.AcademicYearId=? AND r.Status=1',[$id,$year]) as $r) echo '<p><span class="label label-default">'.academic_h($r['Name']).'</span> '.academic_h($r['StartDate'].' – '.($r['EndDate']?:'ongoing')).'</p>';
+    foreach(academic_query($db,'SELECT rt.Name,r.StartDate,r.EndDate,r.Notes FROM tblteacherresponsibilities r JOIN tblresponsibilitytypes rt ON rt.id=r.ResponsibilityTypeId WHERE r.TeacherId=? AND r.AcademicYearId=? AND r.Status=1'.(!empty($_SESSION['alogin'])&&!staff_can('responsibilities.manage')?' AND EXISTS(SELECT 1 FROM tblresponsibilityscope sc WHERE sc.ResponsibilityTypeId=r.ResponsibilityTypeId AND sc.IsAcademic=1)':''),[$id,$year]) as $r) echo '<p><span class="label label-default">'.academic_h($r['Name']).'</span> '.academic_h($r['StartDate'].' – '.($r['EndDate']?:'ongoing')).'</p>';
     if(!$classRows && !$subjectRows) echo '<p class="text-muted">No academic assignments in this year.</p>';
 }
 function academic_student_list($db,$class,$subject,$year) {

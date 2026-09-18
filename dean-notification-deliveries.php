@@ -11,10 +11,10 @@ if(!in_array($status, $allowed)) {
     $status = 'all';
 }
 
-$where = "";
+$where = staff_can('notifications.all')?'':"WHERE (n.Category IN ('TIMETABLE','EXAM_TIMETABLE','RESULTS') OR (n.Type='ACADEMIC_UPDATE' AND n.ActionUrl LIKE 'teacher-academics.php%') OR n.Type='SENIOR_TEACHER_ASSIGNMENT')";
 $params = array();
 if($status !== 'all') {
-    $where = "WHERE d.Status = :status";
+    $where .= ($where?" AND ":"WHERE ")."d.Status = :status";
     $params[':status'] = $status;
 }
 

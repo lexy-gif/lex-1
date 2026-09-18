@@ -32,6 +32,7 @@ function academic_offering($db,$class,$subject) {
 // Caller owns the transaction; lock the class to serialize assignments, including all-year/term overlaps.
 function academic_assign($db,$kind,$teacher,$class,$subject,$year,$term=null,$confirmed=[]) {
     require_once __DIR__.'/senior-school.php';
+    if(!empty($_SESSION['alogin']))staff_assert($kind==='class'?'assignments.class':'teaching.assign');
     if (!$db->inTransaction()) throw new LogicException('Assignment changes require a transaction.');
     academic_period($db,$year,$term); academic_class_lock($db,$class); academic_teacher($db,$teacher);
     $isSubject=$kind==='subject';
@@ -64,6 +65,10 @@ class AcademicConflict extends DomainException {
     function __construct($message,$key) { parent::__construct($message); $this->assignmentKey=$key; }
 }
 function academic_responsibility($db,$teacher,$type,$year,$start,$end,$notes) {
+    if(!empty($_SESSION['alogin'])&&!staff_can('responsibilities.manage')) {
+        staff_assert('assignments.responsibility');
+        if(!academic_query($db,'SELECT ResponsibilityTypeId FROM tblresponsibilityscope WHERE ResponsibilityTypeId=? AND IsAcademic=1',[$type])->fetchColumn())throw new DomainException('Only administrator-classified academic responsibilities may be assigned.');
+    }
     if (!$db->inTransaction()) throw new LogicException('Responsibility changes require a transaction.');
     academic_period($db,$year); academic_teacher($db,$teacher);
     if (!academic_query($db,'SELECT id FROM tblresponsibilitytypes WHERE id=? AND Active=1',[$type])->fetchColumn()) throw new DomainException('Select an active responsibility type.');

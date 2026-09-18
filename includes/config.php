@@ -20,7 +20,7 @@ throw $e;
 // Every legacy and current Dean route loads this file before reading the session.
 if (PHP_SAPI !== 'cli' && !empty($_SESSION['alogin'])) {
     require_once __DIR__.'/dean-account.php';
-    $sessionDean = dean_find_by_username($dbh, $_SESSION['alogin']);
+    $sessionDean = dean_find_by_username($dbh, $_SESSION['alogin'], $_SESSION['staff_account_table'] ?? null);
     if (!$sessionDean || !hash_equals(hash('sha256', $sessionDean->Password), (string)($_SESSION['dean_password_version'] ?? ''))) {
         $_SESSION = [];
         session_regenerate_id(true);
@@ -31,4 +31,6 @@ if (PHP_SAPI !== 'cli' && !empty($_SESSION['alogin'])) {
         }
     }
 }
+require_once __DIR__.'/permissions.php';
+if (PHP_SAPI !== 'cli') staff_require_route();
 ?>

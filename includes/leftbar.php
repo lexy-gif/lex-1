@@ -1,115 +1,34 @@
-<div class="left-sidebar bg-black-300 box-shadow" id="srms-sidebar" role="navigation" aria-label="Dean navigation">
-                        <div class="sidebar-content">
-                            <div class="user-info closed">
-                                <span class="srms-avatar profile-img" aria-hidden="true"><i class="fa fa-user"></i></span>
-                                <h6 class="title">Dean of Studies</h6>
-                                <small class="info">Academic Administrator</small>
-                            </div>
-                            <!-- /.user-info -->
-
-                            <div class="sidebar-nav">
-                                <ul class="side-nav color-gray"><li><a href="dean-teacher-relationships.php"><i class="fa fa-users"></i> <span>Teacher Relationships</span></a></li><li><a href="student-subjects.php"><i class="fa fa-book"></i> <span>Student Subjects</span></a></li>
-                                    <li class="nav-header">
-                                        <span class="">Main Category</span>
-                                    </li>
-                                    <li>
-                                        <a href="dashboard.php"><i class="fa fa-dashboard"></i> <span>Dean Dashboard</span> </a>
-                                     
-                                    </li>
-                                    <li>
-                                        <a href="dean-academics.php"><i class="fa fa-graduation-cap"></i> <span>Academic Workspace</span></a>
-                                    </li>
-                                    <li class="has-children">
-                                        <a href="#"><i class="fa fa-user"></i> <span>Teachers</span> <i class="fa fa-angle-right arrow"></i></a>
-                                        <ul class="child-nav">
-                                            <li><a href="manage-teachers.php"><i class="fa fa-users"></i> <span>Manage Teachers</span></a></li>
-                                            <li><a href="create-teacher.php"><i class="fa fa-user-plus"></i> <span>Create Teacher</span></a></li>
-                                            <li><a href="teacher-assignments.php"><i class="fa fa-tasks"></i> <span>Teacher Assignments</span></a></li>
-                                            <li><a href="teacher-departments.php"><i class="fa fa-sitemap"></i> <span>Departments</span></a></li>
-                                        </ul>
-                                    </li>
-
-                                    <li class="nav-header">
-                                        <span class="">Academic Management</span>
-                                    </li>
-                                    <li>
-                                        <a href="dean-academic-periods.php"><i class="fa fa-calendar"></i> <span>Academic Years & Terms</span></a>
-                                    </li>
-                                    <li class="has-children">
-                                        <a href="#"><i class="fa fa-graduation-cap" aria-hidden="true"></i> <span>Senior School</span> <i class="fa fa-angle-right arrow" aria-hidden="true"></i></a>
-                                        <ul class="child-nav">
-                                            <li><a href="dean-senior-pathways.php">Pathways &amp; Tracks</a></li>
-                                            <li><a href="dean-senior-subjects.php">Senior School Subjects</a></li>
-                                            <li><a href="dean-senior-combinations.php">Subject Combinations</a></li>
-                                            <li><a href="dean-senior-assignments.php">Assign Learners</a></li>
-                                            <li><a href="dean-senior-teachers.php">Teacher Assignments</a></li>
-                                            <li><a href="dean-senior-promotions.php">Promote Learners</a></li>
-                                            <li><a href="dean-senior-reports.php">Senior School Reports</a></li>
-                                        </ul>
-                                    </li>
-                                    <li class="has-children">
-                                        <a href="#"><i class="fa fa-file-text"></i> <span>Classes & Streams</span> <i class="fa fa-angle-right arrow"></i></a>
-                                        <ul class="child-nav">
-                                            <li><a href="create-class.php"><i class="fa fa-bars"></i> <span>Create Grade/Stream</span></a></li>
-                                            <li><a href="manage-classes.php"><i class="fa fa fa-server"></i> <span>Manage Grades/Streams</span></a></li>
-                                           
-                                        </ul>
-                                    </li>
-  <li class="has-children">
-                                        <a href="#"><i class="fa fa-file-text"></i> <span>Subjects</span> <i class="fa fa-angle-right arrow"></i></a>
-                                        <ul class="child-nav">
-                                            <li><a href="create-subject.php"><i class="fa fa-bars"></i> <span>Create Subject</span></a></li>
-                                            <li><a href="manage-subjects.php"><i class="fa fa fa-server"></i> <span>Manage Subjects</span></a></li>
-                                           <li><a href="add-subjectcombination.php"><i class="fa fa-newspaper-o"></i> <span>Add Subject Combination </span></a></li>
-                                           <li><a href="manage-subjectcombination.php"><i class="fa fa-newspaper-o"></i> <span>Manage Subject Combination </span></a></li>
-                                        </ul>
-                                    </li>
-   <li class="has-children">
-                                        <a href="#"><i class="fa fa-users"></i> <span>Students</span> <i class="fa fa-angle-right arrow"></i></a>
-                                        <ul class="child-nav">
-                                            <li><a href="add-students.php"><i class="fa fa-bars"></i> <span>Add Students</span></a></li>
-                                            <li><a href="manage-students.php"><i class="fa fa fa-server"></i> <span>Manage Students</span></a></li>
-                                           
-                                        </ul>
-                                    </li>
-<li class="has-children">
-                                        <a href="#"><i class="fa fa-info-circle"></i> <span>Result</span> <i class="fa fa-angle-right arrow"></i></a>
-                                        <ul class="child-nav">
-                                            <li><a href="manage-exams.php"><i class="fa fa-calendar"></i> <span>Manage Exams</span></a></li>
-                                            <li><a href="add-result.php"><i class="fa fa-bars"></i> <span>Add Result</span></a></li>
-                                            <li><a href="manage-results.php"><i class="fa fa fa-server"></i> <span>Manage Result</span></a></li>
-                                            <li><a href="manage-parents.php"><i class="fa fa-users"></i> <span>Parents / Guardians</span></a></li><li><a href="dean-sms-deliveries.php"><i class="fa fa-envelope"></i> <span>Parent SMS Deliveries</span></a></li><li><a href="dean-grading.php"><i class="fa fa-list"></i> <span>Performance Scale</span></a></li><li><a href="dean-result-approvals.php"><i class="fa fa-check-square-o"></i> <span>Approve / Publish Results</span></a></li>
-                                           
-                                        </ul>        </li>
-
-<li class="has-children">
-                                        <a href="#"><i class="fa fa-calendar-check-o"></i> <span>Timetable</span> <i class="fa fa-angle-right arrow"></i></a>
-                                        <ul class="child-nav">
-                                            <li><a href="dean-timetable-setup.php"><i class="fa fa-cogs"></i> <span>Timetable Setup</span></a></li>
-                                            <li><a href="dean-class-timetable.php"><i class="fa fa-table"></i> <span>Class Timetable</span></a></li>
-                                            <li><a href="dean-exam-timetable.php"><i class="fa fa-file-text-o"></i> <span>Exam Timetable</span></a></li>
-                                        </ul>
-                                    </li>
-
-
-<li class="has-children">
-                                        <a href="#"><i class="fa fa-bell"></i> <span>Notices</span> <i class="fa fa-angle-right arrow"></i></a>
-                                        <ul class="child-nav">
-                                            <li><a href="add-notice.php"><i class="fa fa-bars"></i> <span>Add Notice</span></a></li>
-                                            <li><a href="manage-notices.php"><i class="fa fa fa-server"></i> <span>Manage Notices</span></a></li>
-                                           
-                                        </ul>        </li>
-
-
-
-                                        <li><a href="dean-notification-deliveries.php"><i class="fa fa-envelope"></i> <span>Notification Deliveries</span></a></li>
-                                        <li><a href="dean-audit-logs.php"><i class="fa fa-history"></i> <span>Audit Logs</span></a></li>
-                                        <li><a href="change-password.php"><i class="fa fa fa-server"></i> <span> Dean Change Password</span></a></li>
-                                           
-                            
-                                </ul>
-                            </div>
-                            <!-- /.sidebar-nav -->
-                        </div>
-                        <!-- /.sidebar-content -->
-                    </div>
+<?php
+require_once __DIR__.'/permissions.php';
+$navigation=[
+ 'Academic overview'=>['dashboard.php','dashboard'],
+ 'Calendar and terms'=>['dean-academic-periods.php','calendar'],
+ 'Curriculum, pathways and subjects'=>['dean-senior-pathways.php','book'],
+ 'Classes and streams'=>['manage-classes.php','university'],
+ 'Learner academic records'=>['manage-students.php','graduation-cap'],
+ 'Learner subject enrolments'=>['student-subjects.php','book'],
+ 'Teaching allocations'=>['dean-teacher-relationships.php','users'],
+ 'Timetables'=>['dean-class-timetable.php','table'],
+ 'Curriculum coverage'=>['dean-academics.php?area=coverage','tasks'],
+ 'Assessments'=>['dean-academics.php?area=assessments','pencil'],
+ 'Results review and publication'=>['dean-result-approvals.php','check-square-o'],
+ 'Learner support'=>['dean-academics.php?area=interventions','heart'],
+ 'Academic reports'=>['dean-academics.php?area=reports','bar-chart'],
+ 'Academic notices'=>['manage-notices.php','bullhorn'],
+ 'Notifications'=>['dean-notification-deliveries.php','bell'],
+ 'Guardian SMS deliveries'=>['dean-sms-deliveries.php','envelope'],
+ 'Teacher accounts'=>['manage-teachers.php','user'],
+ 'Guardian accounts'=>['manage-parents.php','users'],
+ 'Department access'=>['dean-academics.php?area=permissions','key'],
+ 'Performance scales'=>['dean-grading.php','list'],
+ 'Learner promotions'=>['dean-senior-promotions.php','level-up'],
+ 'Legacy mark administration'=>['add-result.php','pencil'],
+ 'System audit logs'=>['dean-audit-logs.php','history'],
+ 'Staff permissions'=>['staff-permissions.php','lock'],
+ 'Change password'=>['change-password.php','key']
+];
+?>
+<div class="left-sidebar bg-black-300 box-shadow" id="srms-sidebar" role="navigation" aria-label="Staff navigation"><div class="sidebar-content"><div class="user-info closed"><h6 class="title"><?= htmlspecialchars($_SESSION['alogin']??'Staff',ENT_QUOTES,'UTF-8') ?></h6><small><?= htmlspecialchars(implode(', ', $GLOBALS['staff_access']['roles']??[]),ENT_QUOTES,'UTF-8') ?></small></div><div class="sidebar-nav"><ul class="side-nav color-gray">
+<?php foreach($navigation as $label=>[$url,$icon]) { $path=parse_url($url,PHP_URL_PATH);parse_str(parse_url($url,PHP_URL_QUERY)??'',$query);$permission=isset($query['area'])?staff_area_permission($query['area']):(staff_routes()[$path]??null);if(!staff_can($permission))continue; ?>
+<li><a href="<?= htmlspecialchars($url,ENT_QUOTES,'UTF-8') ?>"><i class="fa fa-<?= $icon ?>"></i> <span><?= htmlspecialchars($label,ENT_QUOTES,'UTF-8') ?></span></a></li>
+<?php } ?></ul></div></div></div>

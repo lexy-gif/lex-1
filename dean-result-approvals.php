@@ -11,6 +11,7 @@ require_dean();
 require_once 'includes/result-workflow.php';
 $error=$msg='';
 if(isset($_POST['decision'])) {
+    staff_require(['approve'=>'results.approve','publish'=>'results.publish','reject'=>'results.review'][$_POST['decision']]??null);
     csrf_require_valid($_POST['csrf_token'] ?? '');
     try {
         $dbh->beginTransaction();
@@ -40,12 +41,12 @@ if(isset($_POST['decision'])) {
 <div class="content-wrapper"><div class="content-container">
 <?php include('includes/leftbar.php');?>
 <div class="main-page"><div class="container-fluid">
-<div class="row page-title-div"><div class="col-md-8"><h2 class="title">Approve / Publish Results</h2></div></div>
+<div class="row page-title-div"><div class="col-md-8"><h2 class="title">Results Review and Publication</h2></div></div>
 <section class="section"><?php if($error){?><div class="alert alert-danger"><?= academic_h($error) ?></div><?php } ?>
 <?php if($msg){?><div class="alert alert-success"><?php echo htmlentities($msg); ?></div><?php } ?>
 <div class="panel"><div class="panel-heading"><h5>Class Result Approval Queue</h5></div><div class="panel-body">
 <table id="example" class="display table table-striped table-bordered">
-<thead><tr><th>#</th><th>Exam</th><th>Class</th><th>Submitted Students</th><th>Class Teacher Review</th><th>Dean Status</th><th>Decision</th></tr></thead>
+<thead><tr><th>#</th><th>Exam</th><th>Class</th><th>Submitted Students</th><th>Class Teacher Review</th><th>Approval Status</th><th>Decision</th></tr></thead>
 <tbody>
 <?php
 $sql = "SELECT e.id AS ExamId, e.ExamName, e.Status AS ExamStatus, ay.AcademicYear, t.TermName,
@@ -79,8 +80,8 @@ foreach($query->fetchAll(PDO::FETCH_OBJ) as $row) { ?>
             <input type="hidden" name="classid" value="<?php echo htmlentities($row->ClassId); ?>">
             <input type="hidden" name="examid" value="<?php echo htmlentities($row->ExamId); ?>">
             <input type="text" name="reason" class="form-control input-sm" placeholder="Reason if rejecting or returning">
-            <button type="submit" name="decision" value="approve" class="btn btn-xs btn-success action-top-sm">Approve</button>
-            <button type="submit" name="decision" value="publish" class="btn btn-xs btn-primary action-top-sm">Publish</button>
+            <?php if(staff_can('results.approve')) { ?><button type="submit" name="decision" value="approve" class="btn btn-xs btn-success action-top-sm">Approve</button><?php } ?>
+            <?php if(staff_can('results.publish')) { ?><button type="submit" name="decision" value="publish" class="btn btn-xs btn-primary action-top-sm">Publish</button><?php } ?>
             <button type="submit" name="decision" value="reject" class="btn btn-xs btn-warning action-top-sm">Return</button>
         </form>
     </td>

@@ -8,6 +8,7 @@ if($cbeTeacherPortal)require_teacher();else require_dean();
 $cbeTeacherId=$cbeTeacherPortal?teacher_id():0;
 $base=$cbeTeacherPortal?'teacher-academics.php':'dean-academics.php';
 $areas=['dashboard'=>'Academic Dashboard','structure'=>'Academic Structure','subjects'=>'Learning Areas / Subjects','pathways'=>'Pathways and School Combinations','allocation'=>'Learner Pathways and Guidance','workload'=>'Teacher Workload','assessments'=>'Assessments','coverage'=>'Curriculum Coverage','interventions'=>'Academic Interventions','analytics'=>'Performance Analytics','reports'=>'Academic Reports','class'=>'Class Academic View','permissions'=>'Department Permissions','exams'=>'Examination Entry Control','timetable'=>'Academic Timetables','department'=>'Department Academic View'];
+if(!$cbeTeacherPortal)$areas=array_filter($areas,fn($label,$key)=>staff_can(staff_area_permission($key)),ARRAY_FILTER_USE_BOTH);
 $area=$_GET['area']??($cbeTeacherPortal?'assessments':'dashboard');
 if(!isset($areas[$area])||($cbeTeacherPortal&&!in_array($area,['assessments','coverage','interventions','workload','timetable','department'],true))){http_response_code(403);exit('This academic area is not available to your account.');}
 try { [$year,$term]=cbe_period_context($dbh,$_GET); }
@@ -25,6 +26,7 @@ if($_SERVER['REQUEST_METHOD']==='POST') {
  try {
     $action=$_POST['action']??'';
     if($cbeTeacherPortal&&!in_array($action,['assessment','score','coverage'],true))throw new DomainException('Only the Dean can perform this change.');
+    if(!$cbeTeacherPortal)staff_require(staff_action_permission($action,$_POST));
     $dbh->beginTransaction();
     switch($action) {
       case 'config':cbe_save_config($dbh,$_POST['entity']??'',$_POST);break;
@@ -132,21 +134,22 @@ if($area==='structure') {
  if(!$cbeTeacherPortal)cbe_form($dbh,'School Workload and Learner Support Limits','settings',['WorkloadLow'=>'number','WorkloadHigh'=>'number','SupportThreshold'=>'number?'],cbe_one($dbh,'SELECT * FROM tblacademicsettings WHERE id=1'));
  $rows=cbe_report($dbh,'workload',$year,$term,$teacher);cbe_table($rows);cbe_chart($term?'Weekly lesson distribution':'Lesson entries across all terms',$rows,'Teacher','Lessons');
 } elseif($area==='assessments') {
- if(!$cbeTeacherPortal)foreach(['types','levels-performance','competencies','outcomes'] as $key){$spec=cbe_configs()[$key];$val=$edit&&$entity===$key?cbe_one($dbh,'SELECT * FROM '.$spec[0].' WHERE id=?',[$edit]):[];cbe_form($dbh,'Configure '.$spec[1],'config',$spec[2],$val?:[],['entity'=>$key]);echo '<details><summary>Existing '.academic_h($spec[1]).'</summary>';cbe_table(cbe_rows($dbh,'SELECT * FROM '.$spec[0]),$base.'?area=assessments&entity='.$key.'&id=');echo '</details>';}
+ if(!$cbeTeacherPortal)foreach(['types','levels-performance','competencies','outcomes'] as $key){if($key==='levels-performance'&&!staff_can('grading.manage'))continue;$spec=cbe_configs()[$key];$val=$edit&&$entity===$key?cbe_one($dbh,'SELECT * FROM '.$spec[0].' WHERE id=?',[$edit]):[];cbe_form($dbh,'Configure '.$spec[1],'config',$spec[2],$val?:[],['entity'=>$key]);echo '<details><summary>Existing '.academic_h($spec[1]).'</summary>';cbe_table(cbe_rows($dbh,'SELECT * FROM '.$spec[0]),$base.'?area=assessments&entity='.$key.'&id=');echo '</details>';}
  $val=$selectedAssessment?:$defaults;if(!empty($val['id']))$val['Outcomes']=academic_query($dbh,'SELECT OutcomeId FROM tblassessmentoutcomes WHERE AssessmentId=?',[$edit])->fetchAll(PDO::FETCH_COLUMN);
- $fields=['Title'=>'text','AssessmentTypeId'=>'types','AcademicYearId'=>'years','TermId'=>'terms','ClassId'=>'classes','SubjectId'=>'subjects'];if(!$cbeTeacherPortal)$fields['TeacherId']='teachers';$fields+=['MaximumScore'=>'number?','AssessmentDate'=>'date','Outcomes'=>'outcomes[]','Status'=>'enum:'.($cbeTeacherPortal?'draft|open|submitted':'draft|open|submitted|locked|approved|published|archived')];
+ $fields=['Title'=>'text','AssessmentTypeId'=>'types','AcademicYearId'=>'years','TermId'=>'terms','ClassId'=>'classes','SubjectId'=>'subjects'];if(!$cbeTeacherPortal)$fields['TeacherId']='teachers';$fields+=['MaximumScore'=>'number?','AssessmentDate'=>'date','Outcomes'=>'outcomes[]','Status'=>'enum:'.($cbeTeacherPortal?'draft|open|submitted':implode('|',array_merge(['draft','open','submitted','locked'],staff_can('results.approve')?['approved']:[],staff_can('results.publish')?['published']:[],['archived'])))];
+ if(!$cbeTeacherPortal&&staff_can('results.correct'))$fields['CorrectionReason']='textarea';
  cbe_form($dbh,'Create / Edit Assessment','assessment',$fields,$val?:$defaults);
  cbe_table(cbe_report($dbh,'assessments',$year,$term,$teacher,$class,$subject),$base.'?area=assessments&entity=assessment&year='.$year.'&id=');
  if($edit&&$entity==='assessment') {
    echo '<h3>Record learner assessment evidence</h3><p>Blank maximum score supports qualitative evidence and performance levels. Entry is permitted only while the assessment is open.</p>';
    $a=$selectedAssessment;$learners=academic_students($dbh,$a['ClassId'],$a['SubjectId'],$a['AcademicYearId']);
-   if($a['Status']==='open'&&$learners) {
+   if($a['Status']==='open'&&$learners&&($cbeTeacherPortal||staff_can('assessment.scores'))) {
      $evidenceValues=($_POST['action']??'')==='score'?$_POST:[];
      $outcomeChoices=cbe_rows($dbh,'SELECT o.id,o.Title Label FROM tblassessmentoutcomes ao JOIN tbllearningoutcomes o ON o.id=ao.OutcomeId WHERE ao.AssessmentId=? ORDER BY o.Title',[$edit]);
      echo '<form method="post" class="panel panel-body">';csrf_field();echo '<input type="hidden" name="action" value="score"><input type="hidden" name="AssessmentId" value="'.$edit.'"><label>Learner registered for this subject</label><select class="form-control academic-search" name="StudentId" required>';foreach($learners as $s)echo '<option value="'.(int)$s['StudentId'].'" '.((int)($evidenceValues['StudentId']??0)===(int)$s['StudentId']?'selected':'').'>'.academic_h($s['StudentName'].' ('.$s['RollId'].')').'</option>';echo '</select>';
      if($a['MaximumScore']!==null)cbe_field($dbh,'Score','number?',$evidenceValues['Score']??null);
      cbe_field($dbh,'PerformanceLevelId','levels-performance?',$evidenceValues['PerformanceLevelId']??null);cbe_field($dbh,'OutcomeId','outcomes?',$evidenceValues['OutcomeId']??null,$outcomeChoices);cbe_field($dbh,'Evidence','textarea',$evidenceValues['Evidence']??null);echo '<button class="btn btn-primary">Save Evidence</button></form>';
-   } else echo '<p class="alert alert-info">'.($a['Status']!=='open'?'Evidence entry is closed for this assessment.':'Register learners for this class and subject to enter evidence.').'</p>';
+   } else echo '<p class="alert alert-info">'.(!$cbeTeacherPortal&&!staff_can('assessment.scores')?'Evidence is recorded by the assigned subject teacher.':($a['Status']!=='open'?'Evidence entry is closed for this assessment.':'Register learners for this class and subject to enter evidence.')).'</p>';
    cbe_table(cbe_rows($dbh,'SELECT s.StudentName Student,r.Score,l.Name PerformanceLevel,r.Evidence,r.RecordedBy,r.UpdationDate FROM tblassessmentresults r JOIN tblstudents s ON s.StudentId=r.StudentId LEFT JOIN tblperformancelevels l ON l.id=r.PerformanceLevelId WHERE r.AssessmentId=?',[$edit]));
    cbe_table(cbe_rows($dbh,'SELECT s.StudentName Student,o.Title Outcome,l.Name PerformanceLevel,r.Evidence FROM tbloutcomeobservations r JOIN tblstudents s ON s.StudentId=r.StudentId JOIN tbllearningoutcomes o ON o.id=r.OutcomeId JOIN tblperformancelevels l ON l.id=r.PerformanceLevelId WHERE r.AssessmentId=?',[$edit]));
  }

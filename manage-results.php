@@ -150,7 +150,7 @@ else{
 }
                                                                 ?></td>
 <td>
-<a href="edit-result.php?stid=<?php echo htmlentities($result->StudentId);?>&examid=<?php echo htmlentities($result->ExamId);?>" class="btn btn-primary btn-xs">Edit</a>
+<?php if(staff_can('results.legacy')) { ?><a href="edit-result.php?stid=<?php echo htmlentities($result->StudentId);?>&examid=<?php echo htmlentities($result->ExamId);?>" class="btn btn-primary btn-xs">Edit</a><?php } else { ?><a class="btn btn-default btn-xs" href="dean-result-approvals.php">Review</a><?php } ?>
 
 </td>
 </tr>

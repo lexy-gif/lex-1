@@ -25,6 +25,8 @@ function cbe_field($db,$name,$type,$value=null,$choices=null) {
     }echo '</div>';
 }
 function cbe_form($db,$title,$action,$fields,$values=[],$hidden=[]) {
+    if(!empty($_SESSION['alogin'])&&!staff_can(staff_action_permission($action,$hidden)))return;
+    if($action==='config'&&($hidden['entity']??'')==='departments'&&!staff_can('departments.access'))unset($fields['HeadTeacherId']);
     $retry=($_SERVER['REQUEST_METHOD']??'GET')==='POST'&&($_POST['action']??'')===$action;
     foreach($hidden as $key=>$value)if(($_POST[$key]??null)!=$value)$retry=false;
     if($retry)$values=array_merge($values,array_intersect_key($_POST,$fields+['id'=>true]));

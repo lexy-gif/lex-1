@@ -4,13 +4,17 @@ require_once __DIR__.'/config.php';require_once __DIR__.'/csrf.php';require_once
 require_once __DIR__.'/senior-ui.php';require_dean();
 $areas=['pathways'=>'Senior School Pathways','subjects'=>'Manage Senior School Subjects','combinations'=>'Subject Combinations','assignments'=>'Assign Learners to Pathways','teachers'=>'Senior School Teacher Assignments','promotions'=>'Senior School Promotion','reports'=>'Senior School Reports'];
 if(!isset($areas[$seniorArea])){http_response_code(404);exit;}
+$areas=array_filter($areas,fn($label,$key)=>staff_can(staff_routes()['dean-senior-'.$key.'.php']??null),ARRAY_FILTER_USE_BOTH);
 $title=$areas[$seniorArea];$base='dean-senior-'.$seniorArea.'.php';$ready=senior_ready($dbh);$error='';$conflict=null;
 try {$f=senior_filters($_GET);$f['year']=$f['year']?:academic_year($dbh);if($f['year'])academic_period($dbh,$f['year']);$edit=senior_id($_GET['id']??0,'record',true);}
 catch(DomainException $e){http_response_code(400);exit(academic_h($e->getMessage()));}
 if($ready && $_SERVER['REQUEST_METHOD']==='POST') {
     csrf_require_valid($_POST['csrf_token']??'');
     try {
-        $dbh->beginTransaction();$action=$_POST['action']??'';
+        $action=$_POST['action']??'';
+        $permission=['pathway'=>'curriculum.manage','track'=>'curriculum.manage','subject'=>'curriculum.manage','mapping'=>'curriculum.manage','settings'=>'curriculum.manage','combination'=>'curriculum.manage','assign'=>'learners.manage','teacher'=>'teaching.assign','promote'=>'learners.promote','toggle'=>'curriculum.manage','delete'=>'curriculum.manage'][$action]??null;
+        staff_require($permission);
+        $dbh->beginTransaction();
         switch($action) {
             case 'pathway':senior_save_pathway($dbh,$_POST);break;
             case 'track':senior_save_track($dbh,$_POST);break;

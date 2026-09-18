@@ -64,6 +64,10 @@ function workflow_complete($db, $class, $e) {
     if ($extra) throw new DomainException('Resolve results with inactive or changed enrolment before publication.');
 }
 function workflow_return($db, $class, $exam, $reason) {
+    if(!empty($_SESSION['alogin'])) {
+        staff_assert('results.review');
+        if(academic_query($db,"SELECT id FROM tbldeanapprovals WHERE ClassId=? AND ExamId=? AND Status='approved'",[$class,$exam])->fetchColumn())staff_assert('results.correct');
+    }
     if ($reason==='') throw new DomainException('Enter a correction reason.');
     $teachers=academic_query($db,'SELECT DISTINCT TeacherId FROM tblresultsubmissions WHERE ClassId=? AND ExamId=?',[$class,$exam])->fetchAll(PDO::FETCH_COLUMN);
     academic_query($db,"UPDATE tblresultsubmissions SET Status='draft',SubmittedAt=NULL WHERE ClassId=? AND ExamId=?",[$class,$exam]);
@@ -99,6 +103,7 @@ function parent_publication_notify($db, $student, $event, $title, $url) {
     }
 }
 function workflow_decide($db, $class, $exam, $decision, $reason) {
+    staff_assert(['approve'=>'results.approve','publish'=>'results.publish','reject'=>'results.review'][$decision]??'');
     if (!$db->inTransaction()) throw new LogicException('A transaction is required.');
     $e=workflow_exam($db,$class,$exam);
     if (!in_array($decision,['approve','publish','reject'],true)) throw new DomainException('Select a valid decision.');

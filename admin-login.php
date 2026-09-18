@@ -33,7 +33,7 @@ if($result && $loginAllowed) {
 if($loginAllowed)security_login_result($dbh,$loginKey,$passwordMatches);
 if($passwordMatches)
 {
-security_login_session(['alogin'=>$result->UserName,'dean_password_version'=>hash('sha256',$result->Password)]);
+security_login_session(['alogin'=>$result->UserName,'staff_account_table'=>$result->AccountTable,'dean_password_version'=>hash('sha256',$result->Password)]);
 audit_log($dbh, 'dean_login', 'dean', $result->UserName, 'Dean of Studies logged in');
 header("Location: dashboard.php");
 exit;

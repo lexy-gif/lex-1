@@ -60,6 +60,14 @@ function cbe_options($db,$kind) {
     if(!isset($queries[$kind]))throw new LogicException('Unknown option list');return cbe_rows($db,$queries[$kind]);
 }
 function cbe_save_config($db,$entity,$p) {
+    if(!empty($_SESSION['alogin'])) {
+        staff_assert($entity==='levels-performance'?'grading.manage':'curriculum.manage');
+        if($entity==='departments'&&!staff_can('departments.access')) {
+            $oldHead=academic_query($db,'SELECT HeadTeacherId FROM tbldepartments WHERE id=?',[(int)($p['id']??0)])->fetchColumn();
+            if(array_key_exists('HeadTeacherId',$p)&&(int)$p['HeadTeacherId']!==(int)$oldHead)staff_assert('departments.access');
+            $p['HeadTeacherId']=$oldHead?:null;
+        }
+    }
     require_once __DIR__.'/senior-school.php';
     if(senior_ready($db)) {
         if($entity==='pathways')return senior_save_pathway($db,$p);

@@ -3,7 +3,7 @@ require_once __DIR__.'/csrf.php';
 $deanDeliveryCount = 0;
 try {
     if(isset($dbh)) {
-        $deliveryQuery = $dbh->prepare("SELECT COUNT(*) FROM tblnotificationdeliveries WHERE Status IN ('PENDING','FAILED','RETRYING')");
+        $deliveryQuery = $dbh->prepare("SELECT COUNT(*) FROM tblnotificationdeliveries d JOIN tblteachernotifications n ON n.id=d.NotificationId WHERE (n.Category IN ('TIMETABLE','EXAM_TIMETABLE','RESULTS') OR (n.Type='ACADEMIC_UPDATE' AND n.ActionUrl LIKE 'teacher-academics.php%') OR n.Type='SENIOR_TEACHER_ASSIGNMENT') AND d.Status IN ('PENDING','FAILED','RETRYING')");
         $deliveryQuery->execute();
         $deanDeliveryCount = (int)$deliveryQuery->fetchColumn();
     }
@@ -17,7 +17,7 @@ try {
             <div class="navbar-header no-padding">
                 <a class="navbar-brand" href="dashboard.php">
                     <span class="srms-brand-mark" aria-hidden="true"><i class="fa fa-graduation-cap"></i></span>
-                    <span class="srms-brand-text">SRMS<small>Dean of Studies</small></span>
+                    <span class="srms-brand-text">SRMS<small>Staff workspace</small></span>
                 </a>
                 <button type="button" class="small-nav-handle srms-icon-button hidden-sm hidden-xs" aria-label="Collapse sidebar" aria-expanded="true" aria-controls="srms-sidebar" title="Collapse sidebar"><i class="fa fa-outdent" aria-hidden="true"></i></button>
                 <button type="button" class="navbar-toggle mobile-nav-toggle" aria-label="Open sidebar" aria-expanded="false" aria-controls="srms-sidebar"><i class="fa fa-bars" aria-hidden="true"></i></button>
@@ -37,7 +37,7 @@ try {
                             <i class="fa fa-angle-down" aria-hidden="true"></i>
                         </a>
                         <ul class="dropdown-menu">
-                            <li class="dropdown-header">Dean of Studies</li>
+                            <li class="dropdown-header"><?= htmlspecialchars(implode(', ',$GLOBALS['staff_access']['roles']??[]),ENT_QUOTES,'UTF-8') ?></li>
                             <li><a href="change-password.php"><i class="fa fa-lock" aria-hidden="true"></i> Change Password</a></li>
                             <li role="separator" class="divider"></li>
                             <li><form method="post" action="logout.php" class="srms-logout-form"><?php csrf_field(); ?><button type="submit" class="srms-logout-button color-danger"><i class="fa fa-sign-out" aria-hidden="true"></i> Logout</button></form></li>
