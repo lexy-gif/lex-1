@@ -8,6 +8,9 @@ if($dbh->query("SELECT COUNT(*) FROM `$table`")->fetchColumn()) { echo "A Dean a
 $username=getenv('SETUP_DEAN_USERNAME')?:'';$password=getenv('SETUP_DEAN_PASSWORD')?:'';
 if(!preg_match('/^[a-zA-Z0-9_.@-]{3,100}$/D',$username))throw new DomainException('Set SETUP_DEAN_USERNAME to a valid username.');
 $hash=security_password($password);
+// First installation must deliberately designate a bootstrap administrator.
+// Later Dean identities receive only the academic allowlist.
+if(getenv('SETUP_STAFF_ROLE')!=='administrator')throw new DomainException('For first installation set SETUP_STAFF_ROLE=administrator to explicitly authorise the initial account. No default administrator is created.');
 $year=getenv('SETUP_ACADEMIC_YEAR')?:date('Y');if(!preg_match('/^20[0-9]{2}$/D',$year))throw new DomainException('Set a four-digit academic year.');
 $dbh->beginTransaction();
 try{
@@ -16,14 +19,21 @@ try{
     $dbh->commit();
 }catch(Throwable $e){if($dbh->inTransaction())$dbh->rollBack();throw $e;}
 // Each existing migration has its own idempotence marker and transaction.
-foreach(['migrate-teacher-management.php','migrate-cbe-academics.php','migrate-senior-school.php','migrate-parent-results.php','migrate-senior-integrity.php','migrate-guardian-access.php'] as $file){
+foreach(['migrate-teacher-management.php','migrate-cbe-academics.php','migrate-senior-school.php','migrate-parent-results.php','migrate-senior-integrity.php','migrate-guardian-access.php','migrate-dean-coordination.php'] as $file){
     $process=proc_open([PHP_BINARY,__DIR__.'/'.$file],[0=>STDIN,1=>STDOUT,2=>STDERR],$pipes);
     if(!is_resource($process)||proc_close($process)!==0)throw new RuntimeException('Setup migration failed: '.$file);
 }
+$dbh->exec(file_get_contents(__DIR__.'/../database-updates/dean-permissions.sql'));
 $dbh->beginTransaction();
 try{
     $dbh->exec("INSERT INTO tblclasses(ClassName,ClassNameNumeric,GradeId,Section) SELECT g.Name,g.GradeNumber,g.id,'A' FROM tblgrades g WHERE g.GradeNumber IN (10,11,12) AND NOT EXISTS(SELECT 1 FROM tblclasses c WHERE c.GradeId=g.id AND c.Section='A')");
     $q=$dbh->prepare("INSERT INTO `$table`(UserName,Password) VALUES(?,?)");$q->execute([$username,$hash]);
+    $account=(int)$dbh->lastInsertId();
+    foreach(['dean','administrator'] as $role) {
+        $dbh->prepare('INSERT INTO tblstaffroles(AccountTable,AccountId,RoleName,GrantedBy) VALUES(?,?,?,?)')->execute([$table,$account,$role,'initial setup']);
+        $dbh->prepare('INSERT INTO tblstaffpermissionaudit(Actor,AccountTable,AccountId,ChangeType,ChangeName,Reason) VALUES(?,?,?,?,?,?)')->execute(['initial setup',$table,$account,'role_granted',$role,'Initial operator explicitly selected SETUP_STAFF_ROLE=administrator.']);
+    }
+    $dbh->exec("INSERT IGNORE INTO tblschemamigrations(Name) VALUES('dean-permissions-v1')");
     $dbh->commit();
     echo "Senior School installed. Configure assessment descriptors and verify curriculum defaults in the Dean workspace.\n";
 }catch(Throwable $e){if($dbh->inTransaction())$dbh->rollBack();throw $e;}

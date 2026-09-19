@@ -61,7 +61,7 @@ function cbe_options($db,$kind) {
 }
 function cbe_save_config($db,$entity,$p) {
     if(!empty($_SESSION['alogin'])) {
-        staff_assert($entity==='levels-performance'?'grading.manage':'curriculum.manage');
+        staff_assert(staff_action_permission('config',['entity'=>$entity]));
         if($entity==='departments'&&!staff_can('departments.access')) {
             $oldHead=academic_query($db,'SELECT HeadTeacherId FROM tbldepartments WHERE id=?',[(int)($p['id']??0)])->fetchColumn();
             if(array_key_exists('HeadTeacherId',$p)&&(int)$p['HeadTeacherId']!==(int)$oldHead)staff_assert('departments.access');

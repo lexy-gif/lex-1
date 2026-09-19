@@ -38,6 +38,15 @@ function dean_find_by_username($dbh, $username, $source = null)
     return $query->fetch(PDO::FETCH_OBJ);
 }
 
+// The source is selected explicitly: identically named legacy accounts remain distinct.
+function staff_login_account($dbh, $username, $source)
+{
+    if (!in_array($source, ['tbldean', 'admin'], true)) return false;
+    $q=$dbh->prepare('SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name=?');
+    $q->execute([$source]);
+    return $q->fetchColumn() ? dean_find_by_username($dbh, $username, $source) : false;
+}
+
 function dean_update_password($dbh, $username, $passwordHash)
 {
     $table = $_SESSION['staff_account_table'] ?? dean_account_table($dbh);

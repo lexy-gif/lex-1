@@ -4,13 +4,15 @@ require_once __DIR__.'/config.php';require_once __DIR__.'/csrf.php';require_once
 require_once __DIR__.'/cbe-learning.php';require_once __DIR__.'/cbe-reports.php';require_once __DIR__.'/cbe-ui.php';
 require_once __DIR__.'/cbe-timetable.php';
 require_once __DIR__.'/cbe-context.php';
+require_once __DIR__.'/academic-planning.php';
 if($cbeTeacherPortal)require_teacher();else require_dean();
 $cbeTeacherId=$cbeTeacherPortal?teacher_id():0;
 $base=$cbeTeacherPortal?'teacher-academics.php':'dean-academics.php';
 $areas=['dashboard'=>'Academic Dashboard','structure'=>'Academic Structure','subjects'=>'Learning Areas / Subjects','pathways'=>'Pathways and School Combinations','allocation'=>'Learner Pathways and Guidance','workload'=>'Teacher Workload','assessments'=>'Assessments','coverage'=>'Curriculum Coverage','interventions'=>'Academic Interventions','analytics'=>'Performance Analytics','reports'=>'Academic Reports','class'=>'Class Academic View','permissions'=>'Department Permissions','exams'=>'Examination Entry Control','timetable'=>'Academic Timetables','department'=>'Department Academic View'];
+$areas['followups']='My Academic Follow-ups';
 if(!$cbeTeacherPortal)$areas=array_filter($areas,fn($label,$key)=>staff_can(staff_area_permission($key)),ARRAY_FILTER_USE_BOTH);
 $area=$_GET['area']??($cbeTeacherPortal?'assessments':'dashboard');
-if(!isset($areas[$area])||($cbeTeacherPortal&&!in_array($area,['assessments','coverage','interventions','workload','timetable','department'],true))){http_response_code(403);exit('This academic area is not available to your account.');}
+if(!isset($areas[$area])||($cbeTeacherPortal&&!in_array($area,['assessments','coverage','interventions','workload','timetable','department','followups'],true))){http_response_code(403);exit('This academic area is not available to your account.');}
 try { [$year,$term]=cbe_period_context($dbh,$_GET); }
 catch(DomainException $e) {http_response_code(400);exit(academic_h($e->getMessage()));}
 $class=(int)($_GET['class']??0);$subject=(int)($_GET['subject']??0);$student=(int)($_GET['student']??0);$teacher=$cbeTeacherId?:(int)($_GET['teacher']??0);$edit=(int)($_GET['id']??0);
@@ -25,7 +27,7 @@ if($_SERVER['REQUEST_METHOD']==='POST') {
  csrf_require_valid($_POST['csrf_token']??'');
  try {
     $action=$_POST['action']??'';
-    if($cbeTeacherPortal&&!in_array($action,['assessment','score','coverage'],true))throw new DomainException('Only the Dean can perform this change.');
+    if($cbeTeacherPortal&&!in_array($action,['assessment','score','coverage','followup_update'],true))throw new DomainException('This action requires separate staff authorisation.');
     if(!$cbeTeacherPortal)staff_require(staff_action_permission($action,$_POST));
     $dbh->beginTransaction();
     switch($action) {
@@ -34,6 +36,9 @@ if($_SERVER['REQUEST_METHOD']==='POST') {
       case 'allocation':cbe_allocate_pathway($dbh,$_POST);break;
       case 'guidance':cbe_guidance($dbh,$_POST);break;
       case 'assessment':$savedAssessment=cbe_save_assessment($dbh,$_POST,$cbeTeacherId);break;
+      case 'assessment_review':cbe_review_assessment($dbh,(int)($_POST['AssessmentId']??0),$_POST['Decision']??'',$_POST['Reason']??'');break;
+      case 'assessment_remind':planning_remind($dbh,'assessment',(int)($_POST['AssessmentId']??0));break;
+      case 'followup_update':planning_teacher_update($dbh,$_POST,$cbeTeacherId);break;
       case 'score':cbe_score($dbh,$_POST,$cbeTeacherId);break;
       case 'coverage':cbe_coverage($dbh,$_POST,$cbeTeacherId);break;
       case 'intervention':cbe_intervention($dbh,$_POST);break;
@@ -54,7 +59,9 @@ if($_SERVER['REQUEST_METHOD']==='POST') {
       case 'permission':
         $t=(int)($_POST['TeacherId']??0);academic_teacher($dbh,$t);$d=(int)($_POST['DepartmentId']??0);$allow=(int)cbe_number($_POST['CanReadAcademic']??'',0,1);
         if(!in_array($d,array_column(cbe_options($dbh,'departments'),'id')))throw new DomainException('Select a valid department.');
-        $old=cbe_one($dbh,'SELECT * FROM tbldepartmentpermissions WHERE TeacherId=? AND DepartmentId=?',[$t,$d]);academic_query($dbh,'INSERT INTO tbldepartmentpermissions VALUES(?,?,?) ON DUPLICATE KEY UPDATE CanReadAcademic=VALUES(CanReadAcademic)',[$t,$d,$allow]);cbe_audit($dbh,'department_permission_saved','tbldepartmentpermissions',$t,$old,$_POST);break;
+        $review=(int)cbe_number($_POST['CanReviewAcademic']??0,0,1);
+        if($review&&!$allow)throw new DomainException('Department review also requires academic read access.');
+        $old=cbe_one($dbh,'SELECT * FROM tbldepartmentpermissions WHERE TeacherId=? AND DepartmentId=?',[$t,$d]);academic_query($dbh,'INSERT INTO tbldepartmentpermissions(TeacherId,DepartmentId,CanReadAcademic,CanReviewAcademic) VALUES(?,?,?,?) ON DUPLICATE KEY UPDATE CanReadAcademic=VALUES(CanReadAcademic),CanReviewAcademic=VALUES(CanReviewAcademic)',[$t,$d,$allow,$review]);cbe_audit($dbh,'department_permission_saved','tbldepartmentpermissions',$t,$old,$_POST);break;
       case 'exam_lock':
         $id=(int)($_POST['ExamId']??0);$old=cbe_one($dbh,'SELECT * FROM tblexams WHERE id=? FOR UPDATE',[$id]);if(!$old)throw new DomainException('Exam not found.');$locked=(int)cbe_number($_POST['EntryLocked']??'',0,1);
         academic_query($dbh,"UPDATE tblexams SET EntryLocked=?,Status=CASE WHEN ?=0 THEN 'marks_entry' ELSE Status END WHERE id=?",[$locked,$locked,$id]);cbe_audit($dbh,'exam_entry_lock_changed','tblexams',$id,$old,['EntryLocked'=>$locked]);break;
@@ -136,11 +143,15 @@ if($area==='structure') {
 } elseif($area==='assessments') {
  if(!$cbeTeacherPortal)foreach(['types','levels-performance','competencies','outcomes'] as $key){if($key==='levels-performance'&&!staff_can('grading.manage'))continue;$spec=cbe_configs()[$key];$val=$edit&&$entity===$key?cbe_one($dbh,'SELECT * FROM '.$spec[0].' WHERE id=?',[$edit]):[];cbe_form($dbh,'Configure '.$spec[1],'config',$spec[2],$val?:[],['entity'=>$key]);echo '<details><summary>Existing '.academic_h($spec[1]).'</summary>';cbe_table(cbe_rows($dbh,'SELECT * FROM '.$spec[0]),$base.'?area=assessments&entity='.$key.'&id=');echo '</details>';}
  $val=$selectedAssessment?:$defaults;if(!empty($val['id']))$val['Outcomes']=academic_query($dbh,'SELECT OutcomeId FROM tblassessmentoutcomes WHERE AssessmentId=?',[$edit])->fetchAll(PDO::FETCH_COLUMN);
- $fields=['Title'=>'text','AssessmentTypeId'=>'types','AcademicYearId'=>'years','TermId'=>'terms','ClassId'=>'classes','SubjectId'=>'subjects'];if(!$cbeTeacherPortal)$fields['TeacherId']='teachers';$fields+=['MaximumScore'=>'number?','AssessmentDate'=>'date','Outcomes'=>'outcomes[]','Status'=>'enum:'.($cbeTeacherPortal?'draft|open|submitted':implode('|',array_merge(['draft','open','submitted','locked'],staff_can('results.approve')?['approved']:[],staff_can('results.publish')?['published']:[],['archived'])))];
- if(!$cbeTeacherPortal&&staff_can('results.correct'))$fields['CorrectionReason']='textarea';
+ $fields=['Title'=>'text','AssessmentTypeId'=>'types','AcademicYearId'=>'years','TermId'=>'terms','ClassId'=>'classes','SubjectId'=>'subjects'];if(!$cbeTeacherPortal)$fields['TeacherId']='teachers';$fields+=['MaximumScore'=>'number?','AssessmentDate'=>'date','Outcomes'=>'outcomes[]','Status'=>'enum:'.($cbeTeacherPortal?'draft|open|submitted':implode('|',array_merge(['draft','open'],staff_can('assessment.scores')?['submitted']:[],staff_can('results.review')?['reviewed']:[],staff_can('results.approve')?['approved']:[],staff_can('results.publish')?['published']:[],['archived'])))];
+ if(!$cbeTeacherPortal){$fields['SubmissionDeadline']='date';if(!empty($val['id']))$val['SubmissionDeadline']=academic_query($dbh,'SELECT DueDate FROM tblassessmentdeadlines WHERE AssessmentId=?',[$val['id']])->fetchColumn()?:$val['AssessmentDate'];}
+ if(!$cbeTeacherPortal&&(staff_can('results.review')||staff_can('results.correct')))$fields['CorrectionReason']='textarea';
  cbe_form($dbh,'Create / Edit Assessment','assessment',$fields,$val?:$defaults);
  cbe_table(cbe_report($dbh,'assessments',$year,$term,$teacher,$class,$subject),$base.'?area=assessments&entity=assessment&year='.$year.'&id=');
  if($edit&&$entity==='assessment') {
+   if(!$cbeTeacherPortal&&in_array($selectedAssessment['Status'],['submitted','reviewed'],true))cbe_form($dbh,'Review or request a correction','assessment_review',['Decision'=>'enum:reviewed|correction','Reason'=>'textarea'],[],['AssessmentId'=>$edit]);
+   if(!$cbeTeacherPortal&&in_array($selectedAssessment['Status'],['draft','open'],true))cbe_form($dbh,'Send an overdue submission reminder','assessment_remind',[],[],['AssessmentId'=>$edit]);
+   cbe_table(cbe_rows($dbh,'SELECT Actor,Decision,Reason,CreatedAt FROM tblassessmentreviews WHERE AssessmentId=? ORDER BY id DESC',[$edit]));
    echo '<h3>Record learner assessment evidence</h3><p>Blank maximum score supports qualitative evidence and performance levels. Entry is permitted only while the assessment is open.</p>';
    $a=$selectedAssessment;$learners=academic_students($dbh,$a['ClassId'],$a['SubjectId'],$a['AcademicYearId']);
    if($a['Status']==='open'&&$learners&&($cbeTeacherPortal||staff_can('assessment.scores'))) {
@@ -162,7 +173,11 @@ if($area==='structure') {
  cbe_table(cbe_report($dbh,'interventions',$year,$term,$teacher,$class,$subject,$student),$cbeTeacherPortal?null:$base.'?area=interventions&year='.$year.'&id=');
  if(!$cbeTeacherPortal){echo '<details><summary>Intervention change history</summary>';cbe_table(cbe_rows($dbh,"SELECT Actor,Details,CreationDate FROM tblauditlog WHERE EntityType='tblacademicinterventions' ORDER BY id DESC LIMIT 200"));echo '</details>';}
 } elseif($area==='permissions') {
- cbe_form($dbh,'Grant / Revoke Department Academic Read Access','permission',['TeacherId'=>'teachers','DepartmentId'=>'departments','CanReadAcademic'=>'bool']);cbe_table(cbe_rows($dbh,'SELECT u.FullName Teacher,d.DepartmentName Department,p.CanReadAcademic FROM tbldepartmentpermissions p JOIN tblusers u ON u.id=p.TeacherId JOIN tbldepartments d ON d.id=p.DepartmentId'));
+ cbe_form($dbh,'Grant / Revoke Department Academic Access','permission',['TeacherId'=>'teachers','DepartmentId'=>'departments','CanReadAcademic'=>'bool','CanReviewAcademic'=>'bool']);cbe_table(cbe_rows($dbh,'SELECT u.FullName Teacher,d.DepartmentName Department,p.CanReadAcademic,p.CanReviewAcademic FROM tbldepartmentpermissions p JOIN tblusers u ON u.id=p.TeacherId JOIN tbldepartments d ON d.id=p.DepartmentId'));
+} elseif($area==='followups') {
+ $plans=cbe_rows($dbh,'SELECT * FROM tblacademicplans WHERE TeacherId=? AND AcademicYearId=? AND (?=0 OR TermId=?) ORDER BY DueDate',[$cbeTeacherId,$year,$term,$term]);
+ cbe_table($plans);
+ foreach($plans as $plan)if(in_array($plan['Status'],['open','in_progress'],true))cbe_form($dbh,'Update: '.$plan['Title'],'followup_update',['Status'=>'enum:in_progress|completed','Outcome'=>'textarea'],$plan);
 } elseif($area==='department') {
  cbe_table(cbe_rows($dbh,'SELECT d.DepartmentName Department,s.SubjectName Subject,a.Title Assessment,COUNT(r.id) Observations,ROUND(AVG(100*r.Score/NULLIF(a.MaximumScore,0)),2) MeanPercentage FROM tbldepartmentpermissions p JOIN tbldepartments d ON d.id=p.DepartmentId JOIN tblsubjects s ON s.DepartmentId=d.id LEFT JOIN tblassessments a ON a.SubjectId=s.id AND a.AcademicYearId=? AND (?=0 OR a.TermId=?) AND (?=0 OR a.ClassId=?) LEFT JOIN tblassessmentresults r ON r.AssessmentId=a.id WHERE p.TeacherId=? AND p.CanReadAcademic=1 AND (?=0 OR s.id=?) GROUP BY d.id,d.DepartmentName,s.id,s.SubjectName,a.id,a.Title',[$year,$term,$term,$class,$class,$cbeTeacherId,$subject,$subject]));
 } elseif($area==='exams') {

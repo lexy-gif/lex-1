@@ -10,6 +10,8 @@ function staff_permissions() {
         'results.review'=>'Results completeness and correction requests', 'reports.view'=>'Academic reports and exports',
         'notices.academic'=>'Academic notices', 'notifications.academic'=>'Academic notification monitoring',
         'account.self'=>'Own password',
+        'planning.manage'=>'Academic calendar, targets and follow-up actions',
+        'resources.request'=>'Request teaching resources', 'resources.approve'=>'Management review of teaching resource requests',
         'accounts.teachers'=>'Teacher account administration', 'accounts.guardians'=>'Guardian accounts and verified learner links',
         'assignments.class'=>'Appoint class teachers', 'assignments.responsibility'=>'Assign approved academic responsibilities',
         'departments.access'=>'Appoint department heads and grant department read access',
@@ -23,11 +25,11 @@ function staff_permissions() {
     ];
 }
 function staff_role_permissions() {
-    $dean=['academic.overview','academic.periods','curriculum.manage','learners.manage','teaching.view','teaching.assign','timetable.manage','assessments.manage','coverage.view','support.manage','results.review','reports.view','notices.academic','notifications.academic','account.self'];
+    $dean=['academic.overview','academic.periods','curriculum.manage','learners.manage','teaching.view','teaching.assign','timetable.manage','assessments.manage','coverage.view','support.manage','results.review','reports.view','notices.academic','notifications.academic','account.self','planning.manage','resources.request'];
     return [
         'dean'=>$dean,
-        'technical_administrator'=>['academic.overview','account.self','accounts.teachers','accounts.guardians','notifications.all','audit.all'],
-        'academic_approver'=>['academic.overview','account.self','results.review','reports.view','results.approve','results.publish','results.correct','grading.manage','learners.promote','assignments.class','assignments.responsibility','departments.access'],
+        'technical_administrator'=>['academic.overview','account.self','teaching.view','accounts.teachers','accounts.guardians','notifications.all','audit.all'],
+        'academic_approver'=>['academic.overview','account.self','assessments.manage','results.review','reports.view','results.approve','results.publish','results.correct','grading.manage','learners.promote','assignments.class','assignments.responsibility','departments.access','resources.approve'],
         'administrator'=>array_keys(staff_permissions())
     ];
 }
@@ -54,8 +56,17 @@ function staff_access($db) {
         if (($e->errorInfo[1]??null)!==1146) throw $e;
         $roles=[];$grants=[];
     }
-    // Unclassified legacy Dean accounts receive only the Dean allowlist.
-    if (!$roles && $identity['table']==='tbldean') $roles=['dean'];
+    // Only unmigrated installations use the legacy academic-only fallback.
+    // An explicitly revoked role must never reappear on the next request.
+    if (!$roles && $identity['table']==='tbldean') {
+        try {
+            $installed=$db->query("SELECT 1 FROM tblschemamigrations WHERE Name='dean-permissions-v1'")->fetchColumn();
+        } catch(PDOException $e) {
+            if (($e->errorInfo[1]??null)!==1146) throw $e;
+            $installed=false;
+        }
+        if (!$installed) $roles=['dean'];
+    }
     $permissions=[];$catalogue=staff_role_permissions();
     foreach($roles as $role)$permissions=array_merge($permissions,$catalogue[$role]??[]);
     $permissions=array_merge($permissions,array_intersect($grants,staff_delegatable_permissions()));
@@ -79,6 +90,7 @@ function staff_assert($permission) { if (!staff_can($permission)) throw new Doma
 function staff_routes() {
     return [
         'dashboard.php'=>'academic.overview','change-password.php'=>'account.self',
+        'dean-planning.php'=>'planning.manage','dean-resource-requests.php'=>'academic.overview',
         'dean-academic-periods.php'=>'academic.periods','dean-academics.php'=>'academic.overview',
         'create-class.php'=>'curriculum.manage','manage-classes.php'=>'curriculum.manage','edit-class.php'=>'curriculum.manage',
         'create-subject.php'=>'curriculum.manage','manage-subjects.php'=>'curriculum.manage','edit-subject.php'=>'curriculum.manage',
@@ -107,8 +119,15 @@ function staff_area_permission($area) {
         'permissions'=>'departments.access','exams'=>'assessments.manage','timetable'=>'timetable.manage','department'=>'reports.view'][$area]??null;
 }
 function staff_action_permission($action,$post=[]) {
-    if ($action==='config') return ($post['entity']??'')==='levels-performance'?'grading.manage':'curriculum.manage';
-    return ['combination'=>'curriculum.manage','allocation'=>'learners.manage','guidance'=>'support.manage','assessment'=>'assessments.manage',
+    if ($action==='config') return match($post['entity']??'') {
+        'levels-performance'=>'grading.manage',
+        'types','competencies','outcomes'=>'assessments.manage',
+        'levels','grades','departments','pathways','tracks'=>'curriculum.manage',
+        default=>null
+    };
+    return ['calendar'=>'planning.manage','plan'=>'planning.manage','resource'=>'resources.request','resource_decision'=>'resources.approve',
+        'assessment_review'=>'results.review','assessment_remind'=>'assessments.manage',
+        'combination'=>'curriculum.manage','allocation'=>'learners.manage','guidance'=>'support.manage','assessment'=>'assessments.manage',
         'score'=>'assessment.scores','coverage'=>'coverage.record','intervention'=>'support.manage','lesson'=>'timetable.manage','exam_session'=>'timetable.manage',
         'class'=>'curriculum.manage','subject'=>'curriculum.manage','settings'=>'teaching.assign','permission'=>'departments.access',
         'exam_lock'=>'assessments.manage','carry'=>'assignments.class'][$action]??null;
